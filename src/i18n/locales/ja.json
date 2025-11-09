@@ -1,0 +1,310 @@
+{
+  "app": {
+    "title": "赤信号 青信号",
+    "subtitle": "タップして生き残れ！"
+  },
+  "startMenu": {
+    "title": "赤信号 <1>青信号</1>",
+    "subtitle": "タップして生き残れ！",
+    "stop": "ストップ",
+    "tap": "タップ",
+    "bestScore": "最高スコア",
+    "howToPlay": "遊び方",
+    "instructions": {
+      "redLight": "赤信号 = タップしない！",
+      "greenLight": "青信号 = 素早くタップ！",
+      "lives": "命は3つだけ - ミスやタップミス！",
+      "speed": "ゲームは各ラウンドで速くなる！",
+      "whackMode": {
+        "redLight": "赤いライトをタップしないで - 「ストップ！」と表示されます",
+        "greenLight": "緑のライトを素早くタップ - 「タップ！」と表示されます",
+        "grid": "複数のライトがアクティブな3x3グリッド",
+        "progression": "各ラウンドでより多くのライトがアクティブになります",
+        "scoring": "完了したラウンドごとに固定+10ポイント",
+        "timing": "緑のライトはすぐに消えます - 素早く！"
+      }
+    },
+    "footer": {
+      "line1": "反射神経と集中力をテストしよう！",
+      "line2": "どれだけ長く生き残れるか？",
+      "tagline": "反射神経と集中力をテストしよう – どれだけ長く生き残れるか？"
+    },
+    "authentication": {
+      "title": "ウォレット認証",
+      "subtitle": "ウォレットを接続してプレイし、Web3報酬を獲得しましょう"
+    },
+    "verification": {
+      "title": "身元確認"
+    },
+    "buttons": {
+      "verifyWorldId": "World IDで認証してプレイ",
+      "authenticateWallet": "ウォレット認証",
+      "startGame": "ゲーム開始 (残り{{turns}}回)",
+      "noTurns": "利用可能なターンがありません - もっと購入！",
+      "authenticating": "認証中...",
+      "checkingTurns": "ターンを確認中...",
+      "forceRefresh": "強制更新",
+      "startAnyway": "とにかく開始 (失敗する可能性)",
+      "buyTurns": "ターンを購入",
+      "manage": "管理",
+      "close": "閉じる"
+    },
+    "turnStatus": {
+      "error": "エラー: {{error}}",
+      "retry": "再試行"
+    }
+  },
+  "gameScreen": {
+    "pause": "⏸️ 一時停止",
+    "round": "ラウンド {{round}}",
+    "paused": {
+      "title": "ゲーム一時停止",
+      "resume": "ゲーム再開",
+      "quit": "ゲーム終了"
+    },
+    "instructions": "ライトまたは画面のどこでもタップしてプレイ"
+  },
+  "lightDisplay": {
+    "lightChange": "ライト変更！",
+    "ready": "準備？",
+    "redInstruction": "赤の時はタップしない！",
+    "greenInstruction": "今タップ！",
+    "waitingInstruction": "準備して...",
+    "tip": "ライトはランダムに変わる - 注意して！"
+  },
+  "gameOver": {
+    "title": "ゲームオーバー",
+    "finalScore": "最終スコア",
+    "previousBest": "前回のベスト: {{score}}",
+    "performance": "あなたのパフォーマンス",
+    "stats": {
+      "rounds": "ラウンド",
+      "streak": "連続",
+      "correct": "正解",
+      "accuracy": "正確性",
+      "tokensEarned": "獲得トークン"
+    },
+    "performanceMessages": {
+      "newHighScore": "🎉 新記録！ 🎉",
+      "legendary": "🔥 伝説的なパフォーマンス！ 🔥",
+      "incredible": "💪 信じられない反射神経！ 💪",
+      "great": "⚡ 素晴らしい！ ⚡",
+      "notBad": "👍 悪くない！ 👍",
+      "keepPracticing": "🎯 練習を続けて！ 🎯"
+    },
+    "encouragement": {
+      "practice": "練習が完璧を作る！リズムに集中してみて",
+      "getting_better": "上達してる！ラウンド15に到達できる？",
+      "amazing": "素晴らしい反射神経！ラウンド20に挑戦しよう！",
+      "master": "あなたは赤信号青信号のマスターだ！ 🏆"
+    },
+    "buttons": {
+      "playAgain": "🔄 もう一度プレイ (残り{{turns}}回)",
+      "noTurns": "❌ 利用可能なターンがありません - もっと購入！",
+      "mainMenu": "メインメニュー",
+      "checkingTurns": "ターンを確認中..."
+    }
+  },
+  "success": {
+    "title": "成功！",
+    "message": "トークンがウォレットに送信されました！",
+    "transactionHash": "トランザクションハッシュ:",
+    "button": "素晴らしい！ 🎉"
+  },
+  "settings": {
+    "title": "⚙️ 設定",
+    "account": {
+      "title": "👤 アカウント",
+      "worldId": "World ID:",
+      "verification": "認証:",
+      "verified": "✓ 認証済み",
+      "notVerified": "✗ 未認証",
+      "notConnected": "接続されていません"
+    },
+    "game": {
+      "title": "🎮 ゲーム設定",
+      "soundEffects": {
+        "title": "効果音",
+        "description": "ゲーム中に音を再生"
+      },
+      "vibration": {
+        "title": "振動",
+        "description": "モバイルでの触覚フィードバック"
+      }
+    },
+    "stats": {
+      "title": "📊 統計",
+      "highScore": "最高スコア:",
+      "gamesPlayed": "プレイしたゲーム:",
+      "resetStats": "ローカル統計をリセット"
+    },
+    "about": {
+      "title": "ℹ️ について",
+      "version": "赤信号青信号ゲーム v1.0",
+      "builtWith": "React + TypeScriptで構築",
+      "poweredBy": "World ID & MiniKitで動作",
+      "copyright": "© 2024 RLGL Game. 全著作権所有."
+    },
+    "language": {
+      "title": "🌍 言語",
+      "description": "お好みの言語を選択"
+    },
+    "confirmReset": "ローカル統計をリセットしてもよろしいですか？これは元に戻せません。"
+  },
+  "userInfo": {
+    "logout": "ログアウト",
+    "verified": "認証済み"
+  },
+  "gameStart": {
+    "title": "🎮 ゲーム開始"
+  },
+  "leaderboard": {
+    "title": "🏆 グローバルリーダーボード",
+    "refresh": "🔄 更新",
+    "topPlayers": "トップ{{count}}プレイヤー",
+    "you": "あなた",
+    "round": "ラウンド{{round}}",
+    "showingTop10": "トップ10スコアを表示",
+    "playToEarn": "🎮 RLGLトークンを獲得するためにプレイしよう！",
+    "beatTopScore": "トップスコアを破ってあなたの場所を確保しよう！🚀",
+    "cached": "キャッシュ済み",
+    "retry": "再試行",
+    "updatedRealTime": "リーダーボードはリアルタイムで更新されます",
+    "noScores": {
+      "title": "まだスコアがありません！",
+      "subtitle": "最初にハイスコアを設定して1位を獲得しましょう！"
+    },
+    "error": {
+      "tryAgain": "再試行",
+      "refreshData": "データを更新"
+    },
+    "updatedEvery12Hours": "リーダーボードは12時間ごとに更新されます。"
+  },
+  "worldIdLogin": {
+    "title": "🚨 だるまさんがころんだ 🚨",
+    "subtitle": "ブロックチェーン上で最も中毒性のあるリアクションゲーム！",
+    "heroText": "⚡ 超高速反射神経が本物の競争と出会う ⚡",
+    "worldIdRequired": "🛡️ 人間専用ゾーン",
+    "onlyVerifiedHumans": "🎯 100% リアルプレイヤー • ボットなし • フェアな競争\n🏆 超高速反射神経を持つ本物の人間と競争しよう！\n💰 あなたのスキルで本物のRLGLトークンを獲得！",
+    "features": {
+      "realPlayers": "👥 本物の人間プレイヤーのみ",
+      "earnTokens": "💎 暗号通貨報酬を獲得",
+      "globalLeaderboard": "🌍 グローバルリーダーボード",
+      "instantPlay": "⚡ 瞬間アクション"
+    },
+    "callToAction": "世界を相手にあなたの反射神経をテストする準備はできていますか？",
+    "verifying": "🔐 あなたの人間性を確認中...",
+    "verify": "🚀 今すぐアクションに参加！",
+    "worldAppNote": "✨ World Appによる迅速で安全な認証",
+    "verifiedTitle": "🎉 アリーナへようこそ！",
+    "verifiedSubtitle": "認証が完了し、競争する準備が整いました！その超高速反射神経を見せる時です。",
+    "tapInstructions": "World IDを使用して人間性を確認するために緑のボタンをタップしてください",
+    "error": "⚠️ 認証に失敗しました。Orbで認証されていることを確認して、もう一度お試しください！"
+  },
+  "turnDisplay": {
+    "yourTurns": "あなたのターン",
+    "live": "ライブ",
+    "availableTurns": "利用可能なターン",
+    "noTurnsRemaining": "残りターンなし",
+    "freeResetsIn": "無料ターンのリセットまで",
+    "nextReset": "次のリセット:",
+    "processing": "処理中...",
+    "buyMoreTurns": "3ターン追加購入",
+    "sale": "セール！",
+    "resetAvailable": "リセット可能！",
+    "turnsResetIn": "ターンリセットまで",
+    "error": "{{error}}",
+    "paymentFailed": "支払いに失敗しました: {{error}}",
+    "paymentSuccess": {
+      "title": "支払い成功！",
+      "subtitle": "{{turns}}回のターンが利用可能です"
+    },
+    "weeklyPass": {
+      "active": "週間パスアクティブ",
+      "unlimitedUntil": "無制限ターン期限:",
+      "buttonTitle": "週間パス",
+      "buttonSubtitle": "7日間無制限ターン！"
+    }
+  },
+  "gameModeSelector": {
+    "title": "ゲームモード選択",
+    "classicMode": {
+      "title": "クラシックモード",
+      "description": "純粋な反応ゲーム - パワーアップなし、あなたと光だけ"
+    },
+    "arcadeMode": {
+      "title": "アーケードモード",
+      "description": "浮遊パワーアップと特殊能力で強化されたゲームプレイ"
+    },
+    "changeAnytime": "メインメニューからいつでもモードを変更できます"
+  },
+  "whackMode": {
+    "title": "🔨 ライト叩き",
+    "description": "緑のライトのみをタップ。ラウンドごとにライトが増える — 素早く致命的。"
+  },
+   "instructions": {
+     "whackMode": {
+       "redLight": "赤いライトは危険です - タップすると命を失います！",
+       "greenLight": "緑のライトがあなたのターゲットです - 素早くタップしてポイントを獲得！",
+       "grid": "ライトは3x3のグリッドパターンで表示され、ナビゲーションが簡単です。",
+       "progression": "各ラウンドでタップするライトが増えます - 集中してください！",
+       "scoring": "正しくタップした緑のライトごとにポイントを獲得。",
+       "timing": "時間は限られています - 素早く正確に！"
+     }
+   },
+   "proTips": {
+    "timing": "タイミングがすべて：タップする前に緑のライトを待って！",
+    "speed": "スピードアップ：スコアが上がるにつれてゲームが速くなります。",
+    "arcade": "アーケードモード：パワーアップを集めて特別な能力を得よう！",
+    "whack": "ライトたたきモード：3x3グリッドで緑のライトをタップ - 各ラウンドでライトが増える！",
+    "leaderboard": "ハイスコア：他のプレイヤーとリーダーボードで競争しよう！"
+  },
+  "walletLogin": {
+    "connectTitle": "ウォレット接続",
+    "connectSubtitle": "安全なWeb3ゲーミング",
+    "walletRequired": "ウォレットが必要",
+    "connectToPlay": "このWeb3ゲームでプレイして報酬を獲得するためにウォレットを接続してください。",
+    "callToAction": "🎮 プレイする準備はできましたか？どこでもタップしてウォレットを接続！",
+    "worldAppNote": "✨ World Appウォレットとシームレスに動作",
+    "tapInstructions": "どこでもタップしてウォレットを接続",
+    "connecting": "接続中...",
+    "error": "⚠️ 接続に失敗しました。もう一度お試しいただくか、ウォレットを確認してください。"
+  },
+  "walletInfoModal": {
+    "title": "ウォレット接続",
+    "description": "このWeb3ゲームにアクセスし、ゲームプレイで報酬を獲得するためにウォレットを接続してください。",
+    "secureTitle": "安全でプライベート",
+    "secureDescription": "あなたのウォレットは安全に保たれます - 接続許可のみを要求します。",
+    "instantTitle": "即座にアクセス",
+    "instantDescription": "一度接続すれば、追加設定なしですぐにプレイできます。",
+    "gameTitle": "プレイして稼ぐ",
+    "gameDescription": "トークンを獲得し、他のプレイヤーとリーダーボードで競争しましょう。",
+    "worldAppNote": "💡 このゲームは最もスムーズな体験のためにWorld Appウォレットで最適に動作します。"
+  },
+  "humanVerification": {
+    "title": "人間性の確認",
+    "description": "オプション：人間であることを確認して、ボーナス報酬と強化されたゲームプレイ機能をアンロックしましょう。",
+    "benefitsTitle": "人間確認の利点：",
+    "benefit1": "より高い報酬倍率",
+    "benefit2": "限定トーナメントへのアクセス",
+    "benefit3": "強化されたアンチチート保護",
+    "verifyButton": "World IDで確認",
+    "skipButton": "今はスキップ",
+    "verifying": "確認中...",
+    "verified": "人間確認済み！",
+    "verifiedDescription": "あなたは人間として確認され、強化された報酬と機能を楽しむことができます。",
+    "continue": "続行",
+    "note": "設定メニューから後で人間性を確認できます。",
+    "error": "⚠️ 確認に失敗しました。Orbで確認されていることを確認して、もう一度お試しください！"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "retry": "再試行",
+    "close": "閉じる",
+    "cancel": "キャンセル",
+    "ok": "OK",
+    "yes": "はい",
+    "no": "いいえ"
+  }
+}

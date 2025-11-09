@@ -1,0 +1,276 @@
+{
+  "app": {
+    "title": "Red Light Green Light",
+    "subtitle": "Tap to Survive!"
+  },
+  "startMenu": {
+    "title": "Red Light <1>Green Light</1>",
+    "subtitle": "Tap to Survive!",
+    "stop": "STOP",
+    "tap": "TAP",
+    "bestScore": "BEST SCORE",
+    "howToPlay": "How to Play",
+    "instructions": {
+      "redLight": "Red Light = Don't tap!",
+      "greenLight": "Green Light = Tap quickly!",
+      "lives": "3 lives only - miss or tap wrong!",
+      "speed": "Game gets faster each round!",
+      "whackMode": {
+        "redLight": "Don't tap red lights - they say \"STOP!\"",
+        "greenLight": "Tap green lights quickly - they say \"TAP!\"",
+        "grid": "3x3 grid with multiple lights active",
+        "progression": "More lights activate each round",
+        "scoring": "Fixed +10 points per completed round",
+        "timing": "Green lights expire quickly - be fast!"
+      }
+    },
+    "footer": {
+      "line1": "Test your reflexes and nerve!",
+      "line2": "How long can you survive?",
+      "tagline": "Test your reflexes and nerve – how long can you survive?"
+    },
+    "authentication": {
+      "title": "Authenticate Wallet",
+      "subtitle": "Connect your wallet to play and earn Web3 rewards"
+    },
+    "verification": {
+      "title": "Verify Identity"
+    },
+    "buttons": {
+      "verifyWorldId": "Verify with World ID to Play",
+      "authenticateWallet": "Authenticate Wallet",
+      "startGame": "Start Game ({{turns}} turns left)",
+      "noTurns": "No Turns Available - Buy More!",
+      "authenticating": "Authenticating...",
+      "checkingTurns": "Checking turns...",
+      "forceRefresh": "Force refresh",
+      "startAnyway": "Start Anyway (May Fail)",
+      "buyTurns": "Buy Turns",
+      "manage": "Manage",
+      "close": "Close"
+    },
+    "turnStatus": {
+      "error": "Error: {{error}}",
+      "retry": "Retry"
+    },
+    "gameStart": {
+      "title": "Start Game"
+    }
+  },
+  "gameScreen": {
+    "pause": "⏸️ Pause",
+    "round": "Round {{round}}",
+    "paused": {
+      "title": "Game Paused",
+      "resume": "Resume Game",
+      "quit": "Quit Game"
+    },
+    "instructions": "Tap the light or anywhere on screen to play"
+  },
+  "lightDisplay": {
+    "lightChange": "LIGHT CHANGE!",
+    "ready": "READY?",
+    "redInstruction": "Don't tap when red!",
+    "greenInstruction": "Tap now!",
+    "waitingInstruction": "Get ready...",
+    "tip": "Lights change randomly - stay alert!"
+  },
+  "gameOver": {
+    "title": "Game Over",
+    "finalScore": "FINAL SCORE",
+    "previousBest": "Previous best: {{score}}",
+    "performance": "Your Performance",
+    "stats": {
+      "rounds": "ROUNDS",
+      "streak": "STREAK",
+      "correct": "CORRECT",
+      "accuracy": "ACCURACY",
+      "tokensEarned": "TOKENS EARNED"
+    },
+    "performanceMessages": {
+      "newHighScore": "🎉 NEW HIGH SCORE! 🎉",
+      "legendary": "🔥 LEGENDARY PERFORMANCE! 🔥",
+      "incredible": "💪 INCREDIBLE REFLEXES! 💪",
+      "great": "⚡ GREAT JOB! ⚡",
+      "notBad": "👍 NOT BAD! 👍",
+      "keepPracticing": "🎯 KEEP PRACTICING! 🎯"
+    },
+    "encouragement": {
+      "practice": "Practice makes perfect! Try to focus on the rhythm.",
+      "getting_better": "You're getting better! Can you reach round 15?",
+      "amazing": "Amazing reflexes! Challenge yourself to reach round 20!",
+      "master": "You're a Red Light Green Light master! 🏆"
+    },
+    "buttons": {
+      "playAgain": "🔄 Play Again ({{turns}} turns left)",
+      "noTurns": "❌ No Turns Available - Buy More!",
+      "mainMenu": "Main Menu",
+      "checkingTurns": "Checking turns..."
+    }
+  },
+  "success": {
+    "title": "Success!",
+    "message": "Your tokens have been sent to your wallet!",
+    "transactionHash": "Transaction Hash:",
+    "button": "Awesome! 🎉"
+  },
+  "settings": {
+    "title": "⚙️ Settings",
+    "account": {
+      "title": "👤 Account",
+      "worldId": "World ID:",
+      "verification": "Verification:",
+      "verified": "✓ Verified",
+      "notVerified": "✗ Not verified",
+      "notConnected": "Not connected"
+    },
+    "game": {
+      "title": "🎮 Game Settings",
+      "soundEffects": {
+        "title": "Sound Effects",
+        "description": "Play sounds during the game"
+      },
+      "vibration": {
+        "title": "Vibration",
+        "description": "Haptic feedback on mobile"
+      }
+    },
+    "stats": {
+      "title": "📊 Statistics",
+      "highScore": "High Score:",
+      "gamesPlayed": "Games Played:",
+      "resetStats": "Reset Local Stats"
+    },
+    "about": {
+      "title": "ℹ️ About",
+      "version": "Red Light Green Light Game v1.0",
+      "builtWith": "Built with React + TypeScript",
+      "poweredBy": "Powered by World ID & MiniKit",
+      "copyright": "© 2024 RLGL Game. All rights reserved."
+    },
+    "language": {
+      "title": "🌍 Language",
+      "description": "Select your preferred language"
+    },
+    "confirmReset": "Are you sure you want to reset your local stats? This cannot be undone."
+  },
+  "userInfo": {
+    "logout": "Logout",
+    "verified": "verified"
+  },
+  "leaderboard": {
+    "title": "🏆 Global Leaderboard",
+    "refresh": "🔄 Refresh",
+    "topPlayers": "Top {{count}} players",
+    "you": "You",
+    "round": "Round {{round}}",
+    "showingTop10": "Showing top 10 scores",
+    "playToEarn": "🎮 Play to earn RLGL tokens!",
+    "beatTopScore": "Beat the top score and claim your spot! 🚀",
+    "cached": "Cached",
+    "retry": "Try Again",
+    "updatedRealTime": "Leaderboard updates in real-time",
+    "noScores": {
+      "title": "No scores yet!",
+      "subtitle": "Be the first to set a high score and claim the top spot!"
+    },
+    "error": {
+      "tryAgain": "Try Again",
+      "refreshData": "Refresh Data"
+    },
+    "updatedEvery12Hours": "Leaderboard updates every 12 hours."
+  },
+  "worldIdLogin": {
+    "title": "🚨 Red Light Green Light 🚨",
+    "subtitle": "The Most Addictive Reaction Game on the Blockchain!",
+    "heroText": "⚡ Lightning-Fast Reflexes Meet Real Competition ⚡",
+    "worldIdRequired": "🛡️ Humans Only Zone",
+    "onlyVerifiedHumans": "🎯 100% REAL PLAYERS • NO BOTS • FAIR COMPETITION\n🏆 Compete against actual humans with lightning reflexes!\n💰 Earn real RLGL tokens for your skills!",
+    "features": {
+      "realPlayers": "👥 Real Human Players Only",
+      "earnTokens": "💎 Earn Crypto Rewards",
+      "globalLeaderboard": "🌍 Global Leaderboard",
+      "instantPlay": "⚡ Instant Action"
+    },
+    "callToAction": "Ready to test your reflexes against the world?",
+    "verifying": "🔐 Verifying your humanity...",
+    "verify": "🚀 JOIN THE ACTION NOW!",
+    "worldAppNote": "✨ Quick & secure verification via World App",
+    "verifiedTitle": "🎉 Welcome to the Arena!",
+    "verifiedSubtitle": "You're verified and ready to compete! Time to show off those lightning reflexes.",
+    "tapInstructions": "Tap the green button to verify humanity using World ID",
+    "error": "⚠️ Verification failed. Make sure you're Orb verified and try again!"
+  },
+  "turnDisplay": {
+    "yourTurns": "Your Turns",
+    "live": "Live",
+    "availableTurns": "Available Turns",
+    "noTurnsRemaining": "No turns remaining",
+    "freeResetsIn": "Free turns reset in",
+    "nextReset": "Next reset:",
+    "processing": "Processing...",
+    "buyMoreTurns": "Buy 3 More Turns",
+    "sale": "Sale!",
+    "resetAvailable": "Reset available now!",
+    "turnsResetIn": "Turns reset in",
+    "error": "{{error}}",
+    "paymentFailed": "Payment failed: {{error}}",
+    "paymentSuccess": {
+      "title": "Payment Successful!",
+      "subtitle": "You now have {{turns}} turns available"
+    },
+    "weeklyPass": {
+      "active": "Weekly Pass Active",
+      "unlimitedUntil": "Unlimited turns until",
+      "buttonTitle": "Weekly Pass",
+      "buttonSubtitle": "Unlimited Turns for 7 Days!"
+    }
+  },
+  "gameModeSelector": {
+    "title": "Select Game Mode",
+    "classicMode": {
+      "title": "Classic Mode",
+      "description": "Pure reaction game - no power-ups, just you vs the light"
+    },
+    "arcadeMode": {
+      "title": "Arcade Mode",
+      "description": "Enhanced gameplay with floating power-ups and special abilities"
+    },
+    "whackMode": {
+      "title": "🔨 Whack-a-Light",
+      "description": "Tap only green lights. More lights each round — quick and deadly."
+    },
+    "changeAnytime": "You can change modes anytime from the main menu"
+  },
+  "whackMode": {
+    "title": "Whack-a-Light",
+    "description": "Tap only green lights. More lights each round — quick and deadly."
+  },
+   "instructions": {
+     "whackMode": {
+       "redLight": "Red lights are dangerous - avoid tapping them or you'll lose a life!",
+       "greenLight": "Green lights are your targets - tap them quickly to score points!",
+       "grid": "Lights appear in a 3x3 grid pattern for easy navigation.",
+       "progression": "Each round adds more lights to tap - stay focused!",
+       "scoring": "Score points for each green light tapped correctly.",
+       "timing": "You have limited time - be quick but accurate!"
+     }
+   },
+   "proTips": {
+      "timing": "Timing is everything: Wait for the green light before tapping!",
+      "speed": "Speed increases: The game gets faster as your score grows.",
+      "arcade": "Arcade mode: Collect power-ups to gain special abilities!",
+    "whack": "Whack-a-Light mode: Tap green lights in a 3x3 grid - more lights each round!",
+    "leaderboard": "High scores: Compete on the leaderboard with other players!"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "close": "Close",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "yes": "Yes",
+    "no": "No"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-08-28T00:40:36.159Z",
+  "results": [
+    {
+      "rpcUrl": "https://worldchain-mainnet.g.alchemy.com/public",
+      "success": true,
+      "connectTime": 157,
+      "leaderboardTime": 87,
+      "sequentialTime": 95,
+      "dataSize": 10,
+      "totalTime": 340
+    },
+    {
+      "rpcUrl": "https://rpc.worldchain.org",
+      "success": false,
+      "error": "getaddrinfo ENOTFOUND rpc.worldchain.org",
+      "connectTime": null,
+      "leaderboardTime": null,
+      "sequentialTime": null,
+      "dataSize": 0,
+      "totalTime": null
+    },
+    {
+      "rpcUrl": "https://worldchain.drpc.org",
+      "success": true,
+      "connectTime": 81,
+      "leaderboardTime": 63,
+      "sequentialTime": 69,
+      "dataSize": 10,
+      "totalTime": 213
+    },
+    {
+      "rpcUrl": "https://worldchain-mainnet.gateway.tenderly.co",
+      "success": true,
+      "connectTime": 193,
+      "leaderboardTime": 352,
+      "sequentialTime": 418,
+      "dataSize": 10,
+      "totalTime": 963
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "env": {
+    "ALCHEMY_API_KEY": "mLzne7L6CEdRUufdPJ2ql",
+    "VITE_WORLD_CHAIN_RPC": "https://worldchain-mainnet.g.alchemy.com/v2/mLzne7L6CEdRUufdPJ2ql",
+    "KV_REST_API_URL": "https://relieved-guinea-36510.upstash.io",
+    "KV_REST_API_TOKEN": "AY6eAAIjcDEwM2NjZDJkZDYzNmM0NDMxYjU5YmY1NzM4OTM2N2VjYnAxMA",
+    "UPSTASH_REDIS_REST_URL": "https://relieved-guinea-36510.upstash.io",
+    "UPSTASH_REDIS_REST_TOKEN": "AY6eAAIjcDEwM2NjZDJkZDYzNmM0NDMxYjU5YmY1NzM4OTM2N2VjYnAxMA"
+  },
+  "build": {
+    "env": {
+      "ALCHEMY_API_KEY": "mLzne7L6CEdRUufdPJ2ql",
+      "VITE_WORLD_CHAIN_RPC": "https://worldchain-mainnet.g.alchemy.com/v2/mLzne7L6CEdRUufdPJ2ql",
+      "KV_REST_API_URL": "https://relieved-guinea-36510.upstash.io",
+      "KV_REST_API_TOKEN": "AY6eAAIjcDEwM2NjZDJkZDYzNmM0NDMxYjU5YmY1NzM4OTM2N2VjYnAxMA",
+      "UPSTASH_REDIS_REST_URL": "https://relieved-guinea-36510.upstash.io",
+      "UPSTASH_REDIS_REST_TOKEN": "AY6eAAIjcDEwM2NjZDJkZDYzNmM0NDMxYjU5YmY1NzM4OTM2N2VjYnAxMA"
+    }
+  }
+}

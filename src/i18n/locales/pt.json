@@ -1,0 +1,277 @@
+{
+  "app": {
+    "title": "Sinal Vermelho Sinal Verde",
+    "subtitle": "Toque para Sobreviver!"
+  },
+  "startMenu": {
+    "title": "Sinal Vermelho <1>Sinal Verde</1>",
+    "subtitle": "Toque para Sobreviver!",
+    "stop": "PARE",
+    "tap": "TOQUE",
+    "bestScore": "MELHOR PONTUAÇÃO",
+    "howToPlay": "Como Jogar",
+    "instructions": {
+      "redLight": "Sinal Vermelho = Não toque!",
+      "greenLight": "Sinal Verde = Toque rapidamente!",
+      "lives": "Apenas 3 vidas - erre ou toque errado!",
+      "speed": "O jogo fica mais rápido a cada rodada!",
+      "whackMode": {
+        "redLight": "Não toque nas luzes vermelhas - elas dizem \"PARE!\"",
+        "greenLight": "Toque nas luzes verdes rapidamente - elas dizem \"TOQUE!\"",
+        "grid": "Grade 3x3 com múltiplas luzes ativas",
+        "progression": "Mais luzes se ativam a cada rodada",
+        "scoring": "+10 pontos fixos por rodada completada",
+        "timing": "Luzes verdes expiram rapidamente - seja rápido!"
+      }
+    },
+    "footer": {
+      "line1": "Teste seus reflexos e nervos!",
+      "line2": "Quanto tempo você pode sobreviver?",
+      "tagline": "Teste seus reflexos e nervos – quanto tempo você pode sobreviver?"
+    },
+    "authentication": {
+      "title": "Autenticar Carteira",
+      "subtitle": "Conecte sua carteira para jogar e ganhar recompensas Web3"
+    },
+    "verification": {
+      "title": "Verificar Identidade"
+    },
+    "buttons": {
+      "verifyWorldId": "Verificar com World ID para Jogar",
+      "authenticateWallet": "Autenticar Carteira",
+      "startGame": "Iniciar Jogo ({{turns}} turnos restantes)",
+      "noTurns": "Não há Turnos Disponíveis - Compre Mais!",
+      "authenticating": "Autenticando...",
+      "checkingTurns": "Verificando turnos...",
+      "forceRefresh": "Forçar atualização",
+      "startAnyway": "Começar Mesmo Assim (Pode Falhar)",
+      "buyTurns": "Comprar Turnos",
+      "manage": "Gerenciar",
+      "close": "Fechar"
+    },
+    "turnStatus": {
+      "error": "Erro: {{error}}",
+      "retry": "Tentar Novamente"
+    }
+  },
+  "gameScreen": {
+    "pause": "⏸️ Pausar",
+    "round": "Rodada {{round}}",
+    "paused": {
+      "title": "Jogo Pausado",
+      "resume": "Retomar Jogo",
+      "quit": "Sair do Jogo"
+    },
+    "instructions": "Toque na luz ou em qualquer lugar da tela para jogar"
+  },
+  "lightDisplay": {
+    "lightChange": "MUDANÇA DE LUZ!",
+    "ready": "PRONTO?",
+    "redInstruction": "Não toque quando estiver vermelho!",
+    "greenInstruction": "Toque agora!",
+    "waitingInstruction": "Prepare-se...",
+    "tip": "As luzes mudam aleatoriamente - fique alerta!"
+  },
+  "gameOver": {
+    "title": "Fim de Jogo",
+    "finalScore": "PONTUAÇÃO FINAL",
+    "previousBest": "Melhor anterior: {{score}}",
+    "performance": "Seu Desempenho",
+    "stats": {
+      "rounds": "RODADAS",
+      "streak": "SEQUÊNCIA",
+      "correct": "CORRETO",
+      "accuracy": "PRECISÃO",
+      "tokensEarned": "TOKENS GANHOS"
+    },
+    "performanceMessages": {
+      "newHighScore": "🎉 NOVA PONTUAÇÃO MÁXIMA! 🎉",
+      "legendary": "🔥 DESEMPENHO LENDÁRIO! 🔥",
+      "incredible": "💪 REFLEXOS INCRÍVEIS! 💪",
+      "great": "⚡ ÓTIMO TRABALHO! ⚡",
+      "notBad": "👍 NADA MAL! 👍",
+      "keepPracticing": "🎯 CONTINUE PRATICANDO! 🎯"
+    },
+    "encouragement": {
+      "practice": "A prática leva à perfeição! Tente se concentrar no ritmo.",
+      "getting_better": "Você está melhorando! Consegue chegar à rodada 15?",
+      "amazing": "Reflexos incríveis! Desafie-se a chegar à rodada 20!",
+      "master": "Você é um mestre do Sinal Vermelho Sinal Verde! 🏆"
+    },
+    "buttons": {
+      "playAgain": "🔄 Jogar Novamente ({{turns}} turnos restantes)",
+      "noTurns": "❌ Não há Turnos Disponíveis - Compre Mais!",
+      "mainMenu": "Menu Principal",
+      "checkingTurns": "Verificando turnos..."
+    }
+  },
+  "success": {
+    "title": "Sucesso!",
+    "message": "Seus tokens foram enviados para sua carteira!",
+    "transactionHash": "Hash da Transação:",
+    "button": "Fantástico! 🎉"
+  },
+  "settings": {
+    "title": "⚙️ Configurações",
+    "account": {
+      "title": "👤 Conta",
+      "worldId": "World ID:",
+      "verification": "Verificação:",
+      "verified": "✓ Verificado",
+      "notVerified": "✗ Não verificado",
+      "notConnected": "Não conectado"
+    },
+    "game": {
+      "title": "🎮 Configurações do Jogo",
+      "soundEffects": {
+        "title": "Efeitos Sonoros",
+        "description": "Reproduzir sons durante o jogo"
+      },
+      "vibration": {
+        "title": "Vibração",
+        "description": "Feedback tátil no celular"
+      }
+    },
+    "stats": {
+      "title": "📊 Estatísticas",
+      "highScore": "Pontuação Máxima:",
+      "gamesPlayed": "Jogos Jogados:",
+      "resetStats": "Resetar Estatísticas Locais"
+    },
+    "about": {
+      "title": "ℹ️ Sobre",
+      "version": "Jogo Sinal Vermelho Sinal Verde v1.0",
+      "builtWith": "Construído com React + TypeScript",
+      "poweredBy": "Alimentado por World ID & MiniKit",
+      "copyright": "© 2024 RLGL Game. Todos os direitos reservados."
+    },
+    "language": {
+      "title": "🌍 Idioma",
+      "description": "Selecione seu idioma preferido"
+    },
+    "confirmReset": "Tem certeza de que deseja resetar suas estatísticas locais? Isso não pode ser desfeito."
+  },
+  "userInfo": {
+    "logout": "Sair",
+    "verified": "verificado"
+  },
+  "leaderboard": {
+    "title": "🏆 Ranking Global",
+    "refresh": "🔄 Atualizar",
+    "topPlayers": "Top {{count}} jogadores",
+    "you": "Você",
+    "round": "Rodada {{round}}",
+    "showingTop10": "Mostrando os 10 melhores pontuações",
+    "playToEarn": "🎮 Jogue para ganhar tokens RLGL!",
+    "beatTopScore": "Supere a pontuação mais alta e reivindique seu lugar! 🚀",
+    "cached": "Em cache",
+    "retry": "Tentar Novamente",
+    "updatedRealTime": "A tabela de líderes é atualizada em tempo real",
+    "noScores": {
+      "title": "Ainda não há pontuações!",
+      "subtitle": "Seja o primeiro a estabelecer uma pontuação alta e reivindicar o primeiro lugar!"
+    },
+    "error": {
+      "tryAgain": "Tentar Novamente",
+      "refreshData": "Atualizar Dados"
+    },
+    "updatedEvery12Hours": "O placar é atualizado a cada 12 horas."
+  },
+  "turnDisplay": {
+    "yourTurns": "Seus Turnos",
+    "live": "Ao Vivo",
+    "availableTurns": "Turnos Disponíveis",
+    "noTurnsRemaining": "Nenhum turno restante",
+    "freeResetsIn": "Turnos gratuitos resetam em",
+    "nextReset": "Próximo reset:",
+    "processing": "Processando...",
+    "buyMoreTurns": "Comprar 3 Turnos Mais",
+    "sale": "Promoção!",
+    "resetAvailable": "Reset disponível agora!",
+    "turnsResetIn": "Turnos resetam em",
+    "error": "{{error}}",
+    "paymentFailed": "Pagamento falhou: {{error}}",
+    "paymentSuccess": {
+      "title": "Pagamento Bem-sucedido!",
+      "subtitle": "Agora você tem {{turns}} turnos disponíveis"
+    },
+    "weeklyPass": {
+      "active": "Passe Semanal Ativo",
+      "unlimitedUntil": "Turnos ilimitados até",
+      "buttonTitle": "Passe Semanal",
+      "buttonSubtitle": "Turnos Ilimitados por 7 Dias!"
+    }
+  },
+  "worldIdLogin": {
+    "title": "🚨 Luz Vermelha Luz Verde 🚨",
+    "subtitle": "O Jogo de Reação Mais Viciante na Blockchain!",
+    "heroText": "⚡ Reflexos Ultra-Rápidos Encontram Competição Real ⚡",
+    "worldIdRequired": "🛡️ Zona Apenas para Humanos",
+    "onlyVerifiedHumans": "🎯 100% JOGADORES REAIS • SEM BOTS • COMPETIÇÃO JUSTA\n🏆 Compita contra humanos reais com reflexos ultra-rápidos!\n💰 Ganhe tokens RLGL reais pelas suas habilidades!",
+    "features": {
+      "realPlayers": "👥 Apenas Jogadores Humanos Reais",
+      "earnTokens": "💎 Ganhe Recompensas Cripto",
+      "globalLeaderboard": "🌍 Tabela de Líderes Global",
+      "instantPlay": "⚡ Ação Instantânea"
+    },
+    "callToAction": "Pronto para testar seus reflexos contra o mundo?",
+    "verifying": "🔐 Verificando sua humanidade...",
+    "verify": "🚀 JUNTE-SE À AÇÃO AGORA!",
+    "worldAppNote": "✨ Verificação rápida e segura via World App",
+    "verifiedTitle": "🎉 Bem-vindo à Arena!",
+    "verifiedSubtitle": "Você está verificado e pronto para competir! É hora de mostrar esses reflexos ultra-rápidos.",
+    "tapInstructions": "Toque no botão verde para verificar sua humanidade usando World ID",
+    "error": "⚠️ Verificação falhou. Certifique-se de estar verificado com Orb e tente novamente!"
+  },
+
+  "gameModeSelector": {
+    "title": "Selecionar Modo de Jogo",
+    "classicMode": {
+      "title": "Modo Clássico",
+      "description": "Jogo de reação pura - sem power-ups, apenas você contra a luz"
+    },
+    "arcadeMode": {
+      "title": "Modo Arcade",
+      "description": "Jogabilidade aprimorada com power-ups flutuantes e habilidades especiais"
+    },
+    "whackMode": {
+      "title": "🔨 Bate na Luz",
+      "description": "Toque apenas luzes verdes. Mais luzes por rodada — rápido e letal."
+    },
+    "changeAnytime": "Você pode mudar de modo a qualquer momento no menu principal"
+  },
+  "whackMode": {
+    "title": "Bate na Luz",
+    "description": "Toque apenas nas luzes verdes. Mais luzes a cada rodada — rápido e mortal."
+  },
+   "instructions": {
+     "whackMode": {
+       "redLight": "Luzes vermelhas são perigosas - evite tocá-las ou você perderá uma vida!",
+       "greenLight": "Luzes verdes são seus alvos - toque nelas rapidamente para marcar pontos!",
+       "grid": "As luzes aparecem em um padrão de grade 3x3 para facilitar a navegação.",
+       "progression": "Cada rodada adiciona mais luzes para tocar - mantenha o foco!",
+       "scoring": "Marque pontos para cada luz verde tocada corretamente.",
+       "timing": "Você tem tempo limitado - seja rápido mas preciso!"
+     }
+   },
+   "proTips": {
+      "timing": "O tempo é tudo: Espere pela luz verde antes de tocar!",
+      "speed": "A velocidade aumenta: O jogo fica mais rápido conforme sua pontuação cresce.",
+      "arcade": "Modo Arcade: Colete power-ups para ganhar habilidades especiais!",
+    "whack": "Modo Bater na Luz: Toque nas luzes verdes em uma grade 3x3 - mais luzes a cada rodada!",
+    "leaderboard": "Pontuações altas: Compita no ranking com outros jogadores!"
+  },
+  "gameStart": {
+    "title": "🎮 Iniciar Jogo"
+  },
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro",
+    "retry": "Tentar Novamente",
+    "close": "Fechar",
+    "cancel": "Cancelar",
+    "ok": "OK",
+    "yes": "Sim",
+    "no": "Não"
+  }
+}

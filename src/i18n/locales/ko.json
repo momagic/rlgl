@@ -1,0 +1,314 @@
+{
+  "app": {
+    "title": "빨간불 파란불",
+    "subtitle": "탭해서 살아남아!"
+  },
+  "startMenu": {
+    "title": "빨간불 <1>파란불</1>",
+    "subtitle": "탭해서 살아남아!",
+    "stop": "멈춰",
+    "tap": "탭",
+    "bestScore": "최고 점수",
+    "howToPlay": "게임 방법",
+    "instructions": {
+      "redLight": "빨간불 = 탭하지 마세요!",
+      "greenLight": "파란불 = 빠르게 탭하세요!",
+      "lives": "3개의 생명만 - 놓치거나 잘못 탭하면!",
+      "speed": "게임은 각 라운드마다 빨라집니다!",
+      "whackMode": {
+        "redLight": "빨간 불빛을 탭하지 마세요 - '스톱!'이라고 표시됩니다",
+        "greenLight": "초록 불빛을 빠르게 탭하세요 - '탭!'이라고 표시됩니다",
+        "grid": "여러 불빛이 활성화된 3x3 격자",
+        "progression": "각 라운드마다 더 많은 불빛이 활성화됩니다",
+        "scoring": "완료된 라운드당 고정 +10점",
+        "timing": "초록 불빛은 빠르게 사라집니다 - 빨리 하세요!"
+      }
+    },
+    "footer": {
+      "line1": "반사신경과 집중력을 테스트해보세요!",
+      "line2": "얼마나 오래 살아남을 수 있나요?",
+      "tagline": "반사신경과 집중력을 테스트해보세요 – 얼마나 오래 살아남을 수 있나요?"
+    },
+    "authentication": {
+      "title": "지갑 인증",
+      "subtitle": "지갑을 연결하여 플레이하고 Web3 보상을 받으세요"
+    },
+    "verification": {
+      "title": "신원 확인"
+    },
+    "buttons": {
+      "verifyWorldId": "World ID로 인증하여 플레이",
+      "authenticateWallet": "지갑 인증",
+      "startGame": "게임 시작 ({{turns}}턴 남음)",
+      "noTurns": "사용 가능한 턴이 없습니다 - 더 구매하세요!",
+      "authenticating": "인증 중...",
+      "checkingTurns": "턴 확인 중...",
+      "forceRefresh": "강제 새로고침",
+      "startAnyway": "어쨌든 시작 (실패할 수 있음)",
+      "buyTurns": "턴 구매",
+      "manage": "관리",
+      "close": "닫기"
+    },
+    "turnStatus": {
+      "error": "오류: {{error}}",
+      "retry": "다시 시도"
+    }
+  },
+  "gameScreen": {
+    "pause": "⏸️ 일시정지",
+    "round": "라운드 {{round}}",
+    "paused": {
+      "title": "게임 일시정지",
+      "resume": "게임 재개",
+      "quit": "게임 종료"
+    },
+    "instructions": "불빛이나 화면 아무 곳이나 탭하여 플레이"
+  },
+  "lightDisplay": {
+    "lightChange": "불빛 변경!",
+    "ready": "준비?",
+    "redInstruction": "빨간불일 때는 탭하지 마세요!",
+    "greenInstruction": "지금 탭하세요!",
+    "waitingInstruction": "준비하세요...",
+    "tip": "불빛은 무작위로 바뀝니다 - 주의하세요!"
+  },
+  "gameOver": {
+    "title": "게임 오버",
+    "finalScore": "최종 점수",
+    "previousBest": "이전 최고: {{score}}",
+    "performance": "당신의 성과",
+    "stats": {
+      "rounds": "라운드",
+      "streak": "연속",
+      "correct": "정답",
+      "accuracy": "정확도",
+      "tokensEarned": "획득한 토큰"
+    },
+    "performanceMessages": {
+      "newHighScore": "🎉 새로운 최고 기록! 🎉",
+      "legendary": "🔥 전설적인 성과! 🔥",
+      "incredible": "💪 믿을 수 없는 반사신경! 💪",
+      "great": "⚡ 훌륭합니다! ⚡",
+      "notBad": "👍 나쁘지 않아요! 👍",
+      "keepPracticing": "🎯 계속 연습하세요! 🎯"
+    },
+    "encouragement": {
+      "practice": "연습이 완벽을 만듭니다! 리듬에 집중해보세요",
+      "getting_better": "점점 나아지고 있어요! 15라운드에 도달할 수 있나요?",
+      "amazing": "놀라운 반사신경! 20라운드에 도전해보세요!",
+      "master": "당신은 빨간불 파란불의 마스터입니다! 🏆"
+    },
+    "buttons": {
+      "playAgain": "🔄 다시 플레이 ({{turns}}턴 남음)",
+      "noTurns": "❌ 사용 가능한 턴이 없습니다 - 더 구매하세요!",
+      "mainMenu": "메인 메뉴",
+      "checkingTurns": "턴 확인 중..."
+    }
+  },
+  "success": {
+    "title": "성공!",
+    "message": "토큰이 지갑으로 전송되었습니다!",
+    "transactionHash": "트랜잭션 해시:",
+    "button": "대단해요! 🎉"
+  },
+  "settings": {
+    "title": "⚙️ 설정",
+    "account": {
+      "title": "👤 계정",
+      "worldId": "World ID:",
+      "verification": "인증:",
+      "verified": "✓ 인증됨",
+      "notVerified": "✗ 인증되지 않음",
+      "notConnected": "연결되지 않음"
+    },
+    "game": {
+      "title": "🎮 게임 설정",
+      "soundEffects": {
+        "title": "효과음",
+        "description": "게임 중 소리 재생"
+      },
+      "vibration": {
+        "title": "진동",
+        "description": "모바일에서 햅틱 피드백"
+      }
+    },
+    "stats": {
+      "title": "📊 통계",
+      "highScore": "최고 점수:",
+      "gamesPlayed": "플레이한 게임:",
+      "resetStats": "로컬 통계 리셋"
+    },
+    "about": {
+      "title": "ℹ️ 정보",
+      "version": "빨간불 파란불 게임 v1.0",
+      "builtWith": "React + TypeScript로 구축",
+      "poweredBy": "World ID & MiniKit 기반",
+      "copyright": "© 2024 RLGL Game. 모든 권리 보유."
+    },
+    "language": {
+      "title": "🌍 언어",
+      "description": "선호하는 언어를 선택하세요"
+    },
+    "confirmReset": "로컬 통계를 정말로 리셋하시겠습니까? 이는 되돌릴 수 없습니다."
+  },
+  "userInfo": {
+    "logout": "로그아웃",
+    "verified": "인증됨"
+  },
+  "gameStart": {
+    "title": "🎮 게임 시작"
+  },
+  "leaderboard": {
+    "title": "🏆 글로벌 리더보드",
+    "refresh": "🔄 새로고침",
+    "topPlayers": "상위 {{count}}명 플레이어",
+    "you": "당신",
+    "round": "라운드 {{round}}",
+    "showingTop10": "상위 10개 점수 표시",
+    "playToEarn": "🎮 RLGL 토큰을 획득하려면 플레이하세요!",
+    "beatTopScore": "최고 점수를 이기고 당신의 자리를 차지하세요! 🚀",
+    "cached": "캐시됨",
+    "retry": "다시 시도",
+    "updatedRealTime": "리더보드는 실시간으로 업데이트됩니다",
+    "noScores": {
+      "title": "아직 점수가 없습니다!",
+      "subtitle": "첫 번째로 높은 점수를 설정하고 1위를 차지하세요!"
+    },
+    "error": {
+      "tryAgain": "다시 시도",
+      "refreshData": "데이터 새로고침"
+    },
+    "updatedEvery12Hours": "리더보드는 12시간마다 업데이트됩니다."
+  },
+  "worldIdLogin": {
+    "title": "🚨 빨간불 초록불 🚨",
+    "subtitle": "블록체인에서 가장 중독성 있는 반응 게임!",
+    "heroText": "⚡ 초고속 반사신경이 실제 경쟁과 만나다 ⚡",
+    "worldIdRequired": "🛡️ 인간 전용 구역",
+    "onlyVerifiedHumans": "🎯 100% 실제 플레이어 • 봇 없음 • 공정한 경쟁\n🏆 초고속 반사신경을 가진 실제 인간과 경쟁하세요!\n💰 당신의 실력으로 실제 RLGL 토큰을 획득하세요!",
+    "features": {
+      "realPlayers": "👥 실제 인간 플레이어만",
+      "earnTokens": "💎 암호화폐 보상 획득",
+      "globalLeaderboard": "🌍 글로벌 리더보드",
+      "instantPlay": "⚡ 즉시 액션"
+    },
+    "callToAction": "세계를 상대로 당신의 반사신경을 테스트할 준비가 되셨나요?",
+    "verifying": "🔐 당신의 인간성을 확인 중...",
+    "verify": "🚀 지금 액션에 참여하세요!",
+    "worldAppNote": "✨ World App을 통한 빠르고 안전한 인증",
+    "verifiedTitle": "🎉 아레나에 오신 것을 환영합니다!",
+    "verifiedSubtitle": "인증이 완료되어 경쟁할 준비가 되었습니다! 이제 그 초고속 반사신경을 보여줄 시간입니다.",
+    "tapInstructions": "World ID를 사용하여 인간성을 확인하려면 녹색 버튼을 탭하세요",
+    "error": "⚠️ 인증 실패. Orb로 인증되었는지 확인하고 다시 시도하세요!"
+  },
+  "turnDisplay": {
+    "yourTurns": "당신의 턴",
+    "live": "라이브",
+    "availableTurns": "사용 가능한 턴",
+    "noTurnsRemaining": "남은 턴 없음",
+    "freeResetsIn": "무료 턴 리셋까지",
+    "nextReset": "다음 리셋:",
+    "processing": "처리 중...",
+    "buyMoreTurns": "3턴 더 구매",
+    "sale": "세일!",
+    "resetAvailable": "리셋 가능!",
+    "turnsResetIn": "턴 리셋까지",
+    "error": "{{error}}",
+    "paymentFailed": "결제 실패: {{error}}",
+    "paymentSuccess": {
+      "title": "결제 성공!",
+      "subtitle": "이제 {{turns}}턴을 사용할 수 있습니다"
+    },
+    "weeklyPass": {
+      "active": "주간 패스 활성화",
+      "unlimitedUntil": "무제한 턴 사용 가능 기간:",
+      "buttonTitle": "주간 패스",
+      "buttonSubtitle": "7일간 무제한 턴!"
+    }
+  },
+  "gameModeSelector": {
+    "title": "게임 모드 선택",
+    "classicMode": {
+      "title": "클래식 모드",
+      "description": "순수한 반응 게임 - 파워업 없이, 오직 당신과 빛만"
+    },
+    "arcadeMode": {
+      "title": "아케이드 모드",
+      "description": "떠다니는 파워업과 특수 능력으로 향상된 게임플레이"
+    },
+    "whackMode": {
+      "title": "🔨 라이트 두드리기",
+      "description": "초록 불만 탭하세요. 매 라운드 불빛 증가 — 빠르고 치명적."
+    },
+    "changeAnytime": "메인 메뉴에서 언제든지 모드를 변경할 수 있습니다"
+  },
+  "whackMode": {
+    "title": "라이트 두드리기",
+    "description": "녹색 불빛만 탭하세요. 라운드마다 더 많은 불빛 — 빠르고 치명적."
+  },
+   "instructions": {
+     "whackMode": {
+       "redLight": "빨간 불빛은 위험합니다 - 탭하면 생명을 잃습니다!",
+       "greenLight": "녹색 불빛이 당신의 목표입니다 - 빠르게 탭해서 점수를 얻으세요!",
+       "grid": "불빛은 쉬운 탐색을 위해 3x3 격자 패턴으로 나타납니다.",
+       "progression": "각 라운드마다 탭할 불빛이 더 많아집니다 - 집중하세요!",
+       "scoring": "올바르게 탭한 각 녹색 불빛에 대해 점수를 얻습니다.",
+       "timing": "시간이 제한되어 있습니다 - 빠르지만 정확하게!"
+     }
+   },
+   "proTips": {
+      "timing": "타이밍이 전부입니다: 탭하기 전에 초록불을 기다리세요!",
+      "speed": "속도 증가: 점수가 올라갈수록 게임이 빨라집니다.",
+      "arcade": "아케이드 모드: 파워업을 수집하여 특별한 능력을 얻으세요!",
+    "whack": "라이트 두드리기 모드: 3x3 격자에서 초록 불빛을 탭하세요 - 매 라운드 불빛 증가!",
+    "leaderboard": "최고 점수: 다른 플레이어들과 리더보드에서 경쟁하세요!"
+  },
+  "walletLogin": {
+    "connectTitle": "지갑 연결",
+    "connectSubtitle": "안전한 Web3 게이밍",
+    "walletRequired": "지갑 필요",
+    "connectToPlay": "이 Web3 게임에서 플레이하고 보상을 받으려면 지갑을 연결하세요.",
+    "callToAction": "🎮 플레이할 준비가 되셨나요? 아무 곳이나 탭해서 지갑을 연결하세요!",
+    "worldAppNote": "✨ World App 지갑과 완벽하게 작동합니다",
+    "tapInstructions": "아무 곳이나 탭해서 지갑을 연결하세요",
+    "connecting": "연결 중...",
+    "error": "⚠️ 연결에 실패했습니다. 다시 시도하거나 지갑을 확인하세요."
+  },
+  "walletInfoModal": {
+    "title": "지갑 연결",
+    "description": "이 Web3 게임에 액세스하고 게임플레이로 보상을 받으려면 지갑을 연결하세요.",
+    "secureTitle": "안전하고 비공개",
+    "secureDescription": "당신의 지갑은 안전하게 유지됩니다 - 연결 권한만 요청합니다.",
+    "instantTitle": "즉시 액세스",
+    "instantDescription": "한 번 연결하면 추가 설정 없이 즉시 플레이할 수 있습니다.",
+    "gameTitle": "플레이하고 획득",
+    "gameDescription": "토큰을 획득하고 다른 플레이어들과 리더보드에서 경쟁하세요.",
+    "worldAppNote": "💡 이 게임은 가장 부드러운 경험을 위해 World App 지갑에서 최적으로 작동합니다."
+  },
+  "humanVerification": {
+    "title": "인간 확인",
+    "description": "선택사항: 보너스 보상과 향상된 게임플레이 기능을 잠금 해제하려면 인간임을 확인하세요.",
+    "benefitsTitle": "인간 확인 혜택:",
+    "benefit1": "더 높은 보상 배수",
+    "benefit2": "독점 토너먼트 액세스",
+    "benefit3": "향상된 치팅 방지 보호",
+    "verifyButton": "World ID로 확인",
+    "skipButton": "지금은 건너뛰기",
+    "verifying": "확인 중...",
+    "verified": "인간 확인됨!",
+    "verifiedDescription": "이제 인간으로 확인되어 향상된 보상과 기능을 즐길 수 있습니다.",
+    "continue": "계속",
+    "note": "설정 메뉴에서 나중에 인간성을 확인할 수 있습니다.",
+    "error": "⚠️ 확인에 실패했습니다. Orb로 확인되었는지 확인하고 다시 시도하세요!"
+  },
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류",
+    "retry": "다시 시도",
+    "close": "닫기",
+    "cancel": "취소",
+    "ok": "확인",
+    "yes": "예",
+    "no": "아니오"
+  }
+}

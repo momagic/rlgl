@@ -1,0 +1,202 @@
+{
+  "timestamp": "2025-08-28T00:48:48.171Z",
+  "testType": "optimized-frontend-leaderboard",
+  "improvements": [
+    "Synchronous username resolution",
+    "Immediate friendly name display",
+    "Background World ID resolution",
+    "24h localStorage caching",
+    "No Promise.all blocking"
+  ],
+  "results": [
+    {
+      "rpcUrl": "https://worldchain-mainnet.g.alchemy.com/v2/demo",
+      "success": false,
+      "error": "exceeded maximum retry limit (request={  }, response={  }, error=null, info={ \"requestUrl\": \"https://worldchain-mainnet.g.alchemy.com/v2/demo\", \"responseBody\": \"error code: 1015\", \"responseStatus\": \"599 CLIENT ESCALATED SERVER ERROR (429 Too Many Requests; exceeded maximum retry limit)\" }, code=SERVER_ERROR, version=6.15.0)"
+    },
+    {
+      "rpcUrl": "https://worldchain.drpc.org",
+      "success": true,
+      "cacheCheckTime": 16,
+      "contractFetchTime": 138,
+      "usernameResolutionTime": 0,
+      "uiUpdateTime": 18,
+      "totalTime": 172,
+      "dataSize": 10,
+      "processedEntries": [
+        {
+          "rank": 1,
+          "player": "0xC347E1E532533ED20557d399567a7E2DCf1D3b86",
+          "score": 2547,
+          "displayName": "Bold Champion 3b86",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0xC347E1E532533ED20557d399567a7E2DCf1D3b86",
+          "processTime": 0
+        },
+        {
+          "rank": 2,
+          "player": "0x00000000000000000000000dCeaC2c8aA3Fe0000",
+          "score": 20402,
+          "displayName": "Swift Player 0000",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x00000000000000000000000dCeaC2c8aA3Fe0000",
+          "processTime": 0
+        },
+        {
+          "rank": 3,
+          "player": "0x0000000000000000000000000000000068Af63cF",
+          "score": 30,
+          "displayName": "Swift Player 63cF",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x0000000000000000000000000000000068Af63cF",
+          "processTime": 0
+        },
+        {
+          "rank": 4,
+          "player": "0xC347E1E532533ED20557d399567a7E2DCf1D3b86",
+          "score": 1527,
+          "displayName": "Bold Champion 3b86",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0xC347E1E532533ED20557d399567a7E2DCf1D3b86",
+          "processTime": 0
+        },
+        {
+          "rank": 5,
+          "player": "0x000000000000000000000008472360f5F2260000",
+          "score": 38415,
+          "displayName": "Swift Player 0000",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x000000000000000000000008472360f5F2260000",
+          "processTime": 0
+        },
+        {
+          "rank": 6,
+          "player": "0x0000000000000000000000000000000068AB55D3",
+          "score": 68,
+          "displayName": "Swift Player 55D3",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x0000000000000000000000000000000068AB55D3",
+          "processTime": 0
+        },
+        {
+          "rank": 7,
+          "player": "0x7f03490BE5a6d553f20E57B8c501C9Ff4DD0D308",
+          "score": 1053,
+          "displayName": "Elite Hero D308",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x7f03490BE5a6d553f20E57B8c501C9Ff4DD0D308",
+          "processTime": 0
+        },
+        {
+          "rank": 8,
+          "player": "0x000000000000000000000005B554c018c0A20000",
+          "score": 37945,
+          "displayName": "Swift Player 0000",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x000000000000000000000005B554c018c0A20000",
+          "processTime": 0
+        },
+        {
+          "rank": 9,
+          "player": "0x00000000000000000000000000000000689326C1",
+          "score": 57,
+          "displayName": "Swift Player 26C1",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x00000000000000000000000000000000689326C1",
+          "processTime": 0
+        },
+        {
+          "rank": 10,
+          "player": "0xE6A80B74aCf662180bb975aDa8c38AB9Cf3977FC",
+          "score": 984,
+          "displayName": "Clever Star 77FC",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0xE6A80B74aCf662180bb975aDa8c38AB9Cf3977FC",
+          "processTime": 0
+        }
+      ]
+    },
+    {
+      "rpcUrl": "https://worldchain-mainnet.gateway.tenderly.co",
+      "success": true,
+      "cacheCheckTime": 15,
+      "contractFetchTime": 870,
+      "usernameResolutionTime": 0,
+      "uiUpdateTime": 28,
+      "totalTime": 913,
+      "dataSize": 10,
+      "processedEntries": [
+        {
+          "rank": 1,
+          "player": "0xC347E1E532533ED20557d399567a7E2DCf1D3b86",
+          "score": 2547,
+          "displayName": "Bold Champion 3b86",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0xC347E1E532533ED20557d399567a7E2DCf1D3b86",
+          "processTime": 0
+        },
+        {
+          "rank": 2,
+          "player": "0x00000000000000000000000dCeaC2c8aA3Fe0000",
+          "score": 20402,
+          "displayName": "Swift Player 0000",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x00000000000000000000000dCeaC2c8aA3Fe0000",
+          "processTime": 0
+        },
+        {
+          "rank": 3,
+          "player": "0x0000000000000000000000000000000068Af63cF",
+          "score": 30,
+          "displayName": "Swift Player 63cF",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x0000000000000000000000000000000068Af63cF",
+          "processTime": 0
+        },
+        {
+          "rank": 4,
+          "player": "0xC347E1E532533ED20557d399567a7E2DCf1D3b86",
+          "score": 1527,
+          "displayName": "Bold Champion 3b86",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0xC347E1E532533ED20557d399567a7E2DCf1D3b86",
+          "processTime": 0
+        },
+        {
+          "rank": 5,
+          "player": "0x000000000000000000000008472360f5F2260000",
+          "score": 38415,
+          "displayName": "Swift Player 0000",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x000000000000000000000008472360f5F2260000",
+          "processTime": 0
+        },
+        {
+          "rank": 6,
+          "player": "0x0000000000000000000000000000000068AB55D3",
+          "score": 68,
+          "displayName": "Swift Player 55D3",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x0000000000000000000000000000000068AB55D3",
+          "processTime": 0
+        },
+        {
+          "rank": 7,
+          "player": "0x7f03490BE5a6d553f20E57B8c501C9Ff4DD0D308",
+          "score": 1053,
+          "displayName": "Elite Hero D308",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x7f03490BE5a6d553f20E57B8c501C9Ff4DD0D308",
+          "processTime": 0
+        },
+        {
+          "rank": 8,
+          "player": "0x000000000000000000000005B554c018c0A20000",
+          "score": 37945,
+          "displayName": "Swift Player 0000",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x000000000000000000000005B554c018c0A20000",
+          "processTime": 0
+        },
+        {
+          "rank": 9,
+          "player": "0x00000000000000000000000000000000689326C1",
+          "score": 57,
+          "displayName": "Swift Player 26C1",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0x00000000000000000000000000000000689326C1",
+          "processTime": 0
+        },
+        {
+          "rank": 10,
+          "player": "0xE6A80B74aCf662180bb975aDa8c38AB9Cf3977FC",
+          "score": 984,
+          "displayName": "Clever Star 77FC",
+          "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=0xE6A80B74aCf662180bb975aDa8c38AB9Cf3977FC",
+          "processTime": 0
+        }
+      ]
+    }
+  ]
+}

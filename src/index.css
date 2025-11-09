@@ -1,0 +1,447 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    width: 100vw;
+    height: 100dvh;
+    overscroll-behavior: none;
+    overflow: scroll;
+    margin: 0;
+    padding: 0;
+    /* Squid Game inspired gradient background */
+    background: linear-gradient(135deg, #0A0A0F 0%, #1A1A20 50%, #0A0A0F 100%);
+    color: #F8F8FF;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    /* Improved mobile touch handling */
+    -webkit-touch-callout: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+  
+  /* Mobile-optimized root font sizing */
+  html {
+    font-size: 16px; /* Base font size for mobile readability */
+  }
+  
+  /* Prevent zoom on input focus for iOS */
+  input, textarea, select {
+    font-size: 16px;
+  }
+  
+  button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    /* Improve button touch targets for mobile */
+    min-height: 44px;
+    min-width: 44px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Improve mobile text rendering */
+  h1, h2, h3, h4, h5, h6 {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer components {
+  /* Squid Game Neobrutalist Button */
+  .game-button {
+    @apply font-squid-heading text-squid-white font-bold py-4 px-6 rounded-lg transform transition-all duration-150 active:scale-95 uppercase tracking-wider;
+    background: #FF1F8C;
+    border: 3px solid #0A0A0F;
+    box-shadow: 4px 4px 0px 0px #0A0A0F;
+    min-height: 48px;
+    touch-action: manipulation;
+  }
+  
+  .game-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px 0px #0A0A0F;
+  }
+  
+  .game-button:disabled {
+    @apply cursor-not-allowed;
+    background: #2D2D35;
+    color: #666;
+    box-shadow: 2px 2px 0px 0px #0A0A0F;
+  }
+  
+  /* Squid Game Neobrutalist Card */
+  .squid-card {
+    @apply font-squid bg-squid-gray border-4 border-squid-border rounded-lg p-4;
+    box-shadow: 4px 4px 0px 0px #0A0A0F;
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  }
+  
+  .squid-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px 0px #0A0A0F;
+  }
+  
+  .squid-card:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px 0px #0A0A0F;
+  }
+  
+  .light-circle {
+    @apply w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-64 lg:h-64 rounded-full shadow-2xl transition-all duration-300 border-2 sm:border-4 md:border-4 lg:border-8 border-bone-white;
+  }
+  
+  .tap-area {
+    @apply w-full h-full flex items-center justify-center select-none;
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+  
+  /* Mobile-first container with safe areas - accounts for bottom nav only */
+  .mobile-container {
+    @apply w-full h-full flex flex-col;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    max-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    position: relative;
+  }
+  
+  /* Add StartMenu background pattern to mobile container */
+  .mobile-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(120,119,198,0.1), transparent 50%);
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: -2;
+  }
+  
+  .mobile-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.02%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22%3E%3C/circle%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+    opacity: 0.2;
+    pointer-events: none;
+    z-index: -1;
+  }
+  
+  /* Mobile container responsive padding for different screen sizes */
+  @media (max-width: 374px) {
+    .mobile-container {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+  
+  @media (min-width: 640px) {
+    .mobile-container {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .mobile-container {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+  
+  /* Mobile container variant for full-screen game */
+  .mobile-container-fullscreen {
+    @apply w-full h-full flex flex-col;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    max-height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: none;
+    position: relative;
+  }
+  
+  /* Add StartMenu background pattern to mobile container fullscreen */
+  .mobile-container-fullscreen::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(120,119,198,0.1), transparent 50%);
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: -2;
+  }
+  
+  .mobile-container-fullscreen::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.02%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22%3E%3C/circle%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+    opacity: 0.2;
+    pointer-events: none;
+    z-index: -1;
+  }
+  
+  /* Mobile container fullscreen responsive padding */
+  @media (max-width: 374px) {
+    .mobile-container-fullscreen {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+  
+  @media (min-width: 640px) {
+    .mobile-container-fullscreen {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .mobile-container-fullscreen {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+  
+  /* Mobile-optimized card design - Compact version */
+  .mobile-card {
+    @apply bg-dusty-beige/90 backdrop-blur-sm border border-gunmetal/30 rounded-xl p-2 sm:p-3;
+    box-shadow: 0 4px 16px rgba(43, 43, 43, 0.3);
+    color: #2B2B2B;
+  }
+  
+  /* Compact card variant for dense layouts */
+  .mobile-card-compact {
+    @apply bg-dusty-beige/90 backdrop-blur-sm border border-gunmetal/30 rounded-lg p-2;
+    box-shadow: 0 2px 8px rgba(43, 43, 43, 0.2);
+    color: #2B2B2B;
+  }
+  
+
+  
+  /* Bottom navigation bar with safe area support */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-industrial-charcoal/95 backdrop-blur-md border-t border-faint-olive/30;
+    height: calc(env(safe-area-inset-bottom) + 64px);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(env(safe-area-inset-bottom), 16px);
+    z-index: 50;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Mobile navigation bar (legacy) */
+  .mobile-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-industrial-charcoal/90 backdrop-blur-md border-t border-faint-olive/30;
+    height: calc(env(safe-area-inset-bottom) + 60px);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Snap-to input styles */
+  .snap-input {
+    @apply w-full p-4 rounded-xl border-2 border-faint-olive/30 bg-dusty-beige/90 text-industrial-charcoal placeholder-gray-500 text-lg;
+    transition: border-color 0.2s ease;
+  }
+  
+  .snap-input:focus {
+    @apply border-soft-sky-blue outline-none;
+    box-shadow: 0 0 0 4px rgba(158, 197, 227, 0.2);
+  }
+}
+
+@layer utilities {
+  /* iOS scroll bounce prevention for scrollable areas */
+  .no-scroll-bounce {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    /* Fallback for older iOS */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+  
+  /* For vertical scrolling areas that need bounce prevention */
+  .scroll-area-safe {
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    /* Enhanced fallbacks for better compatibility */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    /* Prevent momentum scrolling issues on older iOS */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+  
+  /* Mobile-specific utility classes - Compact typography */
+  .mobile-text-xs { font-size: 12px; line-height: 16px; }
+  .mobile-text-sm { font-size: 14px; line-height: 20px; }
+  .mobile-text-base { font-size: 16px; line-height: 24px; }
+  .mobile-text-lg { font-size: 18px; line-height: 28px; }
+  .mobile-text-xl { font-size: 20px; line-height: 32px; }
+  .mobile-text-2xl { font-size: 24px; line-height: 36px; }
+  .mobile-text-3xl { font-size: 30px; line-height: 42px; }
+  .mobile-text-4xl { font-size: 36px; line-height: 48px; }
+  
+  /* Compact spacing utilities for mobile-first design */
+  .mobile-spacing-xs { padding: 8px; }
+  .mobile-spacing-sm { padding: 12px; }
+  .mobile-spacing-md { padding: 16px; }
+  .mobile-spacing-lg { padding: 20px; }
+  .mobile-spacing-xl { padding: 24px; }
+  
+  /* Compact margin utilities */
+  .mobile-margin-xs { margin: 8px; }
+  .mobile-margin-sm { margin: 12px; }
+  .mobile-margin-md { margin: 16px; }
+  
+  /* Compact gap utilities for grids */
+  .mobile-gap-xs { gap: 8px; }
+  .mobile-gap-sm { gap: 12px; }
+  .mobile-gap-md { gap: 16px; }
+  
+  /* Mobile-first grid utilities */
+  .mobile-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .mobile-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); }
+  
+  /* Compact button styles */
+  .mobile-btn-compact {
+    @apply px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150;
+    min-height: 40px;
+    touch-action: manipulation;
+  }
+  
+  /* Compact form elements */
+  .mobile-input-compact {
+    @apply px-3 py-2 text-sm rounded-lg border;
+    min-height: 40px;
+  }
+  
+  /* Touch-friendly animations */
+  .mobile-bounce {
+    animation: mobile-bounce 0.15s ease-out;
+  }
+  
+  @keyframes mobile-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  /* Squid Game Neon Text Effects */
+  .neon-text-pink {
+    color: #FF1F8C;
+    text-shadow: 0 0 10px rgba(255, 31, 140, 0.8),
+                 0 0 20px rgba(255, 31, 140, 0.6),
+                 0 0 30px rgba(255, 31, 140, 0.4);
+  }
+  
+  .neon-text-teal {
+    color: #00D9C0;
+    text-shadow: 0 0 10px rgba(0, 217, 192, 0.8),
+                 0 0 20px rgba(0, 217, 192, 0.6),
+                 0 0 30px rgba(0, 217, 192, 0.4);
+  }
+  
+  .neon-text-green {
+    color: #00A878;
+    text-shadow: 0 0 10px rgba(0, 168, 120, 0.8),
+                 0 0 20px rgba(0, 168, 120, 0.6),
+                 0 0 30px rgba(0, 168, 120, 0.4);
+  }
+  
+  /* Squid Game Neobrutalist Borders */
+  .brutal-border {
+    border: 3px solid #0A0A0F;
+  }
+  
+  .brutal-border-thick {
+    border: 4px solid #0A0A0F;
+  }
+  
+  /* Squid Game Heading Style */
+  .squid-heading {
+    font-family: 'Bebas Neue', 'Impact', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: bold;
+  }
+  
+  /* Squid Game Score Display */
+  .squid-score {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  
+  /* Performance optimized backdrop blur */
+  @supports (backdrop-filter: blur(10px)) {
+    .squid-glass {
+      background: rgba(26, 26, 32, 0.8);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+  }
+  
+  @supports not (backdrop-filter: blur(10px)) {
+    .squid-glass {
+      background: rgba(26, 26, 32, 0.95);
+    }
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

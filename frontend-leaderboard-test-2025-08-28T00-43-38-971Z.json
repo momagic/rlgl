@@ -1,0 +1,232 @@
+{
+  "timestamp": "2025-08-28T00:43:38.976Z",
+  "testType": "frontend-simulation",
+  "summary": {
+    "avgContractTime": 241,
+    "avgUsernameTime": 1103,
+    "avgTotalTime": 1374,
+    "contractPercent": 18,
+    "usernamePercent": 80
+  },
+  "results": [
+    {
+      "rpcUrl": "https://worldchain-mainnet.g.alchemy.com/public",
+      "success": true,
+      "cacheCheckTime": 5,
+      "contractFetchTime": 202,
+      "usernameResolutionTime": 1133,
+      "uiUpdateTime": 16,
+      "totalTime": 1356,
+      "dataSize": 10,
+      "avgUsernameTime": 113,
+      "processedEntries": [
+        {
+          "rank": 1,
+          "score": null,
+          "displayName": "Player1",
+          "usernameResolveTime": 63
+        },
+        {
+          "rank": 2,
+          "score": null,
+          "displayName": "Player2",
+          "usernameResolveTime": 154
+        },
+        {
+          "rank": 3,
+          "score": null,
+          "displayName": "Player3",
+          "usernameResolveTime": 120
+        },
+        {
+          "rank": 4,
+          "score": null,
+          "displayName": "Player4",
+          "usernameResolveTime": 162
+        },
+        {
+          "rank": 5,
+          "score": null,
+          "displayName": "Player5",
+          "usernameResolveTime": 116
+        },
+        {
+          "rank": 6,
+          "score": null,
+          "displayName": "Player6",
+          "usernameResolveTime": 67
+        },
+        {
+          "rank": 7,
+          "score": null,
+          "displayName": "Player7",
+          "usernameResolveTime": 84
+        },
+        {
+          "rank": 8,
+          "score": null,
+          "displayName": "Player8",
+          "usernameResolveTime": 149
+        },
+        {
+          "rank": 9,
+          "score": null,
+          "displayName": "Player9",
+          "usernameResolveTime": 67
+        },
+        {
+          "rank": 10,
+          "score": null,
+          "displayName": "Player10",
+          "usernameResolveTime": 150
+        }
+      ]
+    },
+    {
+      "rpcUrl": "https://worldchain.drpc.org",
+      "success": true,
+      "cacheCheckTime": 15,
+      "contractFetchTime": 137,
+      "usernameResolutionTime": 1244,
+      "uiUpdateTime": 17,
+      "totalTime": 1413,
+      "dataSize": 10,
+      "avgUsernameTime": 124,
+      "processedEntries": [
+        {
+          "rank": 1,
+          "score": null,
+          "displayName": "Player1",
+          "usernameResolveTime": 145
+        },
+        {
+          "rank": 2,
+          "score": null,
+          "displayName": "Player2",
+          "usernameResolveTime": 146
+        },
+        {
+          "rank": 3,
+          "score": null,
+          "displayName": "Player3",
+          "usernameResolveTime": 68
+        },
+        {
+          "rank": 4,
+          "score": null,
+          "displayName": "Player4",
+          "usernameResolveTime": 62
+        },
+        {
+          "rank": 5,
+          "score": null,
+          "displayName": "Player5",
+          "usernameResolveTime": 156
+        },
+        {
+          "rank": 6,
+          "score": null,
+          "displayName": "Player6",
+          "usernameResolveTime": 147
+        },
+        {
+          "rank": 7,
+          "score": null,
+          "displayName": "Player7",
+          "usernameResolveTime": 117
+        },
+        {
+          "rank": 8,
+          "score": null,
+          "displayName": "Player8",
+          "usernameResolveTime": 118
+        },
+        {
+          "rank": 9,
+          "score": null,
+          "displayName": "Player9",
+          "usernameResolveTime": 132
+        },
+        {
+          "rank": 10,
+          "score": null,
+          "displayName": "Player10",
+          "usernameResolveTime": 150
+        }
+      ]
+    },
+    {
+      "rpcUrl": "https://worldchain-mainnet.gateway.tenderly.co",
+      "success": true,
+      "cacheCheckTime": 20,
+      "contractFetchTime": 384,
+      "usernameResolutionTime": 933,
+      "uiUpdateTime": 16,
+      "totalTime": 1353,
+      "dataSize": 10,
+      "avgUsernameTime": 93,
+      "processedEntries": [
+        {
+          "rank": 1,
+          "score": null,
+          "displayName": "Player1",
+          "usernameResolveTime": 70
+        },
+        {
+          "rank": 2,
+          "score": null,
+          "displayName": "Player2",
+          "usernameResolveTime": 94
+        },
+        {
+          "rank": 3,
+          "score": null,
+          "displayName": "Player3",
+          "usernameResolveTime": 84
+        },
+        {
+          "rank": 4,
+          "score": null,
+          "displayName": "Player4",
+          "usernameResolveTime": 83
+        },
+        {
+          "rank": 5,
+          "score": null,
+          "displayName": "Player5",
+          "usernameResolveTime": 107
+        },
+        {
+          "rank": 6,
+          "score": null,
+          "displayName": "Player6",
+          "usernameResolveTime": 143
+        },
+        {
+          "rank": 7,
+          "score": null,
+          "displayName": "Player7",
+          "usernameResolveTime": 67
+        },
+        {
+          "rank": 8,
+          "score": null,
+          "displayName": "Player8",
+          "usernameResolveTime": 67
+        },
+        {
+          "rank": 9,
+          "score": null,
+          "displayName": "Player9",
+          "usernameResolveTime": 118
+        },
+        {
+          "rank": 10,
+          "score": null,
+          "displayName": "Player10",
+          "usernameResolveTime": 99
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,301 @@
+{
+  "manifestVersion": "3.2",
+  "proxies": [
+    {
+      "address": "0x62FE968e683CB8484F20570E6ab611957e4FE3B5",
+      "txHash": "0x7f8962a921aff4d203390997d83a4bc9b41a99608d761399e4068270365c25f6",
+      "kind": "uups"
+    },
+    {
+      "address": "0x86Bdf1B6f81fE33F2085018981e2aeA91C13DB67",
+      "txHash": "0x52b51bb568ac421d3de7c87c970671e83f521f3d5b76034116a1275984843ab0",
+      "kind": "uups"
+    },
+    {
+      "address": "0x7E9F3f2DE1647D74Abb4c87bca74aAF279713068",
+      "txHash": "0xd3aca86c43a71cdfce51fcf636bdbb9c44af597889998b4ec1c64592e51477f6",
+      "kind": "uups"
+    }
+  ],
+  "impls": {
+    "66033ff048a04c8ccba72b0f90fb2f80a9c28869984e0fd32025d1b6de936a57": {
+      "address": "0xe7880FdF3aa9453a94df8411D4B281E9B6880651",
+      "txHash": "0x8679261de664bf14f75946748c68652cade6360f3312d172924ff5a753846c20",
+      "layout": {
+        "solcVersion": "0.8.22",
+        "storage": [
+          {
+            "label": "leaderboards",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_enum(GameMode)2581,t_array(t_struct(LeaderboardEntry)2597_storage)dyn_storage)",
+            "contract": "LeaderboardManager",
+            "src": "contracts\\LeaderboardManager.sol:51"
+          },
+          {
+            "label": "playerStats",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_enum(GameMode)2581,t_mapping(t_address,t_struct(PlayerModeStats)2610_storage))",
+            "contract": "LeaderboardManager",
+            "src": "contracts\\LeaderboardManager.sol:52"
+          },
+          {
+            "label": "authorizedSubmitters",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "LeaderboardManager",
+            "src": "contracts\\LeaderboardManager.sol:53"
+          },
+          {
+            "label": "totalGamesPlayed",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_enum(GameMode)2581,t_uint256)",
+            "contract": "LeaderboardManager",
+            "src": "contracts\\LeaderboardManager.sol:54"
+          },
+          {
+            "label": "totalPlayersCount",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_enum(GameMode)2581,t_uint256)",
+            "contract": "LeaderboardManager",
+            "src": "contracts\\LeaderboardManager.sol:55"
+          },
+          {
+            "label": "globalGameCounter",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_uint256",
+            "contract": "LeaderboardManager",
+            "src": "contracts\\LeaderboardManager.sol:58"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(ReentrancyGuardStorage)226_storage": {
+            "label": "struct ReentrancyGuardUpgradeable.ReentrancyGuardStorage",
+            "members": [
+              {
+                "label": "_status",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_struct(LeaderboardEntry)2597_storage)dyn_storage": {
+            "label": "struct LeaderboardManager.LeaderboardEntry[]",
+            "numberOfBytes": "32"
+          },
+          "t_enum(GameMode)2581": {
+            "label": "enum LeaderboardManager.GameMode",
+            "members": [
+              "Classic",
+              "Arcade"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(PlayerModeStats)2610_storage)": {
+            "label": "mapping(address => struct LeaderboardManager.PlayerModeStats)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_enum(GameMode)2581,t_array(t_struct(LeaderboardEntry)2597_storage)dyn_storage)": {
+            "label": "mapping(enum LeaderboardManager.GameMode => struct LeaderboardManager.LeaderboardEntry[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_enum(GameMode)2581,t_mapping(t_address,t_struct(PlayerModeStats)2610_storage))": {
+            "label": "mapping(enum LeaderboardManager.GameMode => mapping(address => struct LeaderboardManager.PlayerModeStats))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_enum(GameMode)2581,t_uint256)": {
+            "label": "mapping(enum LeaderboardManager.GameMode => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(LeaderboardEntry)2597_storage": {
+            "label": "struct LeaderboardManager.LeaderboardEntry",
+            "members": [
+              {
+                "label": "player",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "score",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "timestamp",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "round",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "tokensEarned",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "gameId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "gameMode",
+                "type": "t_enum(GameMode)2581",
+                "offset": 0,
+                "slot": "6"
+              }
+            ],
+            "numberOfBytes": "224"
+          },
+          "t_struct(PlayerModeStats)2610_storage": {
+            "label": "struct LeaderboardManager.PlayerModeStats",
+            "members": [
+              {
+                "label": "highScore",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "totalGames",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "totalScore",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "averageScore",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "bestRound",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "lastGameTimestamp",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              }
+            ],
+            "numberOfBytes": "192"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.ReentrancyGuard": [
+            {
+              "contract": "ReentrancyGuardUpgradeable",
+              "label": "_status",
+              "type": "t_uint256",
+              "src": "@openzeppelin\\contracts-upgradeable\\utils\\ReentrancyGuardUpgradeable.sol:43",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

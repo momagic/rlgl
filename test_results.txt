@@ -1,0 +1,124 @@
+
+
+  RedLightGreenLightGameV3
+    Deployment
+      ✔ Should deploy with correct initial values (48ms)
+      ✔ Should have correct default pricing
+      ✔ Should have correct verification multipliers
+      ✔ Should mint 1M tokens to developer wallet
+      ✔ Should not deploy with zero developer wallet
+    Game Mechanics
+      ✔ Should start with 3 free turns
+      ✔ Should not allow unverified users to start game
+      ✔ Should consume turns when starting game
+      ✔ Should not allow starting game without turns
+      ✔ Should reset turns after 24 hours
+    Score Submission
+      ✔ Should submit score and mint tokens
+      ✔ Should apply verification multipliers
+      ✔ Should update leaderboard
+      ✔ Should not allow unauthorized score submission
+    Verification System
+      ✔ Should set user verification correctly
+      ✔ Should apply correct multipliers for each verification level (47ms)
+      ✔ Should check verification levels correctly
+    Token Migration
+      ✔ Should migrate tokens from V1 and V2
+      ✔ Should not allow double migration
+      ✔ Should not allow migration with no tokens
+    Daily Claims
+      ✔ Should claim daily reward
+      ✔ Should apply streak bonus
+      ✔ Should not allow claiming before cooldown
+      ✔ Should get correct daily claim status
+    Purchases
+      1) Should purchase additional turns
+      2) Should purchase weekly pass
+    LocalStorage Compatibility
+      ✔ Should set and get extra goes
+      ✔ Should set and get passes
+      ✔ Should use extra goes when free turns are exhausted
+    Leaderboard
+      ✔ Should maintain top 100 scores (67ms)
+      ✔ Should get player rank
+      ✔ Should handle separate leaderboards for different game modes (96ms)
+    Admin Functions
+      ✔ Should update pricing (52ms)
+      ✔ Should update verification multipliers
+      ✔ Should enforce multiplier hierarchy
+      ✔ Should set authorized submitters
+      ✔ Should pause and unpause contract
+      ✔ Should not allow non-owner to call admin functions
+    Player Statistics
+      ✔ Should return correct player stats
+      ✔ Should track game history
+    Contract Statistics
+      ✔ Should return correct contract stats
+    Edge Cases and Error Handling
+      ✔ Should handle maximum supply limit
+      3) Should handle invalid game mode
+      4) Should handle invalid verification level
+      ✔ Should handle zero score submission
+    Gas Optimization
+      5) Should efficiently handle multiple operations
+
+
+  41 passing (5s)
+  5 failing
+
+  1) RedLightGreenLightGameV3
+       Purchases
+         Should purchase additional turns:
+     TypeError: unsupported addressable value (argument="target", value=null, code=INVALID_ARGUMENT, version=6.15.0)
+      at makeError (node_modules\ethers\src.ts\utils\errors.ts:691:21)
+      at assert (node_modules\ethers\src.ts\utils\errors.ts:719:25)
+      at assertArgument (node_modules\ethers\src.ts\utils\errors.ts:731:5)
+      at resolveAddress (node_modules\ethers\src.ts\address\checks.ts:122:19)
+      at C:\Users\Admin.MOHAMMED-PC\Documents\RLGL\node_modules\ethers\src.ts\contract\contract.ts:172:60
+      at ParamType.#walkAsync (node_modules\ethers\src.ts\abi\fragments.ts:779:24)
+      at ParamType.walkAsync (node_modules\ethers\src.ts\abi\fragments.ts:797:24)
+      at C:\Users\Admin.MOHAMMED-PC\Documents\RLGL\node_modules\ethers\src.ts\contract\contract.ts:170:22
+      at Array.map (<anonymous>)
+      at resolveArgs (node_modules\ethers\src.ts\contract\contract.ts:169:37)
+
+  2) RedLightGreenLightGameV3
+       Purchases
+         Should purchase weekly pass:
+     TypeError: unsupported addressable value (argument="target", value=null, code=INVALID_ARGUMENT, version=6.15.0)
+      at makeError (node_modules\ethers\src.ts\utils\errors.ts:691:21)
+      at assert (node_modules\ethers\src.ts\utils\errors.ts:719:25)
+      at assertArgument (node_modules\ethers\src.ts\utils\errors.ts:731:5)
+      at resolveAddress (node_modules\ethers\src.ts\address\checks.ts:122:19)
+      at C:\Users\Admin.MOHAMMED-PC\Documents\RLGL\node_modules\ethers\src.ts\contract\contract.ts:172:60
+      at ParamType.#walkAsync (node_modules\ethers\src.ts\abi\fragments.ts:779:24)
+      at ParamType.walkAsync (node_modules\ethers\src.ts\abi\fragments.ts:797:24)
+      at C:\Users\Admin.MOHAMMED-PC\Documents\RLGL\node_modules\ethers\src.ts\contract\contract.ts:170:22
+      at Array.map (<anonymous>)
+      at resolveArgs (node_modules\ethers\src.ts\contract\contract.ts:169:37)
+
+  3) RedLightGreenLightGameV3
+       Edge Cases and Error Handling
+         Should handle invalid game mode:
+     AssertionError: Expected transaction to be reverted with reason 'Invalid game mode', but it reverted without a reason
+      at Context.<anonymous> (test\RedLightGreenLightGameV3.test.cjs:655:13)
+
+  4) RedLightGreenLightGameV3
+       Edge Cases and Error Handling
+         Should handle invalid verification level:
+     AssertionError: Expected transaction to be reverted with reason 'Invalid verification level', but it reverted without a reason
+      at Context.<anonymous> (test\RedLightGreenLightGameV3.test.cjs:666:13)
+
+  5) RedLightGreenLightGameV3
+       Gas Optimization
+         Should efficiently handle multiple operations:
+
+      AssertionError: expected 30000000 to be below 200000.
+      + expected - actual
+
+      -30000000
+      +200000
+      
+      at Context.<anonymous> (test\RedLightGreenLightGameV3.test.cjs:701:40)
+
+
+

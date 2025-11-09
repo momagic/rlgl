@@ -1,0 +1,89 @@
+{
+  "extractedAt": "2025-08-16T13:41:56.152Z",
+  "source": "V1 Contract Blockchain Data",
+  "v1ContractAddress": "0x9F0cd199d9200AD1A4eAdd6aD54C45D63c87B9C1",
+  "totalEventsFound": 186476,
+  "topEventsProcessed": 50,
+  "finalLeaderboard": [
+    {
+      "player": "0xC347E1E532533ED20557d399567a7E2DCf1D3b86",
+      "score": 1004,
+      "timestamp": 1754474177,
+      "round": 57,
+      "tokensEarned": "100400000000000000000",
+      "gameId": 129886
+    },
+    {
+      "player": "0x027A42C518dd03317be777151B759516ffA83036",
+      "score": 766,
+      "timestamp": 1752850901,
+      "round": 40,
+      "tokensEarned": "76600000000000000000",
+      "gameId": 13411
+    },
+    {
+      "player": "0x00B1063956c1fD674efb925e7aCFd1A721c98d04",
+      "score": 586,
+      "timestamp": 1755033023,
+      "round": 37,
+      "tokensEarned": "58600000000000000000",
+      "gameId": 166287
+    },
+    {
+      "player": "0xd983FB32dd254cBF1ff0F8a21bF6d1F3F36E3246",
+      "score": 546,
+      "timestamp": 1754182971,
+      "round": 32,
+      "tokensEarned": "54600000000000000000",
+      "gameId": 110553
+    },
+    {
+      "player": "0xC8dc0A94F36A745D5F643c22F20A38cdAc992416",
+      "score": 546,
+      "timestamp": 1755027865,
+      "round": 32,
+      "tokensEarned": "54600000000000000000",
+      "gameId": 166032
+    },
+    {
+      "player": "0xC347E1E532533ED20557d399567a7E2DCf1D3b86",
+      "score": 536,
+      "timestamp": 1753782807,
+      "round": 34,
+      "tokensEarned": "53600000000000000000",
+      "gameId": 82636
+    },
+    {
+      "player": "0x739a247855D809a4EFa3798df9403B022CcF91Ee",
+      "score": 524,
+      "timestamp": 1754240521,
+      "round": 38,
+      "tokensEarned": "52400000000000000000",
+      "gameId": 114635
+    },
+    {
+      "player": "0x35189ADBd5F4dc9F2f98fD2a26193C99f0490cfe",
+      "score": 496,
+      "timestamp": 1754081617,
+      "round": 30,
+      "tokensEarned": "49600000000000000000",
+      "gameId": 103904
+    },
+    {
+      "player": "0xC347E1E532533ED20557d399567a7E2DCf1D3b86",
+      "score": 486,
+      "timestamp": 1753225695,
+      "round": 34,
+      "tokensEarned": "48600000000000000000",
+      "gameId": 41342
+    },
+    {
+      "player": "0x34D71112b2A016108050BF8FA56CBBc04B879fB1",
+      "score": 482,
+      "timestamp": 1755082335,
+      "round": 30,
+      "tokensEarned": "48200000000000000000",
+      "gameId": 169291
+    }
+  ]
+}

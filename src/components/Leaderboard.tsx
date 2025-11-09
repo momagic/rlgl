@@ -1,0 +1,797 @@
+import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { MiniKit } from '@worldcoin/minikit-js'
+import { useAuth } from '../contexts/AuthContext'
+import { useContract } from '../hooks/useContract'
+import { getDisplayName } from '../utils'
+import type { LeaderboardEntry } from '../types/contract'
+import { sanitizeLocalStorageData, sanitizeJSONData } from '../utils/inputSanitizer'
+import { UserInfo } from './UserInfo'
+
+// Time filter types
+type TimeFilter = 'weekly' | 'monthly' | 'alltime'
+
+/**
+ * Leaderboard Component with Enhanced Username Display
+ *
+ * Username Display Priority:
+ * 1. Current user's username (from auth context) - shows for their own entries
+ * 2. Cached usernames from previous sessions (stored in memory)
+ * 3. Generated friendly names (e.g., "Swift Runner 3a2f") instead of raw addresses
+ *
+ * Visual Enhancements:
+ * - Profile pictures for current user
+ * - Blue highlight ring for current user's entries
+ * - "You" badge for current user
+ * - Avatar placeholders for all users
+ * - Friendly gaming-themed names for better UX
+ *
+ * Friendly Name Generation:
+ * - Uses wallet address hash to consistently generate readable names
+ * - Format: [Adjective] [Noun] [Last4Chars] (e.g., "Epic Champion a1b2")
+ * - Same address always generates the same friendly name
+ * - Maintains uniqueness while being more user-friendly than raw addresses
+ */
+
+// Simple username cache to store known usernames for better UX
+const usernameCache = new Map<string, string>()
+
+// Generate a friendly display name from wallet address
+const generateFriendlyName = (address: string): string => {
+  // List of gaming-themed adjectives and nouns for friendly names
+  const adjectives = [
+    'Swift', 'Brave', 'Quick', 'Sharp', 'Clever', 'Bold', 'Fast', 'Smart',
+    'Agile', 'Fierce', 'Mighty', 'Elite', 'Pro', 'Epic', 'Legendary', 'Master'
+  ]
+  
+  const nouns = [
+    'Player', 'Gamer', 'Champion', 'Hero', 'Warrior', 'Runner', 'Ninja',
+    'Ace', 'Star', 'Legend', 'Phantom', 'Shadow', 'Tiger', 'Eagle', 'Wolf', 'Fox'
+  ]
+  
+  // Use the address to generate a consistent but pseudo-random name
+  const addressLower = address.toLowerCase()
+  const hash = addressLower.slice(2) // Remove '0x' prefix
+  
+  // Use different parts of the hash for adjective and noun selection
+  const adjIndex = parseInt(hash.slice(0, 8), 16) % adjectives.length
+  const nounIndex = parseInt(hash.slice(8, 16), 16) % nouns.length
+  
+  // Get the last 4 characters for uniqueness
+  const suffix = address.slice(-4)
+  
+  return `${adjectives[adjIndex]} ${nouns[nounIndex]} ${suffix}`
+}
+
+function Leaderboard() {
+  console.log('🎮 Leaderboard component mounted/re-rendered')
+  const { t } = useTranslation()
+  const { user } = useAuth()
+  
+  // Time filter state
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>(() => {
+    const saved = localStorage.getItem('leaderboard-time-filter')
+    return (saved as TimeFilter) || 'weekly'
+  })
+  
+  // Initialize with cached data if available
+  const initializeLeaderboard = () => {
+    const cachedData = localStorage.getItem('leaderboard-cache')
+    const cacheTimestamp = localStorage.getItem('leaderboard-cache-timestamp')
+    const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
+    
+    if (cachedData && cacheTimestamp) {
+      const age = Date.now() - parseInt(cacheTimestamp)
+      if (age < CACHE_DURATION) {
+        console.log('🚀 Loading from cache on initialization')
+        return {
+          data: JSON.parse(cachedData),
+          lastUpdated: new Date(parseInt(cacheTimestamp)),
+          isLoading: false
+        }
+      }
+    }
+    return { data: [], lastUpdated: null, isLoading: true }
+  }
+  
+  const initialState = initializeLeaderboard()
+  const [allLeaderboardData, setAllLeaderboardData] = useState<LeaderboardEntry[]>(initialState.data)
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [isLoading, setIsLoading] = useState(initialState.isLoading)
+  const [error, setError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(initialState.lastUpdated)
+  
+  console.log('📊 Current leaderboard state:', {
+    leaderboardLength: leaderboard.length,
+    allDataLength: allLeaderboardData.length,
+    timeFilter,
+    isLoading,
+    error
+  })
+
+  // Time filter helper functions
+  const getTimeFilterBounds = useCallback((filter: TimeFilter) => {
+    const now = Date.now()
+    switch (filter) {
+      case 'weekly':
+        return {
+          start: now - (7 * 24 * 60 * 60 * 1000), // 7 days ago
+          end: now
+        }
+      case 'monthly':
+        return {
+          start: now - (30 * 24 * 60 * 60 * 1000), // 30 days ago
+          end: now
+        }
+      case 'alltime':
+        return {
+          start: 0, // All time - no start limit
+          end: now
+        }
+      default:
+        return { start: 0, end: now }
+    }
+  }, [])
+
+  const filterLeaderboardByTime = useCallback((data: LeaderboardEntry[], filter: TimeFilter) => {
+    const { start, end } = getTimeFilterBounds(filter)
+    return data.filter(entry => {
+      const entryTime = entry.timestamp
+      return entryTime >= start && entryTime <= end
+    }).sort((a, b) => b.score - a.score) // Sort by score descending
+  }, [getTimeFilterBounds])
+
+  // Apply time filter to leaderboard data
+  useEffect(() => {
+    if (allLeaderboardData.length > 0) {
+      const filtered = filterLeaderboardByTime(allLeaderboardData, timeFilter)
+      setLeaderboard(filtered)
+      console.log(`🕒 Applied ${timeFilter} filter: ${filtered.length} entries`)
+    }
+  }, [allLeaderboardData, timeFilter, filterLeaderboardByTime])
+
+  // Handle time filter change
+  const handleTimeFilterChange = useCallback((newFilter: TimeFilter) => {
+    setTimeFilter(newFilter)
+    localStorage.setItem('leaderboard-time-filter', newFilter)
+    console.log(`🔄 Time filter changed to: ${newFilter}`)
+  }, [])
+
+  // Enhanced username cache with localStorage persistence and TTL
+  const getUsernameFromCache = useCallback((address: string) => {
+    const cacheKey = `username-${address.toLowerCase()}`
+    const cached = localStorage.getItem(cacheKey)
+    if (cached) {
+      try {
+        const { username, timestamp } = JSON.parse(cached)
+        const TTL = 24 * 60 * 60 * 1000 // 24 hours
+        if (Date.now() - timestamp < TTL) {
+          return username
+        } else {
+          localStorage.removeItem(cacheKey)
+        }
+      } catch (e) {
+        localStorage.removeItem(cacheKey)
+      }
+    }
+    return null
+  }, [])
+
+  const setUsernameCache = useCallback((address: string, username: string) => {
+    const cacheKey = `username-${address.toLowerCase()}`
+    localStorage.setItem(cacheKey, JSON.stringify({
+      username,
+      timestamp: Date.now()
+    }))
+    usernameCache.set(address.toLowerCase(), username)
+  }, [])
+
+  // Function to get display name for a player address (optimized)
+  const getPlayerDisplayName = useCallback((playerAddress: string): string => {
+    // If this is the current user's address, show their username
+    if (user?.walletAddress?.toLowerCase() === playerAddress.toLowerCase()) {
+      const displayName = getDisplayName({
+        username: user.username,
+        walletAddress: user.walletAddress
+      })
+      // Cache the current user's username for future reference
+      if (user.username) {
+        setUsernameCache(playerAddress, displayName)
+      }
+      return displayName
+    }
+    
+    // Check persistent cache first
+    const cachedUsername = getUsernameFromCache(playerAddress)
+    if (cachedUsername) {
+      return cachedUsername
+    }
+    
+    // Check in-memory cache
+    const memoryCache = usernameCache.get(playerAddress.toLowerCase())
+    if (memoryCache) {
+      return memoryCache
+    }
+    
+    // Return friendly name immediately, resolve username in background
+    const friendlyName = generateFriendlyName(playerAddress)
+    
+    // Background username resolution (non-blocking)
+    setTimeout(async () => {
+      try {
+        if (MiniKit.isInstalled()) {
+          const worldIdUser = await MiniKit.getUserByAddress(playerAddress)
+          if (worldIdUser?.username) {
+            setUsernameCache(playerAddress, worldIdUser.username)
+            // Trigger a re-render if this component is still mounted
+            setLeaderboard(prev => prev.map(entry => 
+              entry.player.toLowerCase() === playerAddress.toLowerCase() 
+                ? { ...entry, displayName: worldIdUser.username }
+                : entry
+            ))
+          }
+        }
+      } catch (error) {
+        console.log('Background username resolution failed for', playerAddress, error)
+      }
+    }, 0)
+    
+    return friendlyName
+  }, [user, getUsernameFromCache, setUsernameCache])
+
+  // Function to get avatar for a player
+  const getPlayerAvatar = useCallback((playerAddress: string): string | null => {
+    // If this is the current user's address, show their profile picture
+    if (user?.walletAddress?.toLowerCase() === playerAddress.toLowerCase()) {
+      return user.profilePictureUrl || null
+    }
+    return null
+  }, [user])
+
+  // Check if a player is the current user
+  const isCurrentUser = useCallback((playerAddress: string): boolean => {
+    return user?.walletAddress?.toLowerCase() === playerAddress.toLowerCase()
+  }, [user])
+
+  const { getTopScores } = useContract()
+
+  // Cache management functions
+  const getCachedLeaderboard = useCallback((forceExpired = false) => {
+    try {
+      const cachedData = localStorage.getItem('leaderboard-cache')
+      const cacheTimestamp = localStorage.getItem('leaderboard-cache-timestamp')
+      const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
+      
+      if (cachedData && cacheTimestamp) {
+        const age = Date.now() - parseInt(cacheTimestamp)
+        if (!forceExpired && age < CACHE_DURATION) {
+          console.log('✅ Cache is valid, age:', Math.round(age / 1000), 'seconds')
+          const parsedData = JSON.parse(cachedData)
+          
+          // Sanitize cached data
+          const validation = sanitizeJSONData(parsedData)
+          if (!validation.isValid) {
+            console.warn('Cached leaderboard data validation failed:', validation.errors)
+            localStorage.removeItem('leaderboard-cache')
+            localStorage.removeItem('leaderboard-cache-timestamp')
+            return null
+          }
+          
+          // Ensure all values are properly typed (handle any legacy BigInt issues)
+          const sanitizedData = validation.sanitizedValue.map((entry: any) => ({
+            ...entry,
+            score: typeof entry.score === 'string' ? parseInt(entry.score) : Number(entry.score),
+            timestamp: typeof entry.timestamp === 'string' ? parseInt(entry.timestamp) : Number(entry.timestamp),
+            round: typeof entry.round === 'string' ? parseInt(entry.round) : Number(entry.round),
+            rank: typeof entry.rank === 'string' ? parseInt(entry.rank) : Number(entry.rank)
+          }))
+          
+          return sanitizedData
+        } else {
+          console.log('❌ Cache expired or forced refresh, age:', Math.round(age / 1000), 'seconds')
+        }
+      } else {
+        console.log('❌ No cache found')
+      }
+    } catch (error) {
+      console.error('Failed to parse cached leaderboard data:', error)
+      // Clear corrupted cache
+      localStorage.removeItem('leaderboard-cache')
+      localStorage.removeItem('leaderboard-cache-timestamp')
+    }
+    return null
+  }, [])
+
+  const setCachedLeaderboard = useCallback((data: LeaderboardEntry[]) => {
+    try {
+      // Ensure all BigInt values are converted to numbers before caching
+      const serializedData = data.map(entry => ({
+        ...entry,
+        score: typeof entry.score === 'bigint' ? Number(entry.score) : entry.score,
+        timestamp: typeof entry.timestamp === 'bigint' ? Number(entry.timestamp) : entry.timestamp,
+        round: typeof entry.round === 'bigint' ? Number(entry.round) : entry.round,
+        rank: typeof entry.rank === 'bigint' ? Number(entry.rank) : entry.rank
+      }))
+      
+      // Sanitize data before caching
+      const validation = sanitizeLocalStorageData('leaderboard-cache', serializedData)
+      if (!validation.isValid) {
+        console.warn('Leaderboard cache data validation failed:', validation.errors)
+        return
+      }
+      
+      localStorage.setItem('leaderboard-cache', JSON.stringify(serializedData))
+      localStorage.setItem('leaderboard-cache-timestamp', Date.now().toString())
+    } catch (error) {
+      console.error('Failed to cache leaderboard data:', error)
+      // Don't throw error, just log it so the app continues to work
+    }
+  }, [])
+
+  const fetchLeaderboard = useCallback(async () => {
+    if (isLoading) {
+      console.log('⏸️ fetchLeaderboard called but already loading, skipping')
+      return
+    }
+    
+    // Check cache first before setting loading state
+    const cached = getCachedLeaderboard()
+    if (cached) {
+      console.log('📦 Using cached leaderboard data:', cached.length, 'entries')
+      setAllLeaderboardData(cached)
+      const cacheTimestamp = localStorage.getItem('leaderboard-cache-timestamp')
+      if (cacheTimestamp) {
+        setLastUpdated(new Date(parseInt(cacheTimestamp)))
+      }
+      // Don't set loading state when using cache
+      return
+    }
+    
+    console.log('🔄 Fetching fresh leaderboard data...')
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      
+      console.log('🌐 Fetching fresh data from contract...')
+      // Use new V2 contract function for better performance
+       const contractData = await getTopScores(10) // Get top 10 scores
+
+        console.log('📊 Contract data received:', {
+          leaderboard: contractData.length
+        })
+       
+       // Process data with optimized username resolution (no async blocking)
+       const processedData = contractData.map((entry: any, index: number) => ({
+         ...entry,
+         rank: index + 1,
+         displayName: getPlayerDisplayName(entry.player), // Now synchronous with background resolution
+         avatar: getPlayerAvatar(entry.player),
+         isCurrentUser: isCurrentUser(entry.player)
+       }))
+       
+       console.log('🎯 Processed leaderboard data:', processedData.length, 'entries')
+       console.log('📊 First entry sample:', processedData[0])
+       
+       setAllLeaderboardData(processedData)
+       setCachedLeaderboard(processedData)
+        setLastUpdated(new Date())
+        
+        console.log('✅ Leaderboard state updated successfully')
+      
+    } catch (err) {
+      console.error('❌ Error fetching leaderboard:', err)
+      console.error('❌ Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : 'No stack trace'
+      })
+      
+      // Try to use cached data as last resort
+      const cached = getCachedLeaderboard(true) // Force return even if expired
+      if (cached && cached.length > 0) {
+        console.log('🔄 Using cached data as fallback:', cached.length, 'entries')
+        setAllLeaderboardData(cached)
+        setError('Using cached data - some information may be outdated')
+      } else {
+        console.log('❌ No cached data available, showing error')
+        setError(err instanceof Error ? err.message : 'Failed to load leaderboard')
+      }
+    } finally {
+      console.log('🏁 Leaderboard fetch completed, isLoading set to false')
+      setIsLoading(false)
+    }
+  }, [getTopScores, isLoading, getCachedLeaderboard, setCachedLeaderboard, getPlayerDisplayName, getPlayerAvatar, isCurrentUser])
+
+  // Fetch leaderboard on component mount
+  useEffect(() => {
+    // Only fetch if we don't already have cached data loaded
+    if (allLeaderboardData.length === 0) {
+      console.log('🚀 No data loaded, attempting to fetch (will use cache if available)')
+      fetchLeaderboard()
+    } else {
+      console.log('✅ Already have data loaded, skipping initial fetch')
+    }
+    
+    // Set up hourly background refresh
+    const refreshInterval = setInterval(() => {
+      console.log('🕐 Hourly background refresh triggered')
+      fetchLeaderboard()
+    }, 60 * 60 * 1000) // 1 hour
+    
+    // Add a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.log('⏰ Loading timeout reached, forcing loading to false')
+        setIsLoading(false)
+        setError('Loading timeout - please try refreshing the page')
+      }
+    }, 15000) // 15 second timeout
+    
+    return () => {
+      clearTimeout(timeout)
+      clearInterval(refreshInterval)
+    }
+  }, [fetchLeaderboard, isLoading, allLeaderboardData.length])
+
+  // Remove the old formatAddress function since we now use getPlayerDisplayName
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString()
+  }
+
+  const getRankEmoji = (rank: number) => {
+    switch (rank) {
+      case 1: return '🥇'
+      case 2: return '🥈'
+      case 3: return '🥉'
+      default: return `#${rank}`
+    }
+  }
+
+
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex flex-col animate-fade-in overflow-hidden">
+        <div className="flex-1 flex flex-col rounded-lg shadow-2xl p-3 mx-2 border-3 border-squid-border bg-squid-gray overflow-hidden" style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
+          
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex-shrink-0 mb-4">
+              <h3 className="text-squid-white text-xl font-squid-heading font-bold uppercase tracking-wider flex items-center">
+                <span className="mr-2 text-2xl">🏆</span>
+                Leaderboard
+              </h3>
+            </div>
+            
+            {/* Loading skeleton */}
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full space-y-2">
+                {Array.from({ length: 8 }, (_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div 
+                      className="flex items-center space-x-3 p-2 rounded-lg border-2 border-squid-border bg-squid-gray"
+                      style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
+                    >
+                      <div 
+                        className="w-8 h-8 rounded-full border-2 border-squid-black"
+                        style={{ background: '#00A878' }}
+                      ></div>
+                      <div className="flex-1">
+                        <div className="h-3 bg-squid-border rounded w-3/4 mb-1"></div>
+                        <div className="h-2 bg-squid-border rounded w-1/2"></div>
+                      </div>
+                      <div className="h-4 bg-squid-border rounded w-12"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="flex-shrink-0 mt-3 pt-3 border-t-2 border-squid-border text-center">
+              <button 
+                onClick={() => {
+                  console.log('🔄 Manual refresh clicked')
+                  setIsLoading(false)
+                  setTimeout(() => fetchLeaderboard(), 100)
+                }}
+                className="px-4 py-2 rounded border-3 border-squid-black text-squid-black font-squid-heading font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 mb-2 text-sm"
+                style={{ background: '#00A878', boxShadow: '3px 3px 0px 0px #0A0A0F' }}
+                onPointerDown={(e) => {
+                  e.currentTarget.style.transform = 'translate(2px, 2px)'
+                  e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
+                }}
+                onPointerUp={(e) => {
+                  e.currentTarget.style.transform = 'translate(0, 0)'
+                  e.currentTarget.style.boxShadow = '3px 3px 0px 0px #0A0A0F'
+                }}
+              >
+                Refresh
+              </button>
+              <div className="text-squid-white/70 text-xs font-squid font-semibold">
+                {t('leaderboard.updatedRealTime', 'Updates in real-time')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error && allLeaderboardData.length === 0) {
+    return (
+      <div className="h-full flex flex-col animate-fade-in overflow-hidden">
+        <div className="flex-1 flex flex-col rounded-2xl shadow-2xl p-4 mx-4 border border-white/20 bg-white/8 backdrop-blur-sm overflow-hidden">
+          
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex-shrink-0 mb-4">
+              <h3 className="text-white text-lg font-bold tracking-wide flex items-center">
+                <span className="mr-2 text-xl">🏆</span>
+                {t('leaderboard.title').replace(/🏆/g, '').trim()}
+              </h3>
+            </div>
+            
+            {/* Error content */}
+            <div className="flex-1 flex flex-col items-center justify-center text-center">
+              <div className="text-red-400 text-4xl mb-3">⚠️</div>
+              <div className="text-red-400 text-sm mb-4 font-medium">{error}</div>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="px-4 py-2 rounded-xl text-white font-semibold transition-all duration-200 active:scale-95 text-sm"
+                style={{
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  boxShadow: '0 4px 20px rgba(16, 185, 129, 0.3)'
+                }}
+              >
+                {t('leaderboard.retry', 'Try Again')}
+              </button>
+            </div>
+            
+            {/* Footer */}
+            <div className="flex-shrink-0 mt-3 pt-3 border-t border-white/20 text-center">
+              <div className="text-gray-300 text-xs">
+                {t('leaderboard.updatedRealTime', 'Leaderboard updates in real-time')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (allLeaderboardData.length === 0) {
+    return (
+      <div className="h-full flex flex-col animate-fade-in overflow-hidden">
+        <div className="flex-1 flex flex-col rounded-2xl shadow-2xl p-4 mx-4 border border-white/20 bg-white/8 backdrop-blur-sm overflow-hidden">
+          
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex-shrink-0 mb-4">
+              <h3 className="text-white text-lg font-bold tracking-wide flex items-center">
+                <span className="mr-2 text-xl">🏆</span>
+                {t('leaderboard.title').replace(/🏆/g, '').trim()}
+              </h3>
+            </div>
+            
+            {/* Empty state content */}
+            <div className="flex-1 flex flex-col items-center justify-center text-center">
+              {/* Coming Soon Icon */}
+              <div className="text-4xl mb-4">🚧</div>
+              
+              {/* Main Message */}
+              <div className="space-y-3 mb-4">
+                <div className="text-white text-lg font-bold">
+                  Leaderboard Will Be Back Soon!
+                </div>
+                <div className="text-gray-300 text-sm">
+                  We're temporarily updating our systems to bring you an even better experience.
+                </div>
+              </div>
+              
+              {/* Current High Score Display */}
+              <div 
+                className="rounded-xl p-4 border border-white/20 mb-4"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)'
+                }}
+              >
+                <div className="text-white text-sm font-semibold mb-2 flex items-center justify-center">
+                  <span className="mr-2">🏆</span>
+                  Current High Score
+                </div>
+                <div className="flex items-center justify-center space-x-3">
+                  <div className="text-center">
+                    <div className="text-yellow-400 text-xl font-bold">766</div>
+                    <div className="text-gray-300 text-xs">Points</div>
+                  </div>
+                  <div className="text-white text-sm">by</div>
+                  <div className="text-center">
+                    <div className="text-white text-xs font-mono">0x0271..3036</div>
+                    <div className="text-gray-300 text-xs">Champion</div>
+                  </div>
+                </div>
+              </div>
+            
+              {/* Encouragement */}
+              <div className="text-gray-300 text-sm">
+                Keep playing to beat this score! 🎮
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="flex-shrink-0 mt-3 pt-3 border-t border-white/20 text-center">
+              <div className="text-gray-300 text-xs space-y-1">
+                <div>Play Red Light Green Light to earn RLGL tokens!</div>
+                <div>The leaderboard will return shortly with all your achievements intact.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-full flex flex-col animate-fade-in overflow-hidden">
+      <UserInfo />
+      <div className="flex-1 flex flex-col rounded-lg shadow-2xl p-3 mx-3 border-3 border-squid-border bg-squid-gray overflow-hidden" style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
+        
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header - Fixed height */}
+          <div className="flex-shrink-0 mb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-squid-white text-lg font-squid-heading font-bold uppercase tracking-wider flex items-center">
+                  <span className="mr-2 text-xl">🏆</span>
+                  {t('leaderboard.title').replace(/🏆/g, '').trim()}
+                </h3>
+                {lastUpdated && (
+                  <p className="text-squid-white/70 text-xs mt-0.5 font-squid-mono">
+                    {lastUpdated.toLocaleTimeString()}
+                  </p>
+                )}
+              </div>
+              {error && leaderboard.length > 0 && (
+                <div className="flex items-center space-x-1 text-squid-red text-xs px-2 py-1 rounded border-2 border-squid-red bg-squid-red/10 font-squid-heading font-bold uppercase" style={{ boxShadow: '2px 2px 0px 0px #DC143C' }}>
+                  <span>⚠️</span>
+                  <span>{t('leaderboard.cached', 'Cached')}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Time Filter Buttons */}
+            <div className="flex items-center justify-center mt-3 mb-2">
+              <div className="flex rounded border-2 border-squid-border overflow-hidden bg-squid-black" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
+                {(['weekly', 'monthly', 'alltime'] as TimeFilter[]).map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => handleTimeFilterChange(filter)}
+                    className={`px-3 py-1.5 text-xs font-squid-heading font-bold uppercase transition-all duration-150 ${
+                      timeFilter === filter
+                        ? 'text-squid-black'
+                        : 'text-squid-white/70 hover:text-squid-white'
+                    }`}
+                    style={{
+                      background: timeFilter === filter ? '#00D9C0' : 'transparent'
+                    }}
+                  >
+                    {filter === 'weekly' && '📅 Week'}
+                    {filter === 'monthly' && '📆 Month'}
+                    {filter === 'alltime' && '🏆 All'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Leaderboard entries - Compact grid layout */}
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0, 217, 192, 0.5) transparent' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {leaderboard.map((entry) => {
+                const isCurrentUserEntry = isCurrentUser(entry.player)
+                const playerAvatar = getPlayerAvatar(entry.player)
+                const displayName = entry.displayName || generateFriendlyName(entry.player)
+                
+                return (
+                  <div
+                    key={`${entry.player}-${entry.timestamp}`}
+                    className={`
+                      flex flex-col space-y-1 p-2 rounded border-2 transition-all duration-150
+                      ${isCurrentUserEntry ? 'border-squid-pink' : 'border-squid-border'}
+                    `}
+                    style={{
+                      background: isCurrentUserEntry ? 'rgba(255, 31, 140, 0.15)' : '#1A1A20',
+                      boxShadow: isCurrentUserEntry ? '3px 3px 0px 0px #FF1F8C' : '2px 2px 0px 0px #0A0A0F'
+                    }}
+                  >
+                    {/* Top row: Rank and Avatar */}
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-squid-heading font-bold neon-text-teal">
+                        {getRankEmoji(entry.rank)}
+                      </div>
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-squid-black">
+                        {playerAvatar ? (
+                          <img
+                            src={playerAvatar}
+                            alt={`${displayName}'s avatar`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div 
+                            className="w-full h-full flex items-center justify-center text-xs"
+                            style={{
+                              background: isCurrentUserEntry ? '#FF1F8C' : '#2D2D35'
+                            }}
+                          >
+                            {isCurrentUserEntry ? '👤' : '🎮'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Player Info */}
+                    <div className="min-w-0">
+                      <div className={`font-squid font-semibold text-xs truncate ${
+                        isCurrentUserEntry ? 'text-squid-pink' : 'text-squid-white'
+                      }`}>
+                        {displayName}
+                        {isCurrentUserEntry && (
+                          <span className="ml-1 text-xs px-1 py-0.5 rounded border border-squid-pink font-squid-heading font-bold uppercase" style={{ background: 'rgba(255, 31, 140, 0.2)', color: '#FF1F8C' }}>
+                            You
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-squid-white/70 mt-0.5 font-squid-mono">
+                        R{entry.round} • {formatDate(entry.timestamp)}
+                      </div>
+                    </div>
+
+                    {/* Score */}
+                    <div className="text-center">
+                      <div className="font-squid-mono font-bold text-sm neon-text-green">
+                        {entry.score.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-squid-white/70 font-squid">
+                        {(entry.score * 0.1).toFixed(1)} RLGL
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer - Fixed height */}
+          <div className="flex-shrink-0 mt-2 pt-2 border-t-2 border-squid-border">
+            <div className="text-center">
+              <div className="text-squid-white/70 text-xs mb-1 font-squid-mono">
+                {leaderboard.length} of {allLeaderboardData.length}
+                {timeFilter !== 'alltime' && (
+                  <span className="ml-1 text-squid-white/50">
+                    ({timeFilter === 'weekly' ? '7d' : '30d'})
+                  </span>
+                )}
+              </div>
+              {error && leaderboard.length > 0 ? (
+                <div className="mb-1 p-1 rounded border-2 border-squid-red bg-squid-red/10" style={{ boxShadow: '2px 2px 0px 0px #DC143C' }}>
+                  <div className="font-squid-heading font-bold text-squid-red text-xs uppercase">{error}</div>
+                </div>
+              ) : null}
+              <div className="text-squid-white/70 text-xs space-y-0.5 font-squid">
+                <div className="font-semibold">{t('leaderboard.playToEarn')}</div>
+                <div className="text-squid-white/50">{t('leaderboard.updatedRealTime', 'Updates in real-time')}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Leaderboard

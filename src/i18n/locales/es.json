@@ -1,0 +1,314 @@
+{
+  "app": {
+    "title": "Luz Roja Luz Verde",
+    "subtitle": "¡Toca para Sobrevivir!"
+  },
+  "startMenu": {
+    "title": "Luz Roja <1>Luz Verde</1>",
+    "subtitle": "¡Toca para Sobrevivir!",
+    "stop": "ALTO",
+    "tap": "TOCA",
+    "bestScore": "MEJOR PUNTUACIÓN",
+    "howToPlay": "Cómo Jugar",
+    "instructions": {
+      "redLight": "Luz Roja = ¡No toques!",
+      "greenLight": "Luz Verde = ¡Toca rápido!",
+      "lives": "Solo 3 vidas - ¡falla o toca mal!",
+      "speed": "¡El juego se vuelve más rápido cada ronda!",
+      "whackMode": {
+        "redLight": "No toques las luces rojas - dicen \"¡PARA!\"",
+        "greenLight": "Toca las luces verdes rápidamente - dicen \"¡TOCA!\"",
+        "grid": "Cuadrícula 3x3 con múltiples luces activas",
+        "progression": "Más luces se activan cada ronda",
+        "scoring": "+10 puntos fijos por ronda completada",
+        "timing": "Las luces verdes expiran rápido - ¡sé rápido!"
+      }
+    },
+    "footer": {
+      "line1": "¡Pon a prueba tus reflejos y nervios!",
+      "line2": "¿Cuánto tiempo puedes sobrevivir?",
+      "tagline": "Pon a prueba tus reflejos y nervios – ¿cuánto tiempo puedes sobrevivir?"
+    },
+    "authentication": {
+      "title": "Autenticar Cartera",
+      "subtitle": "Conecta tu cartera para jugar y ganar recompensas Web3"
+    },
+    "verification": {
+      "title": "Verificar Identidad"
+    },
+    "gameStart": {
+      "title": "Iniciar Juego"
+    },
+    "buttons": {
+      "verifyWorldId": "Verificar con World ID para Jugar",
+      "authenticateWallet": "Autenticar Cartera",
+      "startGame": "Iniciar Juego ({{turns}} turnos restantes)",
+      "noTurns": "No Hay Turnos Disponibles - ¡Compra Más!",
+      "authenticating": "Autenticando...",
+      "checkingTurns": "Verificando turnos...",
+      "forceRefresh": "Forzar actualización",
+      "startAnyway": "Iniciar De Todos Modos (Puede Fallar)",
+      "buyTurns": "Comprar Turnos",
+      "manage": "Gestionar",
+      "close": "Cerrar"
+    },
+    "turnStatus": {
+      "error": "Error: {{error}}",
+      "retry": "Reintentar"
+    }
+  },
+  "gameScreen": {
+    "pause": "⏸️ Pausar",
+    "round": "Ronda {{round}}",
+    "paused": {
+      "title": "Juego Pausado",
+      "resume": "Reanudar Juego",
+      "quit": "Salir del Juego"
+    },
+    "instructions": "Toca la luz o cualquier parte de la pantalla para jugar"
+  },
+  "lightDisplay": {
+    "lightChange": "¡CAMBIO DE LUZ!",
+    "ready": "¿LISTO?",
+    "redInstruction": "¡No toques cuando esté roja!",
+    "greenInstruction": "¡Toca ahora!",
+    "waitingInstruction": "Prepárate...",
+    "tip": "Las luces cambian aleatoriamente - ¡mantente alerta!"
+  },
+  "gameOver": {
+    "title": "Juego Terminado",
+    "finalScore": "PUNTUACIÓN FINAL",
+    "previousBest": "Mejor anterior: {{score}}",
+    "performance": "Tu Rendimiento",
+    "stats": {
+      "rounds": "RONDAS",
+      "streak": "RACHA",
+      "correct": "CORRECTO",
+      "accuracy": "PRECISIÓN",
+      "tokensEarned": "TOKENS GANADOS"
+    },
+    "performanceMessages": {
+      "newHighScore": "🎉 ¡NUEVA PUNTUACIÓN MÁXIMA! 🎉",
+      "legendary": "🔥 ¡RENDIMIENTO LEGENDARIO! 🔥",
+      "incredible": "💪 ¡REFLEJOS INCREÍBLES! 💪",
+      "great": "⚡ ¡GRAN TRABAJO! ⚡",
+      "notBad": "👍 ¡NADA MAL! 👍",
+      "keepPracticing": "🎯 ¡SIGUE PRACTICANDO! 🎯"
+    },
+    "encouragement": {
+      "practice": "¡La práctica hace al maestro! Trata de concentrarte en el ritmo.",
+      "getting_better": "¡Estás mejorando! ¿Puedes llegar a la ronda 15?",
+      "amazing": "¡Reflejos increíbles! ¡Desafíate a llegar a la ronda 20!",
+      "master": "¡Eres un maestro de Luz Roja Luz Verde! 🏆"
+    },
+    "buttons": {
+      "playAgain": "🔄 Jugar de Nuevo ({{turns}} turnos restantes)",
+      "noTurns": "❌ No Hay Turnos Disponibles - ¡Compra Más!",
+      "mainMenu": "Menú Principal",
+      "checkingTurns": "Verificando turnos..."
+    }
+  },
+  "success": {
+    "title": "¡Éxito!",
+    "message": "¡Tus tokens han sido enviados a tu cartera!",
+    "transactionHash": "Hash de Transacción:",
+    "button": "¡Fantástico! 🎉"
+  },
+  "settings": {
+    "title": "⚙️ Configuración",
+    "account": {
+      "title": "👤 Cuenta",
+      "worldId": "World ID:",
+      "verification": "Verificación:",
+      "verified": "✓ Verificado",
+      "notVerified": "✗ No verificado",
+      "notConnected": "No conectado"
+    },
+    "game": {
+      "title": "🎮 Configuración del Juego",
+      "soundEffects": {
+        "title": "Efectos de Sonido",
+        "description": "Reproducir sonidos durante el juego"
+      },
+      "vibration": {
+        "title": "Vibración",
+        "description": "Feedback háptico en móvil"
+      }
+    },
+    "stats": {
+      "title": "📊 Estadísticas",
+      "highScore": "Puntuación Máxima:",
+      "gamesPlayed": "Juegos Jugados:",
+      "resetStats": "Reiniciar Estadísticas Locales"
+    },
+    "about": {
+      "title": "ℹ️ Acerca de",
+      "version": "Juego Luz Roja Luz Verde v1.0",
+      "builtWith": "Construido con React + TypeScript",
+      "poweredBy": "Impulsado por World ID & MiniKit",
+      "copyright": "© 2024 RLGL Game. Todos los derechos reservados."
+    },
+    "language": {
+      "title": "🌍 Idioma",
+      "description": "Selecciona tu idioma preferido"
+    },
+    "confirmReset": "¿Estás seguro de que quieres reiniciar tus estadísticas locales? Esto no se puede deshacer."
+  },
+  "userInfo": {
+    "logout": "Cerrar Sesión",
+    "verified": "verificado"
+  },
+  "leaderboard": {
+    "title": "🏆 Tabla de Líderes Global",
+    "refresh": "🔄 Actualizar",
+    "topPlayers": "Top {{count}} jugadores",
+    "you": "Tú",
+    "round": "Ronda {{round}}",
+    "showingTop10": "Mostrando los 10 mejores puntajes",
+    "playToEarn": "🎮 ¡Juega para ganar tokens RLGL!",
+    "beatTopScore": "¡Supera el puntaje más alto y reclama tu lugar! 🚀",
+    "cached": "En caché",
+    "retry": "Intentar de Nuevo",
+    "updatedRealTime": "La tabla de líderes se actualiza en tiempo real",
+    "noScores": {
+      "title": "¡Aún no hay puntuaciones!",
+      "subtitle": "¡Sé el primero en establecer una puntuación alta y reclamar el primer lugar!"
+    },
+    "error": {
+      "tryAgain": "Intentar de Nuevo",
+      "refreshData": "Actualizar Datos"
+    },
+    "updatedEvery12Hours": "La tabla de clasificación se actualiza cada 12 horas."
+  },
+  "worldIdLogin": {
+    "title": "🚨 Luz Roja Luz Verde 🚨",
+    "subtitle": "¡El Juego de Reacción Más Adictivo en la Blockchain!",
+    "heroText": "⚡ Reflejos Ultrarrápidos se Encuentran con Competencia Real ⚡",
+    "worldIdRequired": "🛡️ Zona Solo para Humanos",
+    "onlyVerifiedHumans": "🎯 100% JUGADORES REALES • SIN BOTS • COMPETENCIA JUSTA\n🏆 ¡Compite contra humanos reales con reflejos ultrarrápidos!\n💰 ¡Gana tokens RLGL reales por tus habilidades!",
+    "features": {
+      "realPlayers": "👥 Solo Jugadores Humanos Reales",
+      "earnTokens": "💎 Gana Recompensas Cripto",
+      "globalLeaderboard": "🌍 Tabla de Líderes Global",
+      "instantPlay": "⚡ Acción Instantánea"
+    },
+    "callToAction": "¿Listo para poner a prueba tus reflejos contra el mundo?",
+    "verifying": "🔐 Verificando tu humanidad...",
+    "verify": "🚀 ¡ÚNETE A LA ACCIÓN AHORA!",
+    "worldAppNote": "✨ Verificación rápida y segura vía World App",
+    "verifiedTitle": "🎉 ¡Bienvenido a la Arena!",
+    "verifiedSubtitle": "¡Estás verificado y listo para competir! Es hora de mostrar esos reflejos ultrarrápidos.",
+    "tapInstructions": "Toca el botón verde para verificar tu humanidad usando World ID",
+    "error": "⚠️ Verificación fallida. Asegúrate de estar verificado con Orb e inténtalo de nuevo!"
+  },
+  "turnDisplay": {
+    "yourTurns": "Tus Turnos",
+    "live": "En Vivo",
+    "availableTurns": "Turnos Disponibles",
+    "noTurnsRemaining": "No quedan turnos",
+    "freeResetsIn": "Los turnos gratuitos se reinician en",
+    "nextReset": "Próximo reinicio:",
+    "processing": "Procesando...",
+    "buyMoreTurns": "Comprar 3 Turnos Más",
+    "sale": "¡Oferta!",
+    "resetAvailable": "¡Reinicio disponible ahora!",
+    "turnsResetIn": "Los turnos se reinician en",
+    "error": "{{error}}",
+    "paymentFailed": "Pago fallido: {{error}}",
+    "paymentSuccess": {
+      "title": "¡Pago Exitoso!",
+      "subtitle": "Ahora tienes {{turns}} turnos disponibles"
+    },
+    "weeklyPass": {
+      "active": "Pase Semanal Activo",
+      "unlimitedUntil": "Turnos ilimitados hasta",
+      "buttonTitle": "Pase Semanal",
+      "buttonSubtitle": "¡Turnos Ilimitados por 7 Días!"
+    }
+  },
+  "gameModeSelector": {
+    "title": "Seleccionar Modo de Juego",
+    "classicMode": {
+      "title": "Modo Clásico",
+      "description": "Juego de reacción pura - sin potenciadores, solo tú contra la luz"
+    },
+    "arcadeMode": {
+      "title": "Modo Arcade",
+      "description": "Jugabilidad mejorada con potenciadores flotantes y habilidades especiales"
+    },
+    "whackMode": {
+      "title": "🔨 Golpea la Luz",
+      "description": "Toca solo las luces verdes. Más luces cada ronda — rápido y letal."
+    },
+    "changeAnytime": "Puedes cambiar de modo en cualquier momento desde el menú principal"
+  },
+  "whackMode": {
+    "title": "Golpea la Luz",
+    "description": "Toca solo las luces verdes. Más luces cada ronda — rápido y mortal."
+  },
+   "instructions": {
+     "whackMode": {
+       "redLight": "Las luces rojas son peligrosas: ¡evita tocarlas o perderás una vida!",
+       "greenLight": "Las luces verdes son tus objetivos: ¡tócalas rápidamente para anotar puntos!",
+       "grid": "Las luces aparecen en un patrón de cuadrícula 3x3 para facilitar la navegación.",
+       "progression": "Cada ronda añade más luces para tocar: ¡mantente concentrado!",
+       "scoring": "Anota puntos por cada luz verde tocada correctamente.",
+       "timing": "Tienes tiempo limitado: ¡sé rápido pero preciso!"
+     }
+   },
+   "proTips": {
+      "timing": "El tiempo es todo: ¡Espera la luz verde antes de tocar!",
+      "speed": "La velocidad aumenta: El juego se vuelve más rápido a medida que crece tu puntuación.",
+      "arcade": "Modo Arcade: ¡Recoge potenciadores para obtener habilidades especiales!",
+    "whack": "Modo Golpea la Luz: ¡Toca las luces verdes en una cuadrícula 3x3 - más luces cada ronda!",
+    "leaderboard": "Puntuaciones altas: ¡Compite en la tabla de clasificación con otros jugadores!"
+  },
+  "walletLogin": {
+    "connectTitle": "Conectar Cartera",
+    "connectSubtitle": "Juegos Web3 Seguros",
+    "walletRequired": "Cartera Requerida",
+    "connectToPlay": "Conecta tu cartera para jugar y ganar recompensas en este juego Web3.",
+    "callToAction": "🎮 ¿Listo para jugar? ¡Toca en cualquier lugar para conectar tu cartera!",
+    "worldAppNote": "✨ Funciona perfectamente con la cartera World App",
+    "tapInstructions": "Toca en cualquier lugar para conectar tu cartera",
+    "connecting": "Conectando...",
+    "error": "⚠️ Conexión fallida. Inténtalo de nuevo o verifica tu cartera."
+  },
+  "walletInfoModal": {
+    "title": "Conexión de Cartera",
+    "description": "Conecta tu cartera para acceder a este juego Web3 y ganar recompensas por tu jugabilidad.",
+    "secureTitle": "Seguro y Privado",
+    "secureDescription": "Tu cartera permanece segura - solo solicitamos permiso de conexión.",
+    "instantTitle": "Acceso Instantáneo",
+    "instantDescription": "Conéctate una vez y juega inmediatamente sin configuración adicional.",
+    "gameTitle": "Jugar y Ganar",
+    "gameDescription": "Gana tokens y compite en la tabla de líderes con otros jugadores.",
+    "worldAppNote": "💡 Este juego funciona mejor con la cartera World App para la experiencia más fluida."
+  },
+  "humanVerification": {
+    "title": "Verificar Humanidad",
+    "description": "Opcional: Verifica que eres humano para desbloquear recompensas adicionales y características de juego mejoradas.",
+    "benefitsTitle": "Beneficios de la Verificación Humana:",
+    "benefit1": "Multiplicadores de recompensa más altos",
+    "benefit2": "Acceso a torneos exclusivos",
+    "benefit3": "Protección anti-trampa mejorada",
+    "verifyButton": "Verificar con World ID",
+    "skipButton": "Omitir por Ahora",
+    "verifying": "Verificando...",
+    "verified": "¡Humano Verificado!",
+    "verifiedDescription": "Ahora estás verificado como humano y puedes disfrutar de recompensas y características mejoradas.",
+    "continue": "Continuar",
+    "note": "Puedes verificar tu humanidad más tarde desde el menú de configuración.",
+    "error": "⚠️ Verificación fallida. ¡Asegúrate de estar verificado con Orb e inténtalo de nuevo!"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "ok": "OK",
+    "yes": "Sí",
+    "no": "No"
+  }
+}
