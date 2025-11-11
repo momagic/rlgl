@@ -1,14 +1,15 @@
 import { createPublicClient, http, type PublicClient } from 'viem'
 import { worldchain } from 'viem/chains'
 
-// Public RPC endpoints for World Chain (updated with latest available endpoints)
+// Verified World Chain RPC endpoints
 const PUBLIC_RPC_ENDPOINTS = [
   'https://worldchain-mainnet.g.alchemy.com/public',
-  'https://worldchain-mainnet.public.blastapi.io',
+  'https://480.rpc.thirdweb.com',
+  'https://worldchain-mainnet.gateway.tenderly.co',
+  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro',
   'https://worldchain.drpc.org',
-  'https://worldchain.rpc.hypersync.xyz/',
-  'https://worldchain-mainnet.gateway.tenderly.co/',
-  'https://480.rpc.thirdweb.com/',
+  'https://worldchain-mainnet.public.blastapi.io',
+  'https://worldchain.rpc.hypersync.xyz',
   'https://worldchain.blockpi.network/v1/rpc/public',
   'https://worldchain-mainnet.diamondswap.org/rpc',
   'https://worldchain-mainnet.publicnode.com',

@@ -774,6 +774,20 @@ export function useContract(): UseContractReturn {
 
   const getVerificationMultipliers = useCallback(async (): Promise<VerificationMultipliers> => {
     try {
+      // Check RPC health status first
+      const healthStatus = await rpcManager.getHealthStatus()
+      const healthyEndpoints = healthStatus.endpoints.filter(ep => ep.isHealthy)
+      
+      if (healthyEndpoints.length === 0) {
+        console.warn('⚠️ No healthy RPC endpoints available, using fallback verification multipliers')
+        return {
+          orbPlusMultiplier: 150, // 150% (50% bonus)
+          orbMultiplier: 130, // 130% (30% bonus)
+          secureDocumentMultiplier: 120, // 120% (20% bonus)
+          documentMultiplier: 110 // 110% (10% bonus)
+        }
+      }
+      
       const result = await rpcManager.readContract({
         address: GAME_CONTRACT_ADDRESS,
         abi: GAME_CONTRACT_ABI,
@@ -787,12 +801,43 @@ export function useContract(): UseContractReturn {
         documentMultiplier: Number(result.documentMultiplier)
       }
     } catch (err) {
-      throw new Error(`Failed to get verification multipliers: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      
+      // Check if it's a network-related error
+      if (errorMessage.includes('HTTP request failed') || 
+          errorMessage.includes('Failed to fetch') || 
+          errorMessage.includes('Load failed') ||
+          errorMessage.includes('network')) {
+        console.warn('⚠️ Network error detected, using fallback verification multipliers:', errorMessage)
+        return {
+          orbPlusMultiplier: 150, // 150% (50% bonus)
+          orbMultiplier: 130, // 130% (30% bonus)
+          secureDocumentMultiplier: 120, // 120% (20% bonus)
+          documentMultiplier: 110 // 110% (10% bonus)
+        }
+      }
+      
+      // For other errors, still throw to maintain error visibility
+      throw new Error(`Failed to get verification multipliers: ${errorMessage}`)
     }
   }, [])
 
   const getContractStats = useCallback(async (): Promise<ContractStats> => {
     try {
+      // Check RPC health status first
+      const healthStatus = await rpcManager.getHealthStatus()
+      const healthyEndpoints = healthStatus.endpoints.filter(ep => ep.isHealthy)
+      
+      if (healthyEndpoints.length === 0) {
+        console.warn('⚠️ No healthy RPC endpoints available, using fallback contract stats')
+        return {
+          totalGames: 0,
+          totalPlayers: 0,
+          maxSupply: 1000000000 * 10**18, // 1 billion tokens
+          isPaused: false
+        }
+      }
+      
       const result = await rpcManager.readContract({
         address: GAME_CONTRACT_ADDRESS,
         abi: GAME_CONTRACT_ABI,
@@ -806,7 +851,24 @@ export function useContract(): UseContractReturn {
         isPaused: result.isPaused
       }
     } catch (err) {
-      throw new Error(`Failed to get contract stats: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      
+      // Check if it's a network-related error
+      if (errorMessage.includes('HTTP request failed') || 
+          errorMessage.includes('Failed to fetch') || 
+          errorMessage.includes('Load failed') ||
+          errorMessage.includes('network')) {
+        console.warn('⚠️ Network error detected, using fallback contract stats:', errorMessage)
+        return {
+          totalGames: 0,
+          totalPlayers: 0,
+          maxSupply: 1000000000 * 10**18, // 1 billion tokens
+          isPaused: false
+        }
+      }
+      
+      // For other errors, still throw to maintain error visibility
+      throw new Error(`Failed to get contract stats: ${errorMessage}`)
     }
   }, [])
 
