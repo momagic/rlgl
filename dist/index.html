@@ -34,10 +34,36 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <title>Red Light Green Light: Tap to Survive!</title>
-    <script type="module" crossorigin src="/assets/index-CLg4-O3w.js"></script>
+    <script type="module" crossorigin src="/assets/index-DFUc6xLB.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-cdTO85wB.css">
   </head>
   <body>
     <div id="root"></div>
+    
+    <!-- Eruda Debug Console - Load from CDN if enabled via env var -->
+    <script>
+      // Check for Eruda enablement via meta tag or global variable
+      (function() {
+        // Check if Eruda should be enabled
+        const enableEruda = document.querySelector('meta[name="enable-eruda"]')?.content === 'true' ||
+                           window.VITE_ENABLE_ERUDA === true ||
+                           window.VITE_ENABLE_ERUDA === 'true';
+        
+        if (enableEruda) {
+          console.log('🚀 Loading Eruda from CDN...');
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/eruda@3.4.1/eruda.min.js';
+          script.onload = function() {
+            eruda.init();
+            console.log('🔧 Eruda debugging tools enabled via CDN');
+          };
+          script.onerror = function() {
+            console.error('Failed to load Eruda from CDN');
+          };
+          document.head.appendChild(script);
+        }
+      })();
+    </script>
+    
   </body>
 </html>

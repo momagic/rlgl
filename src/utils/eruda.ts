@@ -1,10 +1,19 @@
 /**
- * Conditionally loads Eruda debugging tools in production
- * Controlled by VERCEL_ENV and ENABLE_ERUDA environment variables
+ * Conditionally loads Eruda debugging tools
+ * Controlled by VITE_ENABLE_ERUDA environment variable
  */
 export function initEruda() {
-  // Load Eruda when explicitly enabled via environment variable
-  const enableEruda = import.meta.env.VITE_ENABLE_ERUDA === 'true'
+  // Check multiple possible environment variable sources
+  const enableEruda = import.meta.env.VITE_ENABLE_ERUDA === 'true' || 
+                     (typeof window !== 'undefined' && (window as any).VITE_ENABLE_ERUDA === 'true') ||
+                     (typeof process !== 'undefined' && process.env.VITE_ENABLE_ERUDA === 'true')
+  
+  console.log('Eruda check:', { 
+    viteEnv: import.meta.env.VITE_ENABLE_ERUDA,
+    enableEruda,
+    mode: import.meta.env.MODE,
+    prod: import.meta.env.PROD
+  })
   
   if (enableEruda) {
     import('eruda').then((eruda) => {

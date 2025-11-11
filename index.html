@@ -37,6 +37,32 @@
   </head>
   <body>
     <div id="root"></div>
+    
+    <!-- Eruda Debug Console - Load from CDN if enabled via env var -->
+    <script>
+      // Check for Eruda enablement via meta tag or global variable
+      (function() {
+        // Check if Eruda should be enabled
+        const enableEruda = document.querySelector('meta[name="enable-eruda"]')?.content === 'true' ||
+                           window.VITE_ENABLE_ERUDA === true ||
+                           window.VITE_ENABLE_ERUDA === 'true';
+        
+        if (enableEruda) {
+          console.log('🚀 Loading Eruda from CDN...');
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/eruda@3.4.1/eruda.min.js';
+          script.onload = function() {
+            eruda.init();
+            console.log('🔧 Eruda debugging tools enabled via CDN');
+          };
+          script.onerror = function() {
+            console.error('Failed to load Eruda from CDN');
+          };
+          document.head.appendChild(script);
+        }
+      })();
+    </script>
+    
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

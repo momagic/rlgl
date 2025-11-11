@@ -7,7 +7,7 @@
     "dev": "concurrently \"pnpm run dev:api\" \"pnpm run dev:client\"",
     "dev:api": "node dev-server.js",
     "dev:client": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/build-with-eruda.cjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "compile": "npx hardhat compile",
