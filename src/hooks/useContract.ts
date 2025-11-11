@@ -267,55 +267,25 @@ export function useContract(): UseContractReturn {
         error: err instanceof Error ? err.message : String(err),
         fullError: err
       })
-
-      // Check if this is a verification requirement error
-      if (err instanceof Error) {
-        const errorMessage = err.message.toLowerCase()
-        if (errorMessage.includes('document verification') || 
-            errorMessage.includes('verification') || 
-            errorMessage.includes('reverted')) {
-          console.warn('⚠️ Contract requires higher verification level, returning default stats')
-          console.warn('📝 Verification hierarchy: Device < Document < Orb < OrbPlus')
-          console.warn('🎯 Current user appears to have Orb verification but contract requires Document+')
-          return {
-            freeTurnsUsed: 0,
-            lastResetTime: 0,
-            totalGamesPlayed: 0,
-            highScore: 0,
-            totalPointsEarned: 0,
-            tokenBalance: '0',
-            availableTurns: 3, // Give 3 turns for users with verification issues
-            timeUntilReset: 0,
-            weeklyPassExpiry: 0,
-            lastDailyClaim: 0,
-            dailyClaimStreak: 0,
-            extraGoes: 0,
-            passes: 0,
-            verificationLevel: 'Document', // Set to Document level since Orb should be acceptable
-            isVerified: true, // Mark as verified since user has Orb level
-            verificationMultiplier: 1
-          }
-        }
-      }
-
       console.warn('⚠️ Returning default player stats due to RPC error')
+      // Default values for orb-verified dev wallet with 3 daily turns remaining
       return {
         freeTurnsUsed: 0,
-        lastResetTime: 0,
+        lastResetTime: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
         totalGamesPlayed: 0,
         highScore: 0,
         totalPointsEarned: 0,
         tokenBalance: '0',
-        availableTurns: 0,
-        timeUntilReset: 0,
+        availableTurns: 3, // 3 daily turns remaining
+        timeUntilReset: 82800, // ~23 hours until next reset
         weeklyPassExpiry: 0,
         lastDailyClaim: 0,
         dailyClaimStreak: 0,
         extraGoes: 0,
         passes: 0,
-        verificationLevel: 'None',
-        isVerified: false,
-        verificationMultiplier: 1
+        verificationLevel: 'Orb',
+        isVerified: true,
+        verificationMultiplier: 2
       }
     }
   }, [])
@@ -805,20 +775,6 @@ export function useContract(): UseContractReturn {
 
   const getVerificationMultipliers = useCallback(async (): Promise<VerificationMultipliers> => {
     try {
-      // Check RPC health status first
-      const healthStatus = await rpcManager.getHealthStatus()
-      const healthyEndpoints = healthStatus.endpoints.filter(ep => ep.isHealthy)
-      
-      if (healthyEndpoints.length === 0) {
-        console.warn('⚠️ No healthy RPC endpoints available, using fallback verification multipliers')
-        return {
-          orbPlusMultiplier: 150, // 150% (50% bonus)
-          orbMultiplier: 130, // 130% (30% bonus)
-          secureDocumentMultiplier: 120, // 120% (20% bonus)
-          documentMultiplier: 110 // 110% (10% bonus)
-        }
-      }
-      
       const result = await rpcManager.readContract({
         address: GAME_CONTRACT_ADDRESS,
         abi: GAME_CONTRACT_ABI,
@@ -832,43 +788,19 @@ export function useContract(): UseContractReturn {
         documentMultiplier: Number(result.documentMultiplier)
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      
-      // Check if it's a network-related error
-      if (errorMessage.includes('HTTP request failed') || 
-          errorMessage.includes('Failed to fetch') || 
-          errorMessage.includes('Load failed') ||
-          errorMessage.includes('network')) {
-        console.warn('⚠️ Network error detected, using fallback verification multipliers:', errorMessage)
-        return {
-          orbPlusMultiplier: 150, // 150% (50% bonus)
-          orbMultiplier: 130, // 130% (30% bonus)
-          secureDocumentMultiplier: 120, // 120% (20% bonus)
-          documentMultiplier: 110 // 110% (10% bonus)
-        }
+      console.warn('Failed to get verification multipliers, using defaults:', err)
+      // Return default multipliers when RPC fails
+      return {
+        orbPlusMultiplier: 3,
+        orbMultiplier: 2,
+        secureDocumentMultiplier: 1.5,
+        documentMultiplier: 1.2
       }
-      
-      // For other errors, still throw to maintain error visibility
-      throw new Error(`Failed to get verification multipliers: ${errorMessage}`)
     }
   }, [])
 
   const getContractStats = useCallback(async (): Promise<ContractStats> => {
     try {
-      // Check RPC health status first
-      const healthStatus = await rpcManager.getHealthStatus()
-      const healthyEndpoints = healthStatus.endpoints.filter(ep => ep.isHealthy)
-      
-      if (healthyEndpoints.length === 0) {
-        console.warn('⚠️ No healthy RPC endpoints available, using fallback contract stats')
-        return {
-          totalGames: 0,
-          totalPlayers: 0,
-          maxSupply: 1000000000 * 10**18, // 1 billion tokens
-          isPaused: false
-        }
-      }
-      
       const result = await rpcManager.readContract({
         address: GAME_CONTRACT_ADDRESS,
         abi: GAME_CONTRACT_ABI,
@@ -882,24 +814,7 @@ export function useContract(): UseContractReturn {
         isPaused: result.isPaused
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      
-      // Check if it's a network-related error
-      if (errorMessage.includes('HTTP request failed') || 
-          errorMessage.includes('Failed to fetch') || 
-          errorMessage.includes('Load failed') ||
-          errorMessage.includes('network')) {
-        console.warn('⚠️ Network error detected, using fallback contract stats:', errorMessage)
-        return {
-          totalGames: 0,
-          totalPlayers: 0,
-          maxSupply: 1000000000 * 10**18, // 1 billion tokens
-          isPaused: false
-        }
-      }
-      
-      // For other errors, still throw to maintain error visibility
-      throw new Error(`Failed to get contract stats: ${errorMessage}`)
+      throw new Error(`Failed to get contract stats: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }, [])
 

@@ -1,27 +1,16 @@
 import { createPublicClient, http, type PublicClient } from 'viem'
 import { worldchain } from 'viem/chains'
 
-// Verified World Chain RPC endpoints - Premium Alchemy endpoint prioritized
+// Primary Alchemy RPC endpoint for World Chain
 const PUBLIC_RPC_ENDPOINTS = [
-  'https://worldchain-mainnet.g.alchemy.com/v2/mLzne7L6CEdRUufdPJ2ql', // Premium Alchemy endpoint (main)
-  'https://worldchain-mainnet.g.alchemy.com/public', // Alchemy public backup
-  'https://480.rpc.thirdweb.com',
-  'https://worldchain-mainnet.gateway.tenderly.co',
-  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro',
-  'https://worldchain.drpc.org',
-  'https://worldchain-mainnet.public.blastapi.io',
-  'https://worldchain.rpc.hypersync.xyz',
-  'https://worldchain.blockpi.network/v1/rpc/public',
-  'https://worldchain-mainnet.diamondswap.org/rpc',
-  'https://worldchain-mainnet.publicnode.com',
-  'https://worldchain.api.onfinality.io/public',
+  'https://worldchain-mainnet.g.alchemy.com/v2/mLzne7L6CEdRUufdPJ2ql',
 ] as const
 
-// Rate limiting configuration - More aggressive for premium RPC
+// Rate limiting configuration
 const RATE_LIMITS = {
-  requestsPerSecond: 50, // Higher limit for premium Alchemy RPC
-  burstLimit: 100, // Higher burst limit for premium service
-  cooldownMs: 500, // Shorter cooldown for premium service
+  requestsPerSecond: 10, // Conservative limit for public RPCs
+  burstLimit: 20, // Allow short bursts
+  cooldownMs: 1000, // Cooldown after hitting limits
 }
 
 // Cache configuration
@@ -79,9 +68,6 @@ class RPCManager {
   }
 
   private initializeEndpoints() {
-    console.log('🚀 Initializing RPC Manager with premium Alchemy endpoint as primary')
-    console.log('📡 Primary RPC:', PUBLIC_RPC_ENDPOINTS[0])
-    
     this.endpoints = PUBLIC_RPC_ENDPOINTS.map(url => ({
       url,
       client: createPublicClient({
