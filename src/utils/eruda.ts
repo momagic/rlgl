@@ -3,11 +3,10 @@
  * Controlled by VERCEL_ENV and ENABLE_ERUDA environment variables
  */
 export function initEruda() {
-  // Only load Eruda in production when explicitly enabled
-  const isProduction = import.meta.env.PROD
+  // Load Eruda when explicitly enabled via environment variable
   const enableEruda = import.meta.env.VITE_ENABLE_ERUDA === 'true'
   
-  if (isProduction && enableEruda) {
+  if (enableEruda) {
     import('eruda').then((eruda) => {
       eruda.default.init()
       console.log('🔧 Eruda debugging tools enabled')

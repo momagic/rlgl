@@ -23,8 +23,8 @@ VITE_ENABLE_ERUDA=true
 
 ### 3. How It Works
 
-- Eruda is only loaded in production builds (`import.meta.env.PROD`)
-- It's controlled by the `VITE_ENABLE_ERUDA` environment variable
+- Eruda is loaded when the `VITE_ENABLE_ERUDA` environment variable is set to `true`
+- It works in both development and production environments
 - When enabled, Eruda will automatically initialize and show a floating debug button
 - The debug tools include console, elements, network, resources, info, and more
 
