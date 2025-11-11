@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  world-id-api:
+    build: .
+    container_name: world-id-verification-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Required Configuration
+      - WORLD_ID_APP_ID=${WORLD_ID_APP_ID}
+      - WORLD_ID_ACTION_ID=${WORLD_ID_ACTION_ID:-play-game}
+      - RPC_URL=${RPC_URL:-https://worldchain-mainnet.g.alchemy.com/public}
+      - GAME_CONTRACT_ADDRESS=${GAME_CONTRACT_ADDRESS}
+      - AUTHORIZED_SUBMITTER_PRIVATE_KEY=${AUTHORIZED_SUBMITTER_PRIVATE_KEY}
+      
+      # API Configuration
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3000}
+      
+      # Cache Configuration
+      - CACHE_TTL_MINUTES=${CACHE_TTL_MINUTES:-5}
+      
+      # Rate Limiting
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-900000}
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100}
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.world-id-api.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.world-id-api.entrypoints=websecure"
+      - "traefik.http.routers.world-id-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.world-id-api.loadbalancer.server.port=3000"
+    networks:
+      - world-id-network
+
+  # Optional: Redis for shared caching (if scaling)
+  redis:
+    image: redis:7-alpine
+    container_name: world-id-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - world-id-network
+    profiles:
+      - with-redis
+
+networks:
+  world-id-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

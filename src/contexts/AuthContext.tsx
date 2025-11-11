@@ -6,6 +6,7 @@ import type { AuthContextType, WorldIDUser } from '../types/auth'
 import { useHapticFeedback } from '../hooks/useHapticFeedback'
 import { generateSecureId } from '../utils/secureRandomness'
 import { InputSanitizer } from '../utils/inputSanitizer'
+import { worldIDVerificationService } from '../services/worldIDVerification'
 
 // Constants for localStorage keys and session management
 const AUTH_STORAGE_KEY = 'worldid_auth_session'
@@ -168,18 +169,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return
       }
       
-      // Trust MiniKit's verification - MiniKit handles the verification level hierarchy
-      // If user is Orb-verified, MiniKit will accept Document verification requests
+      // Create the World ID user object
       const worldIDUser: WorldIDUser = {
         nullifierHash: finalPayload.nullifier_hash,
         verificationLevel: finalPayload.verification_level,
         verified: true
       }
+      
+      // Submit verification to backend API for on-chain submission
+      try {
+        console.log('🔄 Submitting verification to backend API...')
+        const verificationResult = await worldIDVerificationService.submitVerification(
+          finalPayload,
+          worldIDUser.walletAddress || '', // Will be empty for now, will be filled after wallet auth
+          true // Submit on-chain
+        )
+        
+        console.log('✅ On-chain verification submitted:', {
+          transactionHash: verificationResult.onChainSubmission?.transactionHash,
+          verificationLevel: verificationResult.verificationLevel
+        })
+        
+        // Update user with on-chain confirmation
+        worldIDUser.onChainVerified = true
+        worldIDUser.onChainVerificationLevel = verificationResult.verificationLevel
+        
+      } catch (apiError) {
+        console.warn('⚠️ Backend API submission failed, using local verification only:', apiError)
+        // Still allow local verification if API fails
+        worldIDUser.onChainVerified = false
+      }
+      
       setUser(worldIDUser)
       saveSession(worldIDUser) // Persist the session
       haptics.verificationSuccess()
       
     } catch (error) {
+      console.error('❌ Verification failed:', error)
       haptics.verificationError()
     } finally {
       setIsLoading(false)

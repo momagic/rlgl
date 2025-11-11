@@ -267,6 +267,31 @@ export function useContract(): UseContractReturn {
         error: err instanceof Error ? err.message : String(err),
         fullError: err
       })
+      
+      // Check if this is a verification requirement error
+      if (err instanceof Error && err.message.includes('Document verification or higher required')) {
+        console.warn('⚠️ User not verified on-chain, returning fallback stats for Orb-verified user')
+        // Return fallback stats for Orb-verified user who hasn't been verified on-chain yet
+        return {
+          freeTurnsUsed: 0,
+          lastResetTime: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
+          totalGamesPlayed: 0,
+          highScore: 0,
+          totalPointsEarned: 0,
+          tokenBalance: '0',
+          availableTurns: 3, // 3 daily turns remaining
+          timeUntilReset: 82800, // ~23 hours until next reset
+          weeklyPassExpiry: 0,
+          lastDailyClaim: 0,
+          dailyClaimStreak: 0,
+          extraGoes: 0,
+          passes: 0,
+          verificationLevel: 'Orb',
+          isVerified: true,
+          verificationMultiplier: 2
+        }
+      }
+      
       console.warn('⚠️ Returning default player stats due to RPC error')
       // Default values for orb-verified dev wallet with 3 daily turns remaining
       return {

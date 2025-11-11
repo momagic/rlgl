@@ -1,0 +1,191 @@
+# Cloudify Blueprint for World ID Verification API
+# This blueprint deploys the World ID Verification API on a VPS with Cloudify
+
+tosca_definitions_version: cloudify_dsl_1_4
+
+description: >
+  World ID Verification API deployment on VPS with Cloudify
+  This blueprint sets up the API service with systemd, nginx, and monitoring
+
+imports:
+  - cloudify/types/types.yaml
+  - plugin:cloudify-fabric-plugin
+  - plugin:cloudify-utilities-plugin
+
+inputs:
+  # Server Configuration
+  server_ip:
+    type: string
+    description: IP address of the VPS server
+    default: ""
+  
+  server_user:
+    type: string
+    description: SSH user for the server
+    default: "root"
+  
+  server_key_path:
+    type: string
+    description: Path to SSH private key
+    default: "~/.ssh/id_rsa"
+  
+  # API Configuration
+  world_id_app_id:
+    type: string
+    description: World ID App ID
+    default: ""
+  
+  world_id_action_id:
+    type: string
+    description: World ID Action ID
+    default: "play-game"
+  
+  rpc_url:
+    type: string
+    description: RPC URL for blockchain
+    default: "https://worldchain-mainnet.g.alchemy.com/public"
+  
+  game_contract_address:
+    type: string
+    description: Game contract address
+    default: ""
+  
+  authorized_submitter_private_key:
+    type: string
+    description: Private key for authorized submitter
+    default: ""
+  
+  # Service Configuration
+  api_port:
+    type: integer
+    description: Port for the API service
+    default: 3000
+  
+  cache_ttl_minutes:
+    type: integer
+    description: Cache TTL in minutes
+    default: 5
+  
+  # Domain Configuration (optional)
+  domain:
+    type: string
+    description: Domain name for the API
+    default: ""
+  
+  enable_ssl:
+    type: boolean
+    description: Enable SSL with Let's Encrypt
+    default: false
+
+node_types:
+  cloudify.nodes.WorldIDAPI:
+    derived_from: cloudify.nodes.WebServer
+    properties:
+      world_id_app_id:
+        type: string
+      world_id_action_id:
+        type: string
+      rpc_url:
+        type: string
+      game_contract_address:
+        type: string
+      authorized_submitter_private_key:
+        type: string
+      api_port:
+        type: integer
+      cache_ttl_minutes:
+        type: integer
+      domain:
+        type: string
+      enable_ssl:
+        type: boolean
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/install.sh
+        configure:
+          implementation: scripts/configure.sh
+        start:
+          implementation: scripts/start.sh
+        stop:
+          implementation: scripts/stop.sh
+        delete:
+          implementation: scripts/uninstall.sh
+
+node_templates:
+  # Virtual Machine
+  vps_server:
+    type: cloudify.nodes.Compute
+    properties:
+      ip: { get_input: server_ip }
+      agent_config:
+        install_method: none
+      ssh_keys:
+        - { get_input: server_key_path }
+      user: { get_input: server_user }
+
+  # World ID API Service
+  world_id_api:
+    type: cloudify.nodes.WorldIDAPI
+    properties:
+      world_id_app_id: { get_input: world_id_app_id }
+      world_id_action_id: { get_input: world_id_action_id }
+      rpc_url: { get_input: rpc_url }
+      game_contract_address: { get_input: game_contract_address }
+      authorized_submitter_private_key: { get_input: authorized_submitter_private_key }
+      api_port: { get_input: api_port }
+      cache_ttl_minutes: { get_input: cache_ttl_minutes }
+      domain: { get_input: domain }
+      enable_ssl: { get_input: enable_ssl }
+    relationships:
+      - type: cloudify.relationships.contained_in
+        target: vps_server
+
+  # Monitoring
+  api_monitoring:
+    type: cloudify.nodes.MonitoredService
+    properties:
+      service_name: "world-id-api"
+      port: { get_input: api_port }
+      path: "/health"
+      expected_response: "healthy"
+      check_interval: 60
+    relationships:
+      - type: cloudify.relationships.contained_in
+        target: vps_server
+
+outputs:
+  api_endpoint:
+    description: API endpoint URL
+    value: { concat: ["http://", { get_input: server_ip }, ":", { get_input: api_port }] }
+  
+  health_check_url:
+    description: Health check URL
+    value: { concat: ["http://", { get_input: server_ip }, ":", { get_input: api_port }, "/health"] }
+  
+  monitoring_dashboard:
+    description: Monitoring dashboard URL
+    value: { concat: ["http://", { get_input: server_ip }, ":3000/dashboard"] }
+
+workflows:
+  # Custom workflow for updating configuration
+  update_config:
+    mapping: scripts/update_config.py
+    parameters:
+      world_id_app_id:
+        type: string
+        default: ""
+      authorized_submitter_private_key:
+        type: string
+        default: ""
+      game_contract_address:
+        type: string
+        default: ""
+
+  # Custom workflow for health check
+  health_check:
+    mapping: scripts/health_check.py
+    parameters:
+      timeout:
+        type: integer
+        default: 30

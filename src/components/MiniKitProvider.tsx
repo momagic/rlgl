@@ -11,7 +11,7 @@ interface MiniKitProviderProps {
 export function MiniKitProvider({ children }: MiniKitProviderProps) {
   useEffect(() => {
     // Initialize MiniKit with our app ID
-    MiniKit.install('app_f11a49a98aab37a10e7dcfd20139f605')
+    MiniKit.install('app_29198ecfe21e2928536961a63cc85606')
   }, [])
 
   return <>{children}</>

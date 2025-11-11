@@ -8,6 +8,8 @@ export interface WorldIDUser {
   username?: string
   profilePictureUrl?: string
   walletAuthenticated?: boolean
+  onChainVerified?: boolean
+  onChainVerificationLevel?: string
 }
 
 export interface AuthContextType {
