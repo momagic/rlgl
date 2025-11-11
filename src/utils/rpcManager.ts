@@ -9,6 +9,10 @@ const PUBLIC_RPC_ENDPOINTS = [
   'https://worldchain.rpc.hypersync.xyz/',
   'https://worldchain-mainnet.gateway.tenderly.co/',
   'https://480.rpc.thirdweb.com/',
+  'https://worldchain.blockpi.network/v1/rpc/public',
+  'https://worldchain-mainnet.diamondswap.org/rpc',
+  'https://worldchain-mainnet.publicnode.com',
+  'https://worldchain.api.onfinality.io/public',
 ] as const
 
 // Rate limiting configuration
@@ -176,6 +180,13 @@ class RPCManager {
       } catch (error) {
         lastError = error as Error
         
+        // Log detailed error information for debugging
+        console.warn(`RPC request attempt ${attempt + 1} failed:`, {
+          error: error instanceof Error ? error.message : String(error),
+          attempt: attempt + 1,
+          maxRetries: RETRY_CONFIG.maxRetries
+        })
+        
         if (attempt < RETRY_CONFIG.maxRetries) {
           const delay = Math.min(
             RETRY_CONFIG.baseDelayMs * Math.pow(RETRY_CONFIG.backoffMultiplier, attempt),
@@ -329,8 +340,35 @@ class RPCManager {
     return this.request<bigint>('getBlockNumber', [], CACHE_CONFIG.blockNumberTTL)
   }
 
-  async readContract(params: any): Promise<any> {
-    return this.request('readContract', [params], CACHE_CONFIG.contractDataTTL)
+  async readContract(config: any): Promise<any> {
+    return this.executeWithRetry(async () => {
+      const endpoint = this.getNextHealthyEndpoint()
+      if (!endpoint) throw new Error('No healthy RPC endpoints available')
+
+      console.log('📖 Contract read attempt:', {
+        address: config.address,
+        functionName: config.functionName,
+        args: config.args,
+        abiFunction: config.abi?.find((item: any) => item.name === config.functionName)?.name
+      })
+
+      try {
+        const result = await endpoint.client.readContract(config)
+        console.log('✅ Contract read success:', {
+          functionName: config.functionName,
+          result
+        })
+        return result
+      } catch (error) {
+        console.error('❌ Contract read failed:', {
+          functionName: config.functionName,
+          address: config.address,
+          args: config.args,
+          error: error instanceof Error ? error.message : String(error)
+        })
+        throw error
+      }
+    })
   }
 
   async multicall(params: any): Promise<any> {

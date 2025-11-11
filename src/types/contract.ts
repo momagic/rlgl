@@ -729,6 +729,17 @@ export const GAME_CONTRACT_ABI = [
 ] as const
 
 // Contract configuration for different networks
+// WLD Token ABI for balance checks
+export const WLD_TOKEN_ABI = [
+  {
+    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
+    "name": "balanceOf",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const
+
 export const CONTRACT_CONFIG = {
   worldchain: {
     gameContract: '0x0b0Df717B5A83DA0451d537e75c7Ab091ac1e6Aa', // V3 Contract with migration support
