@@ -1,12 +1,22 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { GameData, GameState, LightState, PlayerStats, GameConfig, PowerUpState, GameMode, PowerUp, WhackLight } from '../types/game'
-import type { UseTurnManagerReturn } from '../types/contract'
+import type { GameData, GameState, LightState, PlayerStats, GameConfig, PowerUpState, GameMode as GameGameMode, PowerUp, WhackLight } from '../types/game'
+import type { UseTurnManagerReturn, GameMode as ContractGameMode } from '../types/contract'
 import { useSoundEffects } from './useSoundEffects'
 import { useContract } from './useContract'
 import { useHapticFeedback } from './useHapticFeedback'
 import { usePowerUps } from './usePowerUps'
 import { GameRandomness } from '../utils/secureRandomness'
 import { InputSanitizer } from '../utils/inputSanitizer'
+
+// Helper function to convert game GameMode to contract GameMode
+const mapGameModeToContract = (gameMode: GameGameMode): ContractGameMode => {
+  switch (gameMode) {
+    case 'classic': return 'Classic'
+    case 'arcade': return 'Arcade'
+    case 'whack': return 'WhackLight'
+    default: return 'Classic'
+  }
+}
 
 const DEFAULT_CONFIG: GameConfig = {
   initialLives: 3,
@@ -65,7 +75,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
     gameSpeedMultiplier: 1,
     hasShield: false,
     scoreMultiplier: 1,
-    gameMode: 'arcade' as GameMode,
+    gameMode: 'arcade' as GameGameMode,
     tapToActivatePowerUp: (_powerUp: PowerUp) => {}, // Will be set properly below
     removePowerUp: (_powerUpId: string) => {}, // Will be set properly below
     // Whack-a-Light specific state
@@ -164,7 +174,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
   }, [getWhackIntervals])
 
   // Start a new game
-  const startGame = useCallback(async (gameMode: GameMode = 'arcade') => {
+  const startGame = useCallback(async (gameMode: GameGameMode = 'arcade') => {
     try {
       // Check if player has available turns or an active weekly pass
       if (!turnManager.turnStatus || (!turnManager.turnStatus.hasActiveWeeklyPass && turnManager.turnStatus.availableTurns <= 0)) {
@@ -286,7 +296,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             
             // Only submit score to contract if score is greater than 0
             if (finalScore > 0) {
-              contract.submitScore(finalScore, finalRound).then(submission => {
+              contract.submitScore(finalScore, finalRound, mapGameModeToContract(gameData.gameMode)).then(submission => {
                 // Update game state with successful transaction
                 setGameData(currentData => ({
                   ...currentData,
@@ -567,7 +577,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                     
                     // Only submit score to contract if score is greater than 0
                     if (finalScore > 0) {
-                      contract.submitScore(finalScore, finalRound).then(submission => {
+                      contract.submitScore(finalScore, finalRound, mapGameModeToContract(gameData.gameMode)).then(submission => {
                         // Update game state with successful transaction
                         setGameData(currentData => ({
                           ...currentData,
@@ -676,7 +686,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                     
                     // Only submit score to contract if score is greater than 0
                     if (finalScore > 0) {
-                      contract.submitScore(finalScore, finalRound).then(submission => {
+                      contract.submitScore(finalScore, finalRound, mapGameModeToContract(gameData.gameMode)).then(submission => {
                         // Update game state with successful transaction
                         setGameData(currentData => ({
                           ...currentData,
@@ -876,7 +886,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
           const finalScore = current.playerStats.currentScore
           const finalRound = current.playerStats.round
           if (finalScore > 0) {
-            contract.submitScore(finalScore, finalRound).then(submission => {
+            contract.submitScore(finalScore, finalRound, mapGameModeToContract(gameData.gameMode)).then(submission => {
               setGameData(prev => ({
                 ...prev,
                 tokenReward: {
@@ -960,7 +970,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
           const finalScore = newStats.currentScore
           const finalRound = newStats.round
           if (finalScore > 0) {
-            contract.submitScore(finalScore, finalRound).then(submission => {
+            contract.submitScore(finalScore, finalRound, mapGameModeToContract(gameData.gameMode)).then(submission => {
               setGameData(currentData => ({
                 ...currentData,
                 tokenReward: {

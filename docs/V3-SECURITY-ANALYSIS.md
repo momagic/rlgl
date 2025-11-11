@@ -70,7 +70,7 @@ modifier onlyAuthorizedSubmitter() {
 function purchaseAdditionalTurns() external nonReentrant whenNotPaused
 function purchaseWeeklyPass() external nonReentrant whenNotPaused
 function claimDailyReward() external nonReentrant whenNotPaused
-function migrateTokens() external nonReentrant
+
 ```
 
 **Security Assessment**: ✅ **SECURE**
@@ -135,16 +135,16 @@ require(totalSupply() + tokensToMint <= MAX_SUPPLY, "Would exceed max supply");
 - Prevents infinite inflation
 - Clear supply constraints
 
-#### Migration Safety
+#### localStorage Import Safety
 ```solidity
-require(!players[msg.sender].hasMigratedTokens, "Already migrated");
-require(v1Balance > 0 || v2Balance > 0, "No tokens to migrate");
+require(extraGoes <= MAX_LOCAL_STORAGE_VALUE, "Extra goes too high");
+require(passes <= MAX_LOCAL_STORAGE_VALUE, "Passes too high");
 ```
 
 **Security Assessment**: ✅ **SECURE**
-- One-time migration per user
-- Prevents double migration
-- Validates migration requirements
+- Bounded import values
+- Prevents excessive imports
+- Validates import requirements
 
 ### 5. Game Logic Security
 

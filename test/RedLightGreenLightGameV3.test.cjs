@@ -20,7 +20,8 @@ describe("RedLightGreenLightGameV3", function () {
 
     const GAME_MODES = {
         Classic: 0,
-        Arcade: 1
+        Arcade: 1,
+        WhackLight: 2
     };
 
     const VERIFICATION_LEVELS = {
@@ -38,19 +39,13 @@ describe("RedLightGreenLightGameV3", function () {
 
         // Deploy mock tokens
         MockWLDToken = await ethers.getContractFactory("MockERC20");
-        MockRLGLTokenV1 = await ethers.getContractFactory("MockERC20");
-        MockRLGLTokenV2 = await ethers.getContractFactory("MockERC20");
 
         wldToken = await MockWLDToken.deploy("Worldcoin", "WLD");
-        rlglTokenV1 = await MockRLGLTokenV1.deploy("RLGL V1", "RLGL");
-        rlglTokenV2 = await MockRLGLTokenV2.deploy("RLGL V2", "RLGL");
 
         // Deploy V3 game contract
         RedLightGreenLightGameV3 = await ethers.getContractFactory("RedLightGreenLightGameV3");
         v3Game = await RedLightGreenLightGameV3.deploy(
             await wldToken.getAddress(),
-            await rlglTokenV1.getAddress(),
-            await rlglTokenV2.getAddress(),
             owner.address // Developer wallet (using owner for testing)
         );
 
@@ -66,10 +61,6 @@ describe("RedLightGreenLightGameV3", function () {
         await wldToken.mint(player1.address, ethers.parseEther("100"));
         await wldToken.mint(player2.address, ethers.parseEther("100"));
         await wldToken.mint(player3.address, ethers.parseEther("100"));
-
-        // Mint some RLGL tokens to V1 and V2 contracts for migration testing
-        await rlglTokenV1.mint(player1.address, ethers.parseEther("1000"));
-        await rlglTokenV2.mint(player1.address, ethers.parseEther("500"));
     });
 
     describe("Deployment", function () {
@@ -78,8 +69,6 @@ describe("RedLightGreenLightGameV3", function () {
             expect(await v3Game.symbol()).to.equal("RLGL");
             expect(await v3Game.owner()).to.equal(owner.address);
             expect(await v3Game.wldToken()).to.equal(await wldToken.getAddress());
-            expect(await v3Game.rlglTokenV1()).to.equal(await rlglTokenV1.getAddress());
-            expect(await v3Game.rlglTokenV2()).to.equal(await rlglTokenV2.getAddress());
         });
 
         it("Should have correct default pricing", async function () {
@@ -108,8 +97,6 @@ describe("RedLightGreenLightGameV3", function () {
             try {
                 await RedLightGreenLightGameV3.deploy(
                     await wldToken.getAddress(),
-                    await rlglTokenV1.getAddress(),
-                    await rlglTokenV2.getAddress(),
                     "0x0000000000000000000000000000000000000000"
                 );
                 expect.fail("Should have reverted");
@@ -290,38 +277,7 @@ describe("RedLightGreenLightGameV3", function () {
         });
     });
 
-    describe("Token Migration", function () {
-        beforeEach(async function () {
-                    // Approve V3 contract to spend V1 and V2 tokens
-        await rlglTokenV1.connect(player1).approve(await v3Game.getAddress(), ethers.parseEther("1000"));
-        await rlglTokenV2.connect(player1).approve(await v3Game.getAddress(), ethers.parseEther("500"));
-        });
 
-        it("Should migrate tokens from V1 and V2", async function () {
-            const initialV3Balance = await v3Game.balanceOf(player1.address);
-            
-            await v3Game.connect(player1).migrateTokens();
-            
-            const finalV3Balance = await v3Game.balanceOf(player1.address);
-            const migrated = finalV3Balance - initialV3Balance;
-            
-            expect(migrated).to.equal(ethers.parseEther("1500")); // 1000 + 500
-        });
-
-        it("Should not allow double migration", async function () {
-            await v3Game.connect(player1).migrateTokens();
-            
-            await expect(
-                v3Game.connect(player1).migrateTokens()
-            ).to.be.revertedWith("Already migrated");
-        });
-
-        it("Should not allow migration with no tokens", async function () {
-            await expect(
-                v3Game.connect(player2).migrateTokens()
-            ).to.be.revertedWith("No tokens to migrate");
-        });
-    });
 
     describe("Daily Claims", function () {
         it("Should claim daily reward", async function () {
@@ -515,6 +471,62 @@ describe("RedLightGreenLightGameV3", function () {
             expect(classicScores[0].score).to.equal(100);
             expect(arcadeScores.length).to.equal(1);
             expect(arcadeScores[0].score).to.equal(200);
+        });
+
+        it("Should support WhackLight game mode", async function () {
+            await v3Game.connect(player1).startGame();
+            
+            // Submit score for WhackLight mode
+            await v3Game.connect(authorizedSubmitter).submitScore(
+                player1.address,
+                300,
+                1,
+                GAME_MODES.WhackLight
+            );
+
+            const whackLightScores = await v3Game.getTopScores(GAME_MODES.WhackLight, 10);
+            
+            expect(whackLightScores.length).to.equal(1);
+            expect(whackLightScores[0].score).to.equal(300);
+            expect(whackLightScores[0].player).to.equal(player1.address);
+        });
+
+        it("Should handle all three game modes independently", async function () {
+            await v3Game.connect(player1).startGame();
+            await v3Game.connect(player2).startGame();
+            
+            // Submit scores for all three modes
+            await v3Game.connect(authorizedSubmitter).submitScore(
+                player1.address,
+                100,
+                1,
+                GAME_MODES.Classic
+            );
+            
+            await v3Game.connect(authorizedSubmitter).submitScore(
+                player2.address,
+                200,
+                1,
+                GAME_MODES.Arcade
+            );
+            
+            await v3Game.connect(authorizedSubmitter).submitScore(
+                player1.address,
+                300,
+                1,
+                GAME_MODES.WhackLight
+            );
+
+            const classicScores = await v3Game.getTopScores(GAME_MODES.Classic, 10);
+            const arcadeScores = await v3Game.getTopScores(GAME_MODES.Arcade, 10);
+            const whackLightScores = await v3Game.getTopScores(GAME_MODES.WhackLight, 10);
+            
+            expect(classicScores.length).to.equal(1);
+            expect(classicScores[0].score).to.equal(100);
+            expect(arcadeScores.length).to.equal(1);
+            expect(arcadeScores[0].score).to.equal(200);
+            expect(whackLightScores.length).to.equal(1);
+            expect(whackLightScores[0].score).to.equal(300);
         });
     });
 

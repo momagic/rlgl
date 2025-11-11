@@ -62,12 +62,11 @@ npx hardhat coverage
 - ✅ Verification status checks
 - ✅ Individual verification level functions
 
-### 5. Token Migration Tests
-- ✅ V1 token migration
-- ✅ V2 token migration
-- ✅ Combined migration
-- ✅ Double migration prevention
-- ✅ Empty migration handling
+### 5. localStorage Import Tests
+- ✅ Extra goes import
+- ✅ Passes import
+- ✅ Duplicate import prevention
+- ✅ Empty import handling
 
 ### 6. Daily Claims Tests
 - ✅ Daily reward claiming
@@ -144,11 +143,11 @@ npx hardhat coverage
 3. Player submits score with higher multiplier
 4. Verification status is tracked correctly
 
-### Migration Flow
-1. Player has V1 and V2 tokens
-2. Player approves V3 contract
-3. Player migrates tokens
-4. Player cannot migrate again
+### localStorage Import Flow
+1. Player has frontend data in localStorage
+2. Player imports extra goes to V3 contract
+3. Player imports passes to V3 contract
+4. Player cannot import same data again
 
 ### Daily Claims Flow
 1. Player claims daily reward
@@ -163,7 +162,7 @@ npx hardhat coverage
 - ✅ Game Mechanics: 4 tests
 - ✅ Score Submission: 4 tests
 - ✅ Verification System: 3 tests
-- ✅ Token Migration: 3 tests
+- ✅ localStorage Import: 3 tests
 - ✅ Daily Claims: 4 tests
 - ✅ Purchases: 2 tests
 - ✅ LocalStorage: 3 tests
@@ -180,7 +179,7 @@ npx hardhat coverage
 - `startGame()`: < 200,000 gas
 - `submitScore()`: < 300,000 gas
 - `claimDailyReward()`: < 150,000 gas
-- `migrateTokens()`: < 250,000 gas
+
 - `constructor()`: < 400,000 gas (includes 1M token mint)
 
 ## Interpreting Test Results
@@ -195,7 +194,7 @@ npx hardhat coverage
 - **Deployment failures**: Check contract compilation and developer wallet address
 - **Game mechanics failures**: Review turn logic
 - **Verification failures**: Check enum values and multipliers
-- **Migration failures**: Verify token approval logic
+- **Import failures**: Verify localStorage data validation
 - **Authorization failures**: Check access control
 - **Developer allocation failures**: Verify wallet address and token minting
 

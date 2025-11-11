@@ -8,7 +8,9 @@ The Red Light Green Light game offers three distinct gameplay experiences design
 
 - **Classic Mode**: Pure reaction-based gameplay focusing on timing and reflexes
 - **Arcade Mode**: Enhanced gameplay with power-ups, special abilities, and strategic elements
- - **Whack-a-Light Mode**: Grid-based tap challenge focused on hitting greens under dynamic timing
+- **Whack-a-Light Mode**: Grid-based tap challenge focused on hitting greens under dynamic timing
+
+All three modes are now fully supported in the V3 smart contract with dedicated leaderboards and scoring systems.
 
 ## Classic Mode
 
@@ -126,7 +128,8 @@ Each power-up type has unique visual effects:
 | **Visual Effects** | Minimal | Rich | Minimal |
 | **Learning Curve** | Low | Medium | Medium |
 | **Replayability** | High (skill-based) | Very High (variety) | High (pattern recognition) |
-| **Requirements** | None | None | None |
+| **Contract Support** | ✅ Full | ✅ Full | ✅ Full |
+| **Leaderboard** | ✅ Dedicated | ✅ Dedicated | ✅ Dedicated |
 | **Target Audience** | Purists, competitors | Casual, variety-seekers | Puzzle-reflex hybrids |
 
 ## Whack-a-Light Mode

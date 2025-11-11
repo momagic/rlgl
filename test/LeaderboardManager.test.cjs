@@ -5,9 +5,10 @@ const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 describe("LeaderboardManager", function () {
     // Game modes enum
     const GameMode = {
-        Classic: 0,
-        Arcade: 1
-    };
+  Classic: 0,
+  Arcade: 1,
+  WhackLight: 2
+};
 
     async function deployLeaderboardManagerFixture() {
         const [owner, player1, player2, player3, gameContract, unauthorizedUser] = await ethers.getSigners();

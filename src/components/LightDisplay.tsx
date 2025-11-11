@@ -29,17 +29,17 @@ function LightDisplay({ lightState, isTransitioning, showLightChangeFlash, isCon
   const getFlashStyling = () => {
     if (isConsecutiveLight) {
       // Use warning colors for consecutive lights
-      return 'bg-squid-pink text-squid-white font-squid-heading font-bold uppercase animate-pulse border-3 border-squid-white'
+      return 'bg-squid-pink text-squid-white font-squid-heading font-bold uppercase animate-pulse border-3 border-squid-black'
     }
     // Normal flash styling
-    return 'bg-squid-white text-squid-black font-squid-heading font-bold uppercase animate-pulse border-3 border-squid-white'
+    return 'bg-squid-white text-squid-black font-squid-heading font-bold uppercase animate-pulse border-3 border-squid-black'
   }
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 md:gap-6">
       {/* Light Change Flash Indicator */}
       {showLightChangeFlash && (
-        <div className="absolute -top-12 sm:-top-16 animate-bounce" style={{ boxShadow: '3px 3px 0px 0px #FFFFFF' }}>
+        <div className="absolute -top-12 sm:-top-16 animate-bounce" style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}>
           <div className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded mobile-text-base sm:text-lg ${getFlashStyling()}`}>
             {getFlashText()}
           </div>
@@ -59,7 +59,7 @@ function LightDisplay({ lightState, isTransitioning, showLightChangeFlash, isCon
             }
             rounded-full flex items-center justify-center
             transform transition-all duration-300 active:scale-95
-            border-4 border-squid-white
+            border-4 border-squid-black
             ${getPulseAnimation()}
           `}
           style={{ 

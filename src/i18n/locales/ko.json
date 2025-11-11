@@ -205,26 +205,29 @@
     "yourTurns": "당신의 턴",
     "live": "라이브",
     "availableTurns": "사용 가능한 턴",
-    "noTurnsRemaining": "남은 턴 없음",
-    "freeResetsIn": "무료 턴 리셋까지",
+    "noTurnsRemaining": "남은 턴이 없습니다",
+    "freeResetsIn": "무료 리셋까지",
     "nextReset": "다음 리셋:",
     "processing": "처리 중...",
     "buyMoreTurns": "3턴 더 구매",
     "sale": "세일!",
-    "resetAvailable": "리셋 가능!",
-    "turnsResetIn": "턴 리셋까지",
+    "resetAvailable": "지금 리셋 가능!",
+    "turnsResetIn": "턴이 리셋됩니다",
     "error": "{{error}}",
     "paymentFailed": "결제 실패: {{error}}",
     "paymentSuccess": {
       "title": "결제 성공!",
-      "subtitle": "이제 {{turns}}턴을 사용할 수 있습니다"
+      "subtitle": "{{turns}}턴이 이제 사용 가능합니다"
     },
     "weeklyPass": {
       "active": "주간 패스 활성화",
-      "unlimitedUntil": "무제한 턴 사용 가능 기간:",
+      "unlimitedUntil": "무제한 턴까지",
       "buttonTitle": "주간 패스",
       "buttonSubtitle": "7일간 무제한 턴!"
-    }
+    },
+    "verificationBonus": "인증 보너스",
+    "rewardsMultiplier": "보상 배수",
+    "loadingMultiplier": "배수 불러오는 중..."
   },
   "gameModeSelector": {
     "title": "게임 모드 선택",
@@ -240,7 +243,15 @@
       "title": "🔨 라이트 두드리기",
       "description": "초록 불만 탭하세요. 매 라운드 불빛 증가 — 빠르고 치명적."
     },
-    "changeAnytime": "메인 메뉴에서 언제든지 모드를 변경할 수 있습니다"
+    "changeAnytime": "메인 메뉴에서 언제든지 모드를 변경할 수 있습니다",
+    "verificationBenefits": {
+      "title": "인증 혜택",
+      "description": "더 높은 인증 수준은 더 나은 보상을 제공합니다",
+      "document": "문서 인증: 기본 보상 100%",
+      "secureDocument": "보안 문서: 보너스 보상 115%",
+      "orb": "Orb 인증: 보너스 보상 125%",
+      "orbPlus": "Orb+ 인증: 보너스 보상 140%"
+    }
   },
   "whackMode": {
     "title": "라이트 두드리기",
@@ -256,6 +267,22 @@
        "timing": "시간이 제한되어 있습니다 - 빠르지만 정확하게!"
      }
    },
+  "dailyClaim": {
+    "title": "일일 보상",
+    "claim": "보상 받기",
+    "claimed": "받음",
+    "claiming": "받는 중...",
+    "nextReward": "다음 보상",
+    "nextAvailable": "다음 이용 가능까지",
+    "days": "일",
+    "description": "매일 RLGL 토큰을 받으세요! 매일 돌아와서 연속 기록을 쌓으세요.",
+    "streakInfo": "{{days}}일 연속: {{bonus}}% 보너스",
+    "success": "일일 보상을 성공적으로 받았습니다!",
+    "claimError": "일일 보상을 받는 데 실패했습니다",
+    "loadError": "일일 청구 상태를 불러오는 데 실패했습니다",
+    "available": "일일 보상 이용 가능",
+    "dayStreak": "일 연속"
+  },
    "proTips": {
       "timing": "타이밍이 전부입니다: 탭하기 전에 초록불을 기다리세요!",
       "speed": "속도 증가: 점수가 올라갈수록 게임이 빨라집니다.",

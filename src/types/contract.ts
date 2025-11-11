@@ -4,7 +4,18 @@ export interface ContractPlayer {
   totalGamesPlayed: number
   highScore: number
   totalPointsEarned: number
+  weeklyPassExpiry: number
+  lastDailyClaim: number
+  dailyClaimStreak: number
+  extraGoes: number
+  passes: number
+  verificationLevel: VerificationLevel
+  isVerified: boolean
 }
+
+export type VerificationLevel = 'None' | 'Device' | 'Document' | 'SecureDocument' | 'Orb' | 'OrbPlus'
+
+export type GameMode = 'Classic' | 'Arcade' | 'WhackLight'
 
 export interface GameResult {
   player: string
@@ -22,6 +33,14 @@ export interface PlayerStats {
   tokenBalance: string
   availableTurns: number
   timeUntilReset: number
+  weeklyPassExpiry?: number
+  lastDailyClaim?: number
+  dailyClaimStreak?: number
+  extraGoes?: number
+  passes?: number
+  verificationLevel?: VerificationLevel
+  isVerified?: boolean
+  verificationMultiplier?: number
 }
 
 export interface TurnStatus {
@@ -33,6 +52,9 @@ export interface TurnStatus {
   isResetAvailable?: boolean
   hasActiveWeeklyPass?: boolean
   weeklyPassExpiry?: Date
+  dailyClaimAvailable?: boolean
+  dailyClaimStreak?: number
+  nextDailyReward?: number
 }
 
 export interface PaymentResult {
@@ -51,6 +73,24 @@ export interface ContractConstants {
   TOKENS_PER_POINT: string // 0.1 tokens per point
   WEEKLY_PASS_COST: string // weekly pass cost in WLD
   WEEKLY_PASS_DURATION: number // 7 days in seconds
+  DAILY_CLAIM_AMOUNT: string // 100 RLGL tokens
+  MAX_DAILY_CLAIM_STREAK: number // 30 days
+  STREAK_BONUS_MULTIPLIER: string // 10 tokens per streak day
+}
+
+export interface VerificationMultipliers {
+  orbPlusMultiplier: number // 140% (40% bonus for Orb+ verified)
+  orbMultiplier: number // 125% (25% bonus for Orb verified)
+  secureDocumentMultiplier: number // 115% (15% bonus for Secure Document verified)
+  documentMultiplier: number // 100% (baseline for Document verified)
+}
+
+export interface CurrentPricing {
+  tokensPerPoint: string
+  turnCost: string
+  passCost: string
+  additionalTurnsCost: string
+  weeklyPassCost: string
 }
 
 export interface LeaderboardEntry {
@@ -62,6 +102,21 @@ export interface LeaderboardEntry {
   displayName?: string
   avatar?: string | null
   isCurrentUser?: boolean
+  gameMode: GameMode
+}
+
+export interface DailyClaimStatus {
+  canClaim: boolean
+  currentStreak: number
+  nextReward: number
+  lastClaimTime: number
+}
+
+export interface ContractStats {
+  totalGames: number
+  totalPlayers: number
+  maxSupply: number
+  isPaused: boolean
 }
 
 export interface GameSubmission {
@@ -115,21 +170,29 @@ export interface UseContractReturn {
   purchaseWeeklyPass: () => Promise<PaymentResult>
   getWeeklyPassCost: () => Promise<string>
   
+  // Daily claim system
+  claimDailyReward: () => Promise<PaymentResult>
+  getDailyClaimStatus: (playerAddress: string) => Promise<DailyClaimStatus>
+  
   // Game management
   startGame: () => Promise<boolean>
-  submitScore: (score: number, round: number) => Promise<GameSubmission>
+  submitScore: (score: number, round: number, gameMode: GameMode) => Promise<GameSubmission>
   
   // Data retrieval
   getPlayerStats: (playerAddress: string) => Promise<PlayerStats>
-  getLeaderboard: () => Promise<LeaderboardEntry[]>
+  getLeaderboard: (gameMode: GameMode, topN: number) => Promise<LeaderboardEntry[]>
+  getPlayerRank: (playerAddress: string, gameMode: GameMode) => Promise<number>
   getLeaderboardPaginated: (offset: number, limit: number) => Promise<LeaderboardEntry[]>
   getTopScores: (count: number) => Promise<LeaderboardEntry[]>
   getBatchPlayerStats: (playerAddresses: string[]) => Promise<any>
   getLeaderboardStats: () => Promise<{ totalGames: number; totalPlayers: number; leaderboardSize: number; highestScore: number }>
-  getPlayerGameHistory: (playerAddress: string) => Promise<GameResult[]>
+  getPlayerGameHistory: (playerAddress: string, offset: number, limit: number) => Promise<GameResult[]>
   getCurrentTurnCost: () => Promise<string>
   getTotalGamesPlayed: () => Promise<number>
   getAdditionalTurnsCost: () => Promise<string>
+  getCurrentPricing: () => Promise<CurrentPricing>
+  getVerificationMultipliers: () => Promise<VerificationMultipliers>
+  getContractStats: () => Promise<ContractStats>
   
   // Admin functions (owner only)
   updateTurnCost: (newCost: string) => Promise<boolean>
@@ -239,7 +302,8 @@ export const GAME_CONTRACT_ABI = [
   {
     "inputs": [
       {"internalType": "uint256", "name": "score", "type": "uint256"},
-      {"internalType": "uint256", "name": "round", "type": "uint256"}
+      {"internalType": "uint256", "name": "round", "type": "uint256"},
+      {"internalType": "uint8", "name": "gameMode", "type": "uint8"}
     ],
     "name": "submitScore",
     "outputs": [],
@@ -250,14 +314,25 @@ export const GAME_CONTRACT_ABI = [
     "inputs": [{"internalType": "address", "name": "player", "type": "address"}],
     "name": "getPlayerStats",
     "outputs": [
-      {"internalType": "uint256", "name": "freeTurnsUsed", "type": "uint256"},
-      {"internalType": "uint256", "name": "lastResetTime", "type": "uint256"},
-      {"internalType": "uint256", "name": "totalGamesPlayed", "type": "uint256"},
-      {"internalType": "uint256", "name": "highScore", "type": "uint256"},
-      {"internalType": "uint256", "name": "totalPointsEarned", "type": "uint256"},
-      {"internalType": "uint256", "name": "tokenBalance", "type": "uint256"},
-      {"internalType": "uint256", "name": "availableTurns", "type": "uint256"},
-      {"internalType": "uint256", "name": "timeUntilReset", "type": "uint256"}
+      {
+        "components": [
+          {"internalType": "uint256", "name": "freeTurnsUsed", "type": "uint256"},
+          {"internalType": "uint256", "name": "lastResetTime", "type": "uint256"},
+          {"internalType": "uint256", "name": "totalGamesPlayed", "type": "uint256"},
+          {"internalType": "uint256", "name": "highScore", "type": "uint256"},
+          {"internalType": "uint256", "name": "totalPointsEarned", "type": "uint256"},
+          {"internalType": "uint256", "name": "weeklyPassExpiry", "type": "uint256"},
+          {"internalType": "uint256", "name": "lastDailyClaim", "type": "uint256"},
+          {"internalType": "uint256", "name": "dailyClaimStreak", "type": "uint256"},
+          {"internalType": "uint256", "name": "extraGoes", "type": "uint256"},
+          {"internalType": "uint256", "name": "passes", "type": "uint256"},
+          {"internalType": "uint8", "name": "verificationLevel", "type": "uint8"},
+          {"internalType": "bool", "name": "isVerified", "type": "bool"}
+        ],
+        "internalType": "struct RedLightGreenLightGameV3.Player",
+        "name": "",
+        "type": "tuple"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -312,6 +387,123 @@ export const GAME_CONTRACT_ABI = [
     "inputs": [],
     "name": "getTotalGamesPlayed",
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "claimDailyReward",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "player", "type": "address"}],
+    "name": "getDailyClaimStatus",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "bool", "name": "canClaim", "type": "bool"},
+          {"internalType": "uint256", "name": "currentStreak", "type": "uint256"},
+          {"internalType": "uint256", "name": "nextReward", "type": "uint256"},
+          {"internalType": "uint256", "name": "lastClaimTime", "type": "uint256"}
+        ],
+        "internalType": "struct RedLightGreenLightGameV3.DailyClaimStatus",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint8", "name": "gameMode", "type": "uint8"},
+      {"internalType": "uint256", "name": "topN", "type": "uint256"}
+    ],
+    "name": "getTopScores",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "address", "name": "player", "type": "address"},
+          {"internalType": "uint256", "name": "score", "type": "uint256"},
+          {"internalType": "uint256", "name": "timestamp", "type": "uint256"},
+          {"internalType": "uint256", "name": "round", "type": "uint256"},
+          {"internalType": "uint256", "name": "tokensEarned", "type": "uint256"},
+          {"internalType": "uint256", "name": "gameId", "type": "uint256"},
+          {"internalType": "uint8", "name": "gameMode", "type": "uint8"}
+        ],
+        "internalType": "struct RedLightGreenLightGameV3.LeaderboardEntry[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "player", "type": "address"},
+      {"internalType": "uint8", "name": "gameMode", "type": "uint8"}
+    ],
+    "name": "getPlayerRank",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getCurrentPricing",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "uint256", "name": "tokensPerPoint", "type": "uint256"},
+          {"internalType": "uint256", "name": "turnCost", "type": "uint256"},
+          {"internalType": "uint256", "name": "passCost", "type": "uint256"}
+        ],
+        "internalType": "struct RedLightGreenLightGameV3.CurrentPricing",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getVerificationMultipliers",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "uint256", "name": "orbPlusMultiplier", "type": "uint256"},
+          {"internalType": "uint256", "name": "orbMultiplier", "type": "uint256"},
+          {"internalType": "uint256", "name": "secureDocumentMultiplier", "type": "uint256"},
+          {"internalType": "uint256", "name": "documentMultiplier", "type": "uint256"}
+        ],
+        "internalType": "struct RedLightGreenLightGameV3.VerificationMultipliers",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getContractStats",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "uint256", "name": "totalGames", "type": "uint256"},
+          {"internalType": "uint256", "name": "totalPlayers", "type": "uint256"},
+          {"internalType": "uint256", "name": "maxSupply", "type": "uint256"},
+          {"internalType": "bool", "name": "isPaused", "type": "bool"}
+        ],
+        "internalType": "struct RedLightGreenLightGameV3.ContractStats",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -539,7 +731,7 @@ export const GAME_CONTRACT_ABI = [
 // Contract configuration for different networks
 export const CONTRACT_CONFIG = {
   worldchain: {
-    gameContract: '0x20B5fED73305260b82A3bD027D791C9769E22a9A', // V2 Contract with migration support
+    gameContract: '0x0b0Df717B5A83DA0451d537e75c7Ab091ac1e6Aa', // V3 Contract with migration support
     wldToken: '0x2cfc85d8e48f8eab294be644d9e25c3030863003', // WLD token on World Chain
   },
   worldchainSepolia: {

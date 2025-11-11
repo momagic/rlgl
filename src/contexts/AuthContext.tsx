@@ -295,7 +295,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     verify,
     authenticateWallet,
-    logout
+    logout,
+    verificationLevel: user?.verificationLevel || null
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -1,8 +1,10 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../contexts/AuthContext'
 import type { GameMode } from '../types/game'
 import type { TurnStatus } from '../types/contract'
 import { useHapticFeedback } from '../hooks/useHapticFeedback'
+import { useContract } from '../hooks/useContract'
 
 interface GameModeSelectorProps {
   selectedMode: GameMode
@@ -20,7 +22,63 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
   onShowBuyTurns
 }) => {
   const { t } = useTranslation()
+  const { verificationLevel } = useAuth()
+  const { getVerificationMultipliers } = useContract()
   const haptics = useHapticFeedback()
+  
+  const [verificationBenefits, setVerificationBenefits] = useState<{
+    scoreMultiplier: number
+    tokenMultiplier: number
+    bonusTurns: number
+  } | null>(null)
+
+  useEffect(() => {
+    const loadVerificationBenefits = async () => {
+      if (verificationLevel) {
+        try {
+          const multipliers = await getVerificationMultipliers()
+          // Map verification level to appropriate multiplier
+          let scoreMultiplier = 1
+          let tokenMultiplier = 1
+          
+          // Convert verification level to lowercase string for comparison
+          const levelStr = verificationLevel?.toLowerCase() || ''
+          
+          switch (levelStr) {
+            case 'orb_plus':
+              scoreMultiplier = multipliers.orbPlusMultiplier / 100
+              tokenMultiplier = multipliers.orbPlusMultiplier / 100
+              break
+            case 'orb':
+              scoreMultiplier = multipliers.orbMultiplier / 100
+              tokenMultiplier = multipliers.orbMultiplier / 100
+              break
+            case 'secure_document':
+              scoreMultiplier = multipliers.secureDocumentMultiplier / 100
+              tokenMultiplier = multipliers.secureDocumentMultiplier / 100
+              break
+            case 'document':
+              scoreMultiplier = multipliers.documentMultiplier / 100
+              tokenMultiplier = multipliers.documentMultiplier / 100
+              break
+            default:
+              scoreMultiplier = 1
+              tokenMultiplier = 1
+          }
+          
+          setVerificationBenefits({
+            scoreMultiplier,
+            tokenMultiplier,
+            bonusTurns: 0 // No bonus turns from verification level
+          })
+        } catch (error) {
+          console.error('Failed to load verification benefits:', error)
+        }
+      }
+    }
+    
+    loadVerificationBenefits()
+  }, [verificationLevel, getVerificationMultipliers])
 
   const handleModeSelect = (mode: GameMode) => {
     // Check if user has no turns remaining and should show buy turns popup
@@ -137,6 +195,42 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
           </div>
         </button>
       </div>
+
+      {/* Verification Benefits */}
+      {verificationLevel && verificationBenefits && (
+        <div className="mt-6 p-4 rounded-lg border-3 border-squid-green bg-squid-green/20" style={{ boxShadow: '4px 4px 0px 0px #00A878' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl animate-pulse">🎯</span>
+            <span className="text-squid-green font-squid-heading font-bold text-sm uppercase">
+              {t('gameModeSelector.verificationBenefits.title')}
+            </span>
+            <span className="text-squid-green font-squid text-xs bg-squid-green/20 px-2 py-1 rounded-full">
+              {verificationLevel}
+            </span>
+          </div>
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-squid-white/80">Score Multiplier:</span>
+              <span className="text-squid-green font-bold">{verificationBenefits.scoreMultiplier}x</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-squid-white/80">Token Multiplier:</span>
+              <span className="text-squid-green font-bold">{verificationBenefits.tokenMultiplier}x</span>
+            </div>
+            {verificationBenefits.bonusTurns > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-squid-white/80">Bonus Turns:</span>
+                <span className="text-squid-green font-bold">+{verificationBenefits.bonusTurns}</span>
+              </div>
+            )}
+          </div>
+          <div className="mt-3 pt-3 border-t border-squid-green/30">
+            <p className="text-squid-white/60 text-xs text-center">
+              {t('gameModeSelector.verificationBenefits.description')}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

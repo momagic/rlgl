@@ -206,7 +206,7 @@
     "live": "En Vivo",
     "availableTurns": "Turnos Disponibles",
     "noTurnsRemaining": "No quedan turnos",
-    "freeResetsIn": "Los turnos gratuitos se reinician en",
+    "freeResetsIn": "Reinicios gratuitos en",
     "nextReset": "Próximo reinicio:",
     "processing": "Procesando...",
     "buyMoreTurns": "Comprar 3 Turnos Más",
@@ -224,7 +224,10 @@
       "unlimitedUntil": "Turnos ilimitados hasta",
       "buttonTitle": "Pase Semanal",
       "buttonSubtitle": "¡Turnos Ilimitados por 7 Días!"
-    }
+    },
+    "verificationBonus": "Bonificación de Verificación",
+    "rewardsMultiplier": "multiplicador de recompensas",
+    "loadingMultiplier": "Cargando multiplicador..."
   },
   "gameModeSelector": {
     "title": "Seleccionar Modo de Juego",
@@ -240,7 +243,15 @@
       "title": "🔨 Golpea la Luz",
       "description": "Toca solo las luces verdes. Más luces cada ronda — rápido y letal."
     },
-    "changeAnytime": "Puedes cambiar de modo en cualquier momento desde el menú principal"
+    "changeAnytime": "Puedes cambiar de modo en cualquier momento desde el menú principal",
+    "verificationBenefits": {
+      "title": "Beneficios de Verificación",
+      "description": "Niveles de verificación más altos proporcionan mejores recompensas",
+      "document": "Documento Verificado: Recompensas base 100%",
+      "secureDocument": "Documento Seguro: Recompensas bonus 115%",
+      "orb": "Verificación Orb: Recompensas bonus 125%",
+      "orbPlus": "Verificación Orb+: Recompensas bonus 140%"
+    }
   },
   "whackMode": {
     "title": "Golpea la Luz",
@@ -256,6 +267,24 @@
        "timing": "Tienes tiempo limitado: ¡sé rápido pero preciso!"
      }
    },
+  "dailyClaim": {
+    "title": "Recompensa Diaria",
+    "description": "Reclama tu recompensa diaria",
+    "claim": "Reclamar",
+    "claimed": "Reclamado",
+    "nextClaim": "Siguiente reclamo en",
+    "streak": "Racha",
+    "available": "Recompensa Diaria Disponible",
+    "dayStreak": "racha de días",
+    "claiming": "Reclamando...",
+    "nextReward": "Siguiente Recompensa",
+    "nextAvailable": "Siguiente Disponible En",
+    "days": "Días",
+    "streakInfo": "Racha de {{days}} días: {{bonus}}% de bono",
+    "success": "¡Recompensa diaria reclamada con éxito!",
+    "claimError": "Error al reclamar la recompensa diaria",
+    "loadError": "Error al cargar el estado de reclamo diario"
+  },
    "proTips": {
       "timing": "El tiempo es todo: ¡Espera la luz verde antes de tocar!",
       "speed": "La velocidad aumenta: El juego se vuelve más rápido a medida que crece tu puntuación.",

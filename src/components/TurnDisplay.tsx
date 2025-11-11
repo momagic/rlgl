@@ -1,6 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePayment } from '../hooks/usePayment'
+import { useAuth } from '../contexts/AuthContext'
+import { useContract } from '../hooks/useContract'
 import type { UseTurnManagerReturn } from '../types/contract'
 
 interface TurnDisplayProps {
@@ -9,12 +11,35 @@ interface TurnDisplayProps {
 
 function TurnDisplay({ turnManager }: TurnDisplayProps) {
   const { t } = useTranslation()
+  const { verificationLevel } = useAuth()
   const { turnStatus, isLoading, error, purchaseTurns, purchaseWeeklyPass, refreshTurnStatus } = turnManager
   const payment = usePayment()
+  const { getVerificationMultipliers } = useContract()
   
-  // Use fixed costs for faster loading, similar to old version
-  const additionalTurnsCost = '0.2'
-  const weeklyPassCost = '5.0'
+  const [verificationBenefits, setVerificationBenefits] = useState<{
+    orbPlusMultiplier: number
+    orbMultiplier: number
+    secureDocumentMultiplier: number
+    documentMultiplier: number
+  } | null>(null)
+  
+  // Use dynamic pricing from contract, with fallbacks
+  const additionalTurnsCost = payment.dynamicPricing?.turnCost || '0.2'
+  const weeklyPassCost = payment.dynamicPricing?.passCost || '5.0'
+
+  // Load verification multipliers
+  useEffect(() => {
+    const loadVerificationMultipliers = async () => {
+      try {
+        const multipliers = await getVerificationMultipliers()
+        setVerificationBenefits(multipliers)
+      } catch (error) {
+        console.error('Failed to load verification multipliers:', error)
+      }
+    }
+
+    loadVerificationMultipliers()
+  }, [getVerificationMultipliers])
 
   // Clear payment result after success
   useEffect(() => {
@@ -105,6 +130,48 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
           <span className="text-squid-white/70 text-sm font-squid font-semibold">{t('turnDisplay.live')}</span>
         </div>
       </div>
+
+      {/* Verification Level Bonus */}
+      {verificationLevel && verificationLevel.toLowerCase() !== 'none' && verificationLevel.toLowerCase() !== 'device' && (
+        <div 
+          className="mb-4 p-4 rounded-lg border-3 border-squid-green bg-squid-green/20"
+          style={{ boxShadow: '4px 4px 0px 0px #00A878' }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl animate-pulse">🎯</span>
+            <span className="text-squid-green font-squid-heading font-bold text-sm uppercase">
+              {verificationLevel} {t('turnDisplay.verificationBonus')}
+            </span>
+          </div>
+          <div className="text-xs text-squid-white/70 font-squid font-semibold">
+            {verificationBenefits && (
+              <>
+                {verificationLevel.toLowerCase() === 'orb_plus' && `+${verificationBenefits.orbPlusMultiplier - 100}% ${t('turnDisplay.rewardsMultiplier')}`}
+            {verificationLevel.toLowerCase() === 'orb' && `+${verificationBenefits.orbMultiplier - 100}% ${t('turnDisplay.rewardsMultiplier')}`}
+            {verificationLevel.toLowerCase() === 'secure_document' && `+${verificationBenefits.secureDocumentMultiplier - 100}% ${t('turnDisplay.rewardsMultiplier')}`}
+            {verificationLevel.toLowerCase() === 'document' && `+${verificationBenefits.documentMultiplier - 100}% ${t('turnDisplay.rewardsMultiplier')}`}
+              </>
+            )}
+            {!verificationBenefits && t('turnDisplay.loadingMultiplier')}
+          </div>
+        </div>
+      )}
+
+      {/* Daily Claim Status */}
+      {turnStatus.dailyClaimAvailable && (
+        <div 
+          className="mb-4 p-4 rounded-lg border-3 border-squid-yellow bg-squid-yellow/20"
+          style={{ boxShadow: '4px 4px 0px 0px #FFD700' }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl animate-pulse">💰</span>
+            <span className="text-squid-yellow font-squid-heading font-bold text-sm uppercase">{t('dailyClaim.available')}</span>
+          </div>
+          <div className="text-xs text-squid-white/70 font-squid font-semibold">
+            {turnStatus.dailyClaimStreak} {t('dailyClaim.dayStreak')} • {t('dailyClaim.nextReward')}: {turnStatus.nextDailyReward} RLGL
+          </div>
+        </div>
+      )}
 
       {/* Weekly Pass Status */}
       {turnStatus.hasActiveWeeklyPass && (

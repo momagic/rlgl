@@ -2,7 +2,7 @@
 
 ## Overview
 
-Red Light Green Light Game V3 is a comprehensive upgrade that introduces full configurability, token migration, localStorage compatibility, daily rewards, and enhanced security features. This contract maintains backward compatibility while adding powerful new capabilities.
+Red Light Green Light Game V3 is a comprehensive upgrade that introduces full configurability, localStorage compatibility, daily rewards, and enhanced security features. This contract maintains backward compatibility while adding powerful new capabilities.
 
 ## Key Features
 
@@ -12,17 +12,11 @@ Red Light Green Light Game V3 is a comprehensive upgrade that introduces full co
 - **Real-time Updates**: Changes take effect immediately
 - **Bounded Parameters**: All configurable values have min/max bounds for safety
 
-### 🔄 **Token Migration System**
-- **V1/V2 Compatibility**: Migrate tokens from previous contract versions
-- **One-time Migration**: Each user can migrate only once
-- **Preserve Balances**: All token balances are preserved during migration
-- **Automatic Tracking**: Contract tracks migration status per user
-
 ### 💾 **localStorage Compatibility**
 - **Extra Goes Support**: Import extra goes from localStorage
 - **Passes Support**: Import passes from localStorage
 - **Seamless Integration**: Works with existing frontend localStorage data
-- **Optional Migration**: Users can choose to migrate localStorage data
+- **Optional Import**: Users can choose to import localStorage data
 
 ### 🎁 **Daily Claim System**
 - **Base Reward**: 100 RLGL tokens per day
@@ -64,7 +58,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         uint256 weeklyPassExpiry;
         uint256 lastDailyClaim;
         uint256 dailyClaimStreak;
-        bool hasMigratedTokens;
         uint256 extraGoes; // localStorage compatibility
         uint256 passes; // localStorage compatibility
     }
@@ -86,7 +79,7 @@ uint256 public constant MIN_TURN_COST = 1e17; // 0.1 WLD
 uint256 public constant MAX_TURN_COST = 5e18; // 5 WLD
 ```
 
-## Migration Process
+## Deployment Process
 
 ### Step 1: Deploy V3 Contract
 
@@ -98,45 +91,11 @@ npm run deploy-v3:sepolia
 npm run deploy-v3:worldchain
 ```
 
-### Step 2: Analyze Migration Requirements
-
-```bash
-# Check migration status for a player
-node scripts/migrate-to-v3.cjs <V3_CONTRACT_ADDRESS> <PLAYER_ADDRESS>
-```
-
-### Step 3: Player Migration Steps
-
-1. **Approve Token Transfers**:
-   ```javascript
-   // Approve V1 tokens (if any)
-   await v1Contract.approve(v3ContractAddress, v1Balance);
-   
-   // Approve V2 tokens (if any)
-   await v2Contract.approve(v3ContractAddress, v2Balance);
-   ```
-
-2. **Migrate Tokens**:
-   ```javascript
-   await v3Contract.migrateTokens();
-   ```
-
-3. **Set localStorage Data** (optional):
-   ```javascript
-   await v3Contract.setExtraGoes(5); // Set extra goes
-   await v3Contract.setPasses(2); // Set passes
-   ```
-
-### Step 4: Verify Migration
+### Step 2: Set localStorage Data (Optional)
 
 ```javascript
-// Check migration status
-const playerStats = await v3Contract.getPlayerStats(playerAddress);
-const hasMigrated = playerStats[12]; // hasMigratedTokens field
-const tokenBalance = playerStats[5]; // tokenBalance field
-
-console.log("Migration status:", hasMigrated);
-console.log("Token balance:", ethers.formatEther(tokenBalance), "RLGL");
+await v3Contract.setExtraGoes(5); // Set extra goes
+await v3Contract.setPasses(2); // Set passes
 ```
 
 ## Daily Claim System
@@ -178,7 +137,7 @@ await v3Contract.claimDailyReward();
 - **Extra Goes**: Additional turns stored in localStorage
 - **Passes**: Weekly passes stored in localStorage
 
-### Migration Process
+### localStorage Import Process
 
 ```javascript
 // Get localStorage data from frontend
@@ -309,7 +268,7 @@ await v3Contract.clearLeaderboard(0); // Clear Classic mode
 ### Token Safety
 
 - **Max Supply Limit**: Cannot exceed 1 billion tokens
-- **Migration Tracking**: Prevents double migration
+- **Import Tracking**: Prevents duplicate imports
 - **Approval System**: Secure token transfer mechanism
 
 ## Contract Statistics
@@ -333,7 +292,7 @@ console.log("High score:", playerStats[3].toString());
 console.log("Token balance:", ethers.formatEther(playerStats[5]), "RLGL");
 console.log("Available turns:", playerStats[6].toString());
 console.log("Daily claim streak:", playerStats[10].toString());
-console.log("Has migrated tokens:", playerStats[12]);
+console.log("localStorage extra goes:", playerStats[12]);
 ```
 
 ## Events
@@ -357,12 +316,7 @@ event DailyClaimed(
     uint256 bonus
 );
 
-event TokensMigrated(
-    address indexed player,
-    uint256 v1Amount,
-    uint256 v2Amount,
-    uint256 totalMigrated
-);
+
 ```
 
 ### Admin Events
@@ -395,7 +349,6 @@ event AuthorizedSubmitterUpdated(
 ### Cost Estimates
 
 - **Deploy**: ~2,000,000 gas
-- **Migrate Tokens**: ~100,000 gas
 - **Daily Claim**: ~80,000 gas
 - **Submit Score**: ~150,000 gas
 - **Update Pricing**: ~60,000 gas
@@ -420,9 +373,6 @@ npm run deploy:local
 ```bash
 # Deploy to Sepolia
 npm run deploy-v3:sepolia
-
-# Test migration
-node scripts/migrate-to-v3.cjs <V3_ADDRESS> <PLAYER_ADDRESS>
 ```
 
 ### Mainnet Deployment
@@ -439,20 +389,12 @@ npm run verify:worldchain <V3_ADDRESS>
 
 ### Common Issues
 
-1. **"Already migrated" error**
-   - Player has already migrated tokens
-   - Check migration status with `getPlayerStats()`
-
-2. **"Insufficient allowance" error**
-   - Player needs to approve token transfers
-   - Call `approve()` on V1/V2 contracts first
-
-3. **"Contract is paused" error**
+1. **"Contract is paused" error**
    - Contract is paused for maintenance
    - Wait for owner to unpause
 
-4. **"Would exceed max supply" error**
-   - Migration would exceed 1 billion token limit
+2. **"Would exceed max supply" error**
+   - Transaction would exceed 1 billion token limit
    - Contact owner for resolution
 
 ### Support
@@ -467,7 +409,6 @@ For technical support:
 
 ### V3.0.0 (Current)
 - Full configurability system
-- Token migration from V1/V2
 - localStorage compatibility
 - Daily claim system
 - Enhanced leaderboards

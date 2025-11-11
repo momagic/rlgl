@@ -8,6 +8,7 @@ import type { UseTurnManagerReturn } from '../types/contract'
 import type { GameMode } from '../types/game'
 import TurnDisplay from './TurnDisplay'
 import GameModeSelector from './GameModeSelector'
+import NotificationBanner from './NotificationBanner'
 import { Button, Typography, Container, Stack } from './ui'
 import { UserInfo } from './UserInfo'
 
@@ -30,6 +31,9 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
   const [showTurnsModal, setShowTurnsModal] = useState(false)
   
   const buttonDisabled = turnLoading || !turnStatus || (!turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns <= 0)
+
+  // State for the contract deployment notification banner
+  const [showContractBanner, setShowContractBanner] = useState(true)
 
   // REMOVED: Auto-switch to classic mode restriction - arcade mode is now available to all users
 
@@ -107,6 +111,20 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
   return (
     <div className="h-full flex flex-col overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #0A0A0F 0%, #1A1A20 50%, #0A0A0F 100%)' }}>
       <UserInfo />
+      
+      {/* Contract Deployment Notification Banner */}
+      {showContractBanner && (
+        <div className="px-2 pt-2">
+          <NotificationBanner
+            title="New Contract Coming Soon!"
+            message="We're improving the contract, leaderboard system, and adding exciting new features. Stay tuned for the upgrade!"
+            type="info"
+            onClose={() => setShowContractBanner(false)}
+            closable={true}
+          />
+        </div>
+      )}
+      
       {/* Squid Game Neon Accents */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-10 -left-20 w-72 h-72 rounded-full blur-3xl opacity-30" style={{ background: 'radial-gradient(circle, #FF1F8C 0%, transparent 70%)' }}></div>

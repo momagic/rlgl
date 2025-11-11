@@ -30,8 +30,6 @@ async function main() {
     
     const gameContract = await RedLightGreenLightGameV3.deploy(
         WLD_TOKEN_ADDRESS,
-        V1_CONTRACT_ADDRESS,
-        V2_CONTRACT_ADDRESS,
         DEVELOPER_WALLET
     );
     
@@ -48,7 +46,7 @@ async function main() {
     // Create deployment info
     const deploymentInfo = {
         network: chainId === 480 ? "worldchain" : chainId === 4801 ? "worldchain-sepolia" : "unknown",
-        chainId: chainId,
+        chainId: Number(chainId),
         contractAddress: contractAddress,
         wldTokenAddress: WLD_TOKEN_ADDRESS,
         v1ContractAddress: V1_CONTRACT_ADDRESS,
@@ -106,8 +104,6 @@ async function main() {
                 address: contractAddress,
                 constructorArguments: [
                     WLD_TOKEN_ADDRESS,
-                    V1_CONTRACT_ADDRESS,
-                    V2_CONTRACT_ADDRESS,
                     DEVELOPER_WALLET
                 ],
             });

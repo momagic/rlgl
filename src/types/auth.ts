@@ -16,6 +16,7 @@ export interface AuthContextType {
   verify: () => Promise<void>
   authenticateWallet: () => Promise<void>
   logout: () => void
+  verificationLevel: VerificationLevel | null
 }
 
 export interface VerificationPayload {
@@ -23,4 +24,4 @@ export interface VerificationPayload {
   merkle_root: string
   nullifier_hash: string
   verification_level: VerificationLevel
-} 
+}

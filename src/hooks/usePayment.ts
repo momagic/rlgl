@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { MiniKit, tokenToDecimals, Tokens } from '@worldcoin/minikit-js'
 import type { PayCommandInput } from '@worldcoin/minikit-js'
 import type { PaymentResult } from '../types/contract'
 import { CONTRACT_CONFIG } from '../types/contract'
 import { useHapticFeedback } from './useHapticFeedback'
+import { useContract } from './useContract'
 
 const DEFAULT_TURN_COST_WLD = '0.2' // Fallback price if dynamic fetch fails
 const DEFAULT_WEEKLY_PASS_COST_WLD = '5.0' // Fallback price for weekly pass
@@ -12,7 +13,9 @@ const CONTRACT_ADDRESS = CONTRACT_CONFIG.worldchain.gameContract // Use actual d
 export function usePayment() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [lastPaymentResult, setLastPaymentResult] = useState<PaymentResult | null>(null)
+  const [dynamicPricing, setDynamicPricing] = useState<{ turnCost: string; passCost: string } | null>(null)
   const haptics = useHapticFeedback()
+  const { getCurrentPricing } = useContract()
 
   const initiatePayment = useCallback(async (
     amount: string, 
@@ -138,14 +141,14 @@ export function usePayment() {
   }, [haptics])
 
   const purchaseAdditionalTurns = useCallback(async (dynamicCost?: string): Promise<PaymentResult> => {
-    const cost = dynamicCost || DEFAULT_TURN_COST_WLD
+    const cost = dynamicCost || dynamicPricing?.turnCost || DEFAULT_TURN_COST_WLD
     return initiatePayment(cost, 'Purchase 3 additional game turns')
-  }, [initiatePayment])
+  }, [initiatePayment, dynamicPricing])
 
   const purchaseWeeklyPass = useCallback(async (dynamicCost?: string): Promise<PaymentResult> => {
-    const cost = dynamicCost || DEFAULT_WEEKLY_PASS_COST_WLD
+    const cost = dynamicCost || dynamicPricing?.passCost || DEFAULT_WEEKLY_PASS_COST_WLD
     return initiatePayment(cost, 'Purchase 7-day unlimited game turns')
-  }, [initiatePayment])
+  }, [initiatePayment, dynamicPricing])
 
   const verifyPayment = useCallback(async (paymentId: string): Promise<boolean> => {
     try {
@@ -168,6 +171,24 @@ export function usePayment() {
     setLastPaymentResult(null)
   }, [])
 
+  // Fetch dynamic pricing on mount
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const pricing = await getCurrentPricing()
+        setDynamicPricing({
+          turnCost: pricing.additionalTurnsCost,
+          passCost: pricing.weeklyPassCost
+        })
+      } catch (error) {
+        console.warn('Failed to fetch dynamic pricing, using defaults:', error)
+        // Keep default pricing on error
+      }
+    }
+
+    fetchPricing()
+  }, [getCurrentPricing])
+
   return {
     initiatePayment,
     purchaseAdditionalTurns,
@@ -176,5 +197,6 @@ export function usePayment() {
     isProcessing,
     lastPaymentResult,
     clearLastResult,
+    dynamicPricing,
   }
 }

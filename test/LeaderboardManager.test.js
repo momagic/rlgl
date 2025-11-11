@@ -6,7 +6,8 @@ describe("LeaderboardManager", function () {
     // Game modes enum
     const GameMode = {
         Classic: 0,
-        Arcade: 1
+        Arcade: 1,
+        WhackLight: 2
     };
 
     async function deployLeaderboardManagerFixture() {

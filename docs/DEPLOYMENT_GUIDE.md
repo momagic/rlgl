@@ -2,7 +2,7 @@
 
 ## 🚀 Quick Start
 
-Follow these steps to deploy your Red Light Green Light game contract to World Chain:
+Follow these steps to deploy your Red Light Green Light game contract to World Chain. This guide supports V1, V2, and V3 contracts.
 
 ### 1. Install Dependencies
 
@@ -73,58 +73,138 @@ const WLD_ADDRESSES = {
 
 ## 🌐 Deployment Commands
 
-### Deploy to Sepolia Testnet (Recommended First)
+### V3 Contract (Latest - Recommended)
 
+**Deploy to Sepolia Testnet (Recommended First):**
+```bash
+npm run deploy-v3:sepolia
+```
+
+**Deploy to Mainnet:**
+```bash
+npm run deploy-v3:worldchain
+```
+
+### V2 Contract
+
+**Deploy to Sepolia Testnet:**
+```bash
+npm run deploy-v2:sepolia
+```
+
+**Deploy to Mainnet:**
+```bash
+npm run deploy-v2:worldchain
+```
+
+### V1 Contract (Legacy)
+
+**Deploy to Sepolia Testnet:**
 ```bash
 npm run deploy:sepolia
 ```
 
-### Deploy to Mainnet
-
+**Deploy to Mainnet:**
 ```bash
 npm run deploy:worldchain
 ```
 
 ## 📋 What Happens During Deployment
 
+### V3 Contract Features
 1. **Validation**: Checks your wallet balance and network connection
-2. **Compilation**: Compiles the smart contract
-3. **Deployment**: Deploys to the specified network
+2. **Compilation**: Compiles the V3 smart contract with enhanced features
+3. **Deployment**: Deploys with V1/V2 contract references for migration support
+4. **Verification**: Tests basic contract functions and new V3 features
+5. **Configuration**: Saves deployment info to `deployments/` folder
+6. **Token Allocation**: 1M RLGL tokens allocated to developer wallet
+7. **Instructions**: Shows V3-specific frontend update steps
+
+### V2 Contract Features
+1. **Validation**: Checks your wallet balance and network connection
+2. **Compilation**: Compiles the V2 smart contract
+3. **Deployment**: Deploys with weekly pass and optimized leaderboard
+4. **Verification**: Tests V2-specific functions
+5. **Configuration**: Saves deployment info to `deployments/` folder
+6. **Instructions**: Shows V2-specific frontend update steps
+
+### V1 Contract (Legacy)
+1. **Validation**: Checks your wallet balance and network connection
+2. **Compilation**: Compiles the original smart contract
+3. **Deployment**: Deploys the basic game contract
 4. **Verification**: Tests basic contract functions
 5. **Configuration**: Saves deployment info to `deployments/` folder
-6. **Instructions**: Shows you how to update your frontend
+6. **Instructions**: Shows basic frontend update steps
 
 ## 📁 After Deployment
 
-The deployment creates:
+### V3 Deployment Files
+```
+deployments/
+├── worldchain-v3.json          # Latest V3 mainnet deployment
+├── worldchain-v3-{timestamp}.json  # Timestamped V3 mainnet deployment
+├── worldchain-sepolia-v3.json    # Latest V3 sepolia deployment
+└── worldchain-sepolia-v3-{timestamp}.json  # Timestamped V3 sepolia deployment
+```
 
+### V2 Deployment Files
+```
+deployments/
+├── worldchain-v2.json          # Latest V2 mainnet deployment
+└── worldchain-sepolia-v2.json  # Latest V2 sepolia deployment
+```
+
+### V1 Deployment Files (Legacy)
 ```
 deployments/
 ├── worldchain.json          # Mainnet deployment info
 └── worldchain-sepolia.json  # Testnet deployment info
 ```
 
-Each file contains:
+Each deployment file contains:
 - Contract address
 - Network details
 - Deployment transaction hash
 - ABI location
+- Contract version and features
+- Constructor parameters used
 
 ## 🔧 Update Frontend Configuration
 
-After successful deployment, update `src/types/contract.ts`:
+### V3 Contract Updates
+
+After V3 deployment, update `src/types/contract.ts` with the V3 contract address:
 
 ```typescript
 export const CONTRACT_CONFIG = {
   worldchain: {
-    gameContract: '0xYourDeployedContractAddress', // From deployment output
+    gameContract: '0xYourV3DeployedContractAddress', // From V3 deployment output
     wldToken: '0xWLDTokenAddress', // WLD token address
   },
   worldchainSepolia: {
-    gameContract: '0xYourSepoliaContractAddress', // From deployment output
+    gameContract: '0xYourV3SepoliaContractAddress', // From V3 deployment output
     wldToken: '0xSepoliaWLDTokenAddress', // Sepolia WLD token address
   }
 } as const
+```
+
+**Important for V3:** Also update the ABI import to use the V3 contract ABI:
+```typescript
+import GameContractABI from '../artifacts/contracts/RedLightGreenLightGameV3.sol/RedLightGreenLightGameV3.json'
+```
+
+### V2 Contract Updates
+
+After V2 deployment, update with V2 contract address and ABI:
+```typescript
+import GameContractABI from '../artifacts/contracts/RedLightGreenLightGameV2.sol/RedLightGreenLightGameV2.json'
+```
+
+### V1 Contract Updates (Legacy)
+
+After V1 deployment, update with V1 contract address and ABI:
+```typescript
+import GameContractABI from '../artifacts/contracts/RedLightGreenLightGame.sol/RedLightGreenLightGame.json'
 ```
 
 ## ✅ Verify Deployment
@@ -149,12 +229,52 @@ npm run verify:sepolia YOUR_CONTRACT_ADDRESS YOUR_WLD_TOKEN_ADDRESS
 
 ## 🎮 Test Your Deployment
 
+### V3 Contract Testing
+
 1. **Start Frontend:**
    ```bash
    npm run dev
    ```
 
-2. **Test Features:**
+2. **Test V3 Features:**
+   - Verify World ID login works
+   - Test daily claim system (100 RLGL + streak bonus)
+   - Check turn display shows correct count
+   - Try purchasing turns and weekly passes (on testnet first!)
+   - Test token migration from V1/V2 (if applicable)
+   - Play games and verify tokens are earned
+   - Check both Classic and Arcade leaderboards
+   - Test emergency pause functionality (admin only)
+
+3. **V3-Specific Tests:**
+   - Test localStorage import functionality
+   - Verify token allocation (1M RLGL to developer wallet)
+   - Check max supply enforcement (1B RLGL)
+   - Test pricing update functionality (admin only)
+
+### V2 Contract Testing
+
+1. **Start Frontend:**
+   ```bash
+   npm run dev
+   ```
+
+2. **Test V2 Features:**
+   - Verify World ID login works
+   - Check turn display shows correct count
+   - Try purchasing turns and weekly passes (on testnet first!)
+   - Play a game and verify tokens are earned
+   - Check optimized leaderboard (Top 10)
+   - Test leaderboard seeding functionality
+
+### V1 Contract Testing (Legacy)
+
+1. **Start Frontend:**
+   ```bash
+   npm run dev
+   ```
+
+2. **Test Basic Features:**
    - Verify World ID login works
    - Check turn display shows correct count
    - Try purchasing turns (on testnet first!)
@@ -193,16 +313,96 @@ curl -X POST -H "Content-Type: application/json" \
 - [Hardhat Documentation](https://hardhat.org/docs)
 - [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts)
 
-## 🎯 Next Steps After Deployment
+## 🎯 Final Recommendations
 
 1. **Test thoroughly** on Sepolia before mainnet
 2. **Set up monitoring** for contract events
 3. **Prepare frontend** for production
 4. **Consider security audit** before mainnet launch
 5. **Plan token distribution** strategy
+6. **Backup deployment files** for future reference
+
+## 🚀 Next Steps After Deployment
+
+### V3 Contract Next Steps
+
+1. **Update Frontend:**
+   - Update contract addresses in `src/types/contract.ts`
+   - Update contract ABI to use V3 ABI
+   - Test frontend functionality
+
+2. **Configure V3 Contract:**
+   - Set authorized submitters for leaderboard
+   - Update turn costs and weekly pass costs if needed
+   - Configure daily claim amounts and streak bonuses
+   - Set emergency pause controller (if needed)
+
+3. **Test Migration Features:**
+   - Test token migration from V1/V2 contracts
+   - Verify migration limits and restrictions
+   - Test authorization of existing game contracts
+
+4. **Monitor & Maintain:**
+   - Monitor contract activity
+   - Check for any issues
+   - Plan for future upgrades
+
+### V2 Contract Next Steps
+
+1. **Update Frontend:**
+   - Update contract addresses in `src/types/contract.ts`
+   - Update contract ABI to use V2 ABI
+   - Test frontend functionality
+
+2. **Configure V2 Contract:**
+   - Set authorized submitters for leaderboard
+   - Update turn costs if needed
+   - Configure weekly pass costs
+
+3. **Monitor & Maintain:**
+   - Monitor contract activity
+   - Check for any issues
+   - Plan for future upgrades
+
+### V1 Contract Next Steps (Legacy)
+
+1. **Update Frontend:**
+   - Update contract addresses in `src/types/contract.ts`
+   - Update contract ABI to use V1 ABI
+   - Test frontend functionality
+
+2. **Configure V1 Contract:**
+   - Set authorized submitters (if using leaderboard)
+   - Update turn costs if needed
+
+3. **Monitor & Maintain:**
+   - Monitor contract activity
+   - Check for any issues
+   - Plan for migration to newer versions
 
 ## 💰 Gas Costs Estimate
 
+### V3 Contract Costs
+| Operation | Estimated Gas | Cost @ 20 gwei |
+|-----------|---------------|------------------|
+| Contract Deployment | ~3,000,000 | ~0.06 ETH |
+| Daily Claim | ~100,000 | ~0.002 ETH |
+| Purchase Turns | ~80,000 | ~0.0016 ETH |
+| Purchase Weekly Pass | ~120,000 | ~0.0024 ETH |
+| Submit Score | ~120,000 | ~0.0024 ETH |
+| Update Pricing (Admin) | ~60,000 | ~0.0012 ETH |
+| Emergency Pause (Admin) | ~40,000 | ~0.0008 ETH |
+
+### V2 Contract Costs
+| Operation | Estimated Gas | Cost @ 20 gwei |
+|-----------|---------------|------------------|
+| Contract Deployment | ~2,500,000 | ~0.05 ETH |
+| Purchase Turns | ~80,000 | ~0.0016 ETH |
+| Purchase Weekly Pass | ~100,000 | ~0.002 ETH |
+| Submit Score | ~120,000 | ~0.0024 ETH |
+| Update Turn Cost | ~50,000 | ~0.001 ETH |
+
+### V1 Contract Costs (Legacy)
 | Operation | Estimated Gas | Cost @ 20 gwei |
 |-----------|---------------|------------------|
 | Contract Deployment | ~2,500,000 | ~0.05 ETH |
@@ -210,8 +410,8 @@ curl -X POST -H "Content-Type: application/json" \
 | Submit Score | ~120,000 | ~0.0024 ETH |
 | Update Turn Cost | ~50,000 | ~0.001 ETH |
 
-*Costs may vary based on network congestion*
+*Costs may vary based on network congestion and contract complexity*
 
 ---
 
-🎉 **Ready to deploy?** Run `npm run deploy:sepolia` to get started! 
+🎉 **Ready to deploy?** Run `npm run deploy:sepolia` to get started!

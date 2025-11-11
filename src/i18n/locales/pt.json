@@ -178,29 +178,32 @@
     "updatedEvery12Hours": "O placar é atualizado a cada 12 horas."
   },
   "turnDisplay": {
-    "yourTurns": "Seus Turnos",
+    "yourTurns": "Suas Turnos",
     "live": "Ao Vivo",
     "availableTurns": "Turnos Disponíveis",
     "noTurnsRemaining": "Nenhum turno restante",
-    "freeResetsIn": "Turnos gratuitos resetam em",
-    "nextReset": "Próximo reset:",
+    "freeResetsIn": "Redefinições gratuitas em",
+    "nextReset": "Próxima redefinição:",
     "processing": "Processando...",
     "buyMoreTurns": "Comprar 3 Turnos Mais",
     "sale": "Promoção!",
-    "resetAvailable": "Reset disponível agora!",
-    "turnsResetIn": "Turnos resetam em",
+    "resetAvailable": "Redefinição disponível agora!",
+    "turnsResetIn": "Turnos serão redefinidos em",
     "error": "{{error}}",
     "paymentFailed": "Pagamento falhou: {{error}}",
     "paymentSuccess": {
       "title": "Pagamento Bem-sucedido!",
-      "subtitle": "Agora você tem {{turns}} turnos disponíveis"
+      "subtitle": "Você agora tem {{turns}} turnos disponíveis"
     },
     "weeklyPass": {
       "active": "Passe Semanal Ativo",
       "unlimitedUntil": "Turnos ilimitados até",
       "buttonTitle": "Passe Semanal",
       "buttonSubtitle": "Turnos Ilimitados por 7 Dias!"
-    }
+    },
+    "verificationBonus": "Bônus de Verificação",
+    "rewardsMultiplier": "multiplicador de recompensas",
+    "loadingMultiplier": "Carregando multiplicador..."
   },
   "worldIdLogin": {
     "title": "🚨 Luz Vermelha Luz Verde 🚨",
@@ -263,6 +266,16 @@
   },
   "gameStart": {
     "title": "🎮 Iniciar Jogo"
+  },
+  "dailyClaim": {
+    "title": "Recompensa Diária",
+    "description": "Pegue sua recompensa diária",
+    "claim": "Pegar",
+    "claimed": "Pego",
+    "nextClaim": "Próximo resgate em",
+    "streak": "Sequência",
+    "available": "Recompensa Diária Disponível",
+    "dayStreak": "sequência de dias"
   },
   "common": {
     "loading": "Carregando...",

@@ -8,7 +8,12 @@ import type {
   PaymentResult, 
   GameSubmission, 
   LeaderboardEntry, 
-  GameResult 
+  GameResult,
+  DailyClaimStatus,
+  CurrentPricing,
+  VerificationMultipliers,
+  ContractStats,
+  GameMode
 } from '../types/contract'
 import { GAME_CONTRACT_ABI, CONTRACT_CONFIG } from '../types/contract'
 import { rpcManager } from '../utils/rpcManager'
@@ -69,6 +74,12 @@ export function useContract(): UseContractReturn {
             abi: GAME_CONTRACT_ABI,
             functionName: 'getWeeklyPassExpiry',
             args: [playerAddress as Address]
+          },
+          {
+            address: GAME_CONTRACT_ADDRESS,
+            abi: GAME_CONTRACT_ABI,
+            functionName: 'getDailyClaimStatus',
+            args: [playerAddress as Address]
           }
         ]
       }
@@ -79,6 +90,7 @@ export function useContract(): UseContractReturn {
       const timeUntilReset = results[1].status === 'success' ? results[1].result : BigInt(0)
       const hasWeeklyPass = results[2].status === 'success' ? results[2].result : false
       const weeklyPassExpiry = results[3].status === 'success' ? results[3].result : BigInt(0)
+      const dailyClaimStatus = results[4].status === 'success' ? results[4].result : null
 
       const turns = Number(availableTurns)
       const resetTime = Number(timeUntilReset) * 1000 // Convert to milliseconds
@@ -89,7 +101,10 @@ export function useContract(): UseContractReturn {
         canPurchaseMoreTurns: turns === 0 && !hasWeeklyPass,
         nextResetTime: new Date(Date.now() + resetTime),
         hasActiveWeeklyPass: hasWeeklyPass,
-        weeklyPassExpiry: hasWeeklyPass ? new Date(Number(weeklyPassExpiry) * 1000) : undefined
+        weeklyPassExpiry: hasWeeklyPass ? new Date(Number(weeklyPassExpiry) * 1000) : undefined,
+        dailyClaimAvailable: dailyClaimStatus?.canClaim || false,
+        dailyClaimStreak: dailyClaimStatus?.currentStreak ? Number(dailyClaimStatus.currentStreak) : undefined,
+        nextDailyReward: dailyClaimStatus?.nextReward ? Number(dailyClaimStatus.nextReward) : undefined
       }
       
       return result
@@ -132,10 +147,7 @@ export function useContract(): UseContractReturn {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Purchase failed'
       setError(errorMessage)
-      return {
-        success: false,
-        error: errorMessage
-      }
+      throw new Error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -173,7 +185,7 @@ export function useContract(): UseContractReturn {
     }
   }, [])
 
-  const submitScore = useCallback(async (score: number, round: number): Promise<GameSubmission> => {
+  const submitScore = useCallback(async (score: number, round: number, gameMode: GameMode = 'Classic'): Promise<GameSubmission> => {
     try {
       setIsLoading(true)
       setError(null)
@@ -182,12 +194,15 @@ export function useContract(): UseContractReturn {
         throw new Error('MiniKit not installed')
       }
 
+      // Convert GameMode to uint8 (0: Classic, 1: Arcade, 2: WhackLight)
+      const gameModeValue = gameMode === 'Classic' ? 0 : gameMode === 'Arcade' ? 1 : 2
+
       const result = await MiniKit.commandsAsync.sendTransaction({
         transaction: [{
           address: GAME_CONTRACT_ADDRESS,
           abi: GAME_CONTRACT_ABI,
           functionName: 'submitScore',
-          args: [BigInt(score), BigInt(round)]
+          args: [BigInt(score), BigInt(round), BigInt(gameModeValue)]
         }]
       })
 
@@ -195,14 +210,11 @@ export function useContract(): UseContractReturn {
         throw new Error(result.finalPayload.error_code || 'Transaction failed')
       }
 
-      // Calculate tokens earned (0.1 token per point)
-      const tokensEarned = formatEther(BigInt(score) * parseEther('0.1'))
-
       return {
         score,
         round,
-        tokensEarned,
-        transactionHash: result.finalPayload.transaction_status || 'success'
+        tokensEarned: '0', // This should be calculated from the contract response
+        transactionHash: result.finalPayload.transaction_id
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to submit score'
@@ -250,20 +262,26 @@ export function useContract(): UseContractReturn {
     }
   }, [])
 
-  const getLeaderboard = useCallback(async (): Promise<LeaderboardEntry[]> => {
+  const getLeaderboard = useCallback(async (gameMode: GameMode = 'Classic', topN: number = 10): Promise<LeaderboardEntry[]> => {
     try {
+      // Convert GameMode to uint8 (0: Classic, 1: Arcade, 2: WhackLight)
+      const gameModeValue = gameMode === 'Classic' ? 0 : gameMode === 'Arcade' ? 1 : 2
+      
       const result = await rpcManager.readContract({
         address: GAME_CONTRACT_ADDRESS,
         abi: GAME_CONTRACT_ABI,
-        functionName: 'getLeaderboard'
-      }) as readonly { player: Address; score: bigint; timestamp: bigint; round: bigint }[]
+        functionName: 'getTopScores',
+        args: [BigInt(gameModeValue), BigInt(topN)]
+      }) as readonly { player: Address; score: bigint; timestamp: bigint; round: bigint; tokensEarned: bigint }[]
 
       const leaderboard: LeaderboardEntry[] = result.map((entry, index) => ({
         player: entry.player,
         score: Number(entry.score),
         timestamp: Number(entry.timestamp) * 1000, // Convert to milliseconds
         round: Number(entry.round),
-        rank: index + 1
+        rank: index + 1,
+        tokensEarned: formatEther(entry.tokensEarned),
+        gameMode
       }))
       
       return leaderboard
@@ -282,7 +300,25 @@ export function useContract(): UseContractReturn {
     }
   }, [])
 
-  const getLeaderboardPaginated = useCallback(async (offset: number, limit: number): Promise<LeaderboardEntry[]> => {
+  const getPlayerRank = useCallback(async (playerAddress: string, gameMode: GameMode = 'Classic'): Promise<number> => {
+    try {
+      // Convert GameMode to uint8 (0: Classic, 1: Arcade, 2: WhackLight)
+      const gameModeValue = gameMode === 'Classic' ? 0 : gameMode === 'Arcade' ? 1 : 2
+      
+      const result = await rpcManager.readContract({
+        address: GAME_CONTRACT_ADDRESS,
+        abi: GAME_CONTRACT_ABI,
+        functionName: 'getPlayerRank',
+        args: [playerAddress as Address, BigInt(gameModeValue)]
+      }) as bigint
+      
+      return Number(result)
+    } catch (err) {
+      throw new Error(`Failed to get player rank: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
+  }, [])
+
+  const getLeaderboardPaginated = useCallback(async (offset: number, limit: number, gameMode: GameMode = 'Classic'): Promise<LeaderboardEntry[]> => {
     try {
       const result = await rpcManager.readContract({
         address: GAME_CONTRACT_ADDRESS,
@@ -296,7 +332,8 @@ export function useContract(): UseContractReturn {
         score: Number(entry.score),
         timestamp: Number(entry.timestamp) * 1000, // Convert to milliseconds
         round: Number(entry.round),
-        rank: offset + index + 1
+        rank: offset + index + 1,
+        gameMode
       }))
       
       return leaderboard
@@ -305,7 +342,7 @@ export function useContract(): UseContractReturn {
     }
   }, [])
 
-  const getTopScores = useCallback(async (count: number): Promise<LeaderboardEntry[]> => {
+  const getTopScores = useCallback(async (count: number, gameMode: GameMode = 'Classic'): Promise<LeaderboardEntry[]> => {
     try {
       const result = await rpcManager.readContract({
         address: GAME_CONTRACT_ADDRESS,
@@ -319,7 +356,8 @@ export function useContract(): UseContractReturn {
         score: Number(entry.score),
         timestamp: Number(entry.timestamp) * 1000, // Convert to milliseconds
         round: Number(entry.round),
-        rank: index + 1
+        rank: index + 1,
+        gameMode
       }))
       
       return topScores
@@ -526,6 +564,122 @@ export function useContract(): UseContractReturn {
     // Return fallback value immediately for faster loading
     // This matches the old behavior for better performance
     return '5.0'
+  }, [])
+
+  const claimDailyReward = useCallback(async (): Promise<PaymentResult> => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      if (!MiniKit.isInstalled()) {
+        throw new Error('MiniKit not installed')
+      }
+
+      const result = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [{
+          address: GAME_CONTRACT_ADDRESS,
+          abi: GAME_CONTRACT_ABI,
+          functionName: 'claimDailyReward',
+          args: []
+        }]
+      })
+
+      if (result.finalPayload.status === 'error') {
+        throw new Error(result.finalPayload.error_code || 'Transaction failed')
+      }
+
+      return {
+        success: true,
+        transactionHash: result.finalPayload.transaction_id
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to claim daily reward'
+      setError(errorMessage)
+      return {
+        success: false,
+        error: errorMessage
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const getDailyClaimStatus = useCallback(async (playerAddress: string): Promise<DailyClaimStatus> => {
+    try {
+      const result = await rpcManager.readContract({
+        address: GAME_CONTRACT_ADDRESS,
+        abi: GAME_CONTRACT_ABI,
+        functionName: 'getDailyClaimStatus',
+        args: [playerAddress as Address]
+      }) as any
+      
+      return {
+        canClaim: result.canClaim,
+        currentStreak: Number(result.currentStreak),
+        nextReward: Number(result.nextReward),
+        lastClaimTime: Number(result.lastClaimTime)
+      }
+    } catch (err) {
+      throw new Error(`Failed to get daily claim status: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
+  }, [])
+
+  const getCurrentPricing = useCallback(async (): Promise<CurrentPricing> => {
+    try {
+      const result = await rpcManager.readContract({
+        address: GAME_CONTRACT_ADDRESS,
+        abi: GAME_CONTRACT_ABI,
+        functionName: 'getCurrentPricing'
+      }) as any
+      
+      return {
+        tokensPerPoint: formatEther(result.tokensPerPoint),
+        turnCost: formatEther(result.turnCost),
+        passCost: formatEther(result.passCost),
+        additionalTurnsCost: formatEther(result.additionalTurnsCost),
+        weeklyPassCost: formatEther(result.weeklyPassCost)
+      }
+    } catch (err) {
+      throw new Error(`Failed to get current pricing: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
+  }, [])
+
+  const getVerificationMultipliers = useCallback(async (): Promise<VerificationMultipliers> => {
+    try {
+      const result = await rpcManager.readContract({
+        address: GAME_CONTRACT_ADDRESS,
+        abi: GAME_CONTRACT_ABI,
+        functionName: 'getVerificationMultipliers'
+      }) as any
+      
+      return {
+        orbPlusMultiplier: Number(result.orbPlusMultiplier),
+        orbMultiplier: Number(result.orbMultiplier),
+        secureDocumentMultiplier: Number(result.secureDocumentMultiplier),
+        documentMultiplier: Number(result.documentMultiplier)
+      }
+    } catch (err) {
+      throw new Error(`Failed to get verification multipliers: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
+  }, [])
+
+  const getContractStats = useCallback(async (): Promise<ContractStats> => {
+    try {
+      const result = await rpcManager.readContract({
+        address: GAME_CONTRACT_ADDRESS,
+        abi: GAME_CONTRACT_ABI,
+        functionName: 'getContractStats'
+      }) as any
+      
+      return {
+        totalGames: Number(result.totalGames),
+        totalPlayers: Number(result.totalPlayers),
+        maxSupply: Number(result.maxSupply),
+        isPaused: result.isPaused
+      }
+    } catch (err) {
+      throw new Error(`Failed to get contract stats: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
   }, [])
 
   const purchaseWeeklyPass = useCallback(async (): Promise<PaymentResult> => {
@@ -735,6 +889,10 @@ export function useContract(): UseContractReturn {
     purchaseWeeklyPass,
     getWeeklyPassCost,
     
+    // Daily claim system
+    claimDailyReward,
+    getDailyClaimStatus,
+    
     // Game management
     startGame,
     submitScore,
@@ -742,6 +900,7 @@ export function useContract(): UseContractReturn {
     // Data retrieval
     getPlayerStats,
     getLeaderboard,
+    getPlayerRank,
     getLeaderboardPaginated,
     getTopScores,
     getBatchPlayerStats,
@@ -750,6 +909,9 @@ export function useContract(): UseContractReturn {
     getCurrentTurnCost,
     getTotalGamesPlayed,
     getAdditionalTurnsCost,
+    getCurrentPricing,
+    getVerificationMultipliers,
+    getContractStats,
     
     // Admin functions (owner only)
     updateTurnCost,

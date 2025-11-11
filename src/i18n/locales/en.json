@@ -224,7 +224,10 @@
       "unlimitedUntil": "Unlimited turns until",
       "buttonTitle": "Weekly Pass",
       "buttonSubtitle": "Unlimited Turns for 7 Days!"
-    }
+    },
+    "verificationBonus": "Verification Bonus",
+    "rewardsMultiplier": "rewards multiplier",
+    "loadingMultiplier": "Loading multiplier..."
   },
   "gameModeSelector": {
     "title": "Select Game Mode",
@@ -240,11 +243,34 @@
       "title": "🔨 Whack-a-Light",
       "description": "Tap only green lights. More lights each round — quick and deadly."
     },
-    "changeAnytime": "You can change modes anytime from the main menu"
+    "changeAnytime": "You can change modes anytime from the main menu",
+    "verificationBenefits": {
+      "title": "Verification Benefits",
+      "description": "Higher verification levels provide better rewards",
+      "document": "Document Verified: 100% baseline rewards",
+      "secureDocument": "Secure Document: 115% bonus rewards",
+      "orb": "Orb Verified: 125% bonus rewards",
+      "orbPlus": "Orb+ Verified: 140% bonus rewards"
+    }
   },
   "whackMode": {
     "title": "Whack-a-Light",
     "description": "Tap only green lights. More lights each round — quick and deadly."
+  },
+  "dailyClaim": {
+    "title": "Daily Reward",
+    "claim": "Claim Reward",
+    "claiming": "Claiming...",
+    "nextReward": "Next Reward",
+    "nextAvailable": "Next Available In",
+    "days": "Days",
+    "description": "Claim your daily RLGL tokens! Come back every day to build your streak.",
+    "streakInfo": "{{days}} day streak: {{bonus}}% bonus",
+    "success": "Daily reward claimed successfully!",
+    "claimError": "Failed to claim daily reward",
+    "loadError": "Failed to load daily claim status",
+    "available": "Daily Reward Available",
+    "dayStreak": "day streak"
   },
    "instructions": {
      "whackMode": {

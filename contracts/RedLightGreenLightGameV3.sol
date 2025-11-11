@@ -10,8 +10,8 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title RedLightGreenLightGameV3
- * @dev Advanced game contract with full configurability, migration support, and daily rewards
- * @notice Features: Dynamic pricing, token migration, localStorage compatibility, daily claims, enhanced leaderboards
+ * @dev Advanced game contract with full configurability, and daily rewards
+ * @notice Features: Dynamic pricing, localStorage compatibility, daily claims, enhanced leaderboards
  */
 contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     // Using simple uint256 counter instead of Counters library
@@ -28,8 +28,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     
     // ============ STATE VARIABLES ============
     IERC20 public immutable wldToken;
-    IERC20 public immutable rlglTokenV1;
-    IERC20 public immutable rlglTokenV2;
     
     // Dynamic pricing (owner configurable)
     uint256 public tokensPerPoint = 1e17; // 0.1 tokens per point (default)
@@ -51,7 +49,7 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     uint256 public constant MAX_WEEKLY_PASS_COST = 20e18; // 20 WLD
     
     // Game modes
-    enum GameMode { Classic, Arcade }
+    enum GameMode { Classic, Arcade, WhackLight }
     
     // Verification levels
     enum VerificationLevel { None, Device, Document, SecureDocument, Orb, OrbPlus }
@@ -66,7 +64,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         uint256 weeklyPassExpiry;
         uint256 lastDailyClaim;
         uint256 dailyClaimStreak;
-        bool hasMigratedTokens;
         uint256 extraGoes; // localStorage compatibility
         uint256 passes; // localStorage compatibility
         VerificationLevel verificationLevel; // User verification level
@@ -105,10 +102,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     uint256 public totalGamesPlayed;
     uint256 public totalPlayersCount;
     
-    // Migration tracking
-    mapping(address => bool) public hasMigratedFromV1;
-    mapping(address => bool) public hasMigratedFromV2;
-    
     // Verification tracking
     mapping(address => VerificationLevel) public userVerificationLevels;
     
@@ -139,13 +132,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         uint256 amount,
         uint256 streak,
         uint256 bonus
-    );
-    
-    event TokensMigrated(
-        address indexed player,
-        uint256 v1Amount,
-        uint256 v2Amount,
-        uint256 totalMigrated
     );
     
     event HighScoreUpdated(
@@ -200,7 +186,7 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     }
     
     modifier validGameMode(GameMode gameMode) {
-        require(uint8(gameMode) <= 1, "Invalid game mode");
+        require(uint8(gameMode) <= 2, "Invalid game mode");
         _;
     }
     
@@ -214,15 +200,11 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     // ============ CONSTRUCTOR ============
     constructor(
         address _wldToken,
-        address _rlglTokenV1,
-        address _rlglTokenV2,
         address _developerWallet
     ) ERC20("Red Light Green Light Token V3", "RLGL") Ownable(msg.sender) {
         require(_developerWallet != address(0), "Developer wallet cannot be zero address");
         
         wldToken = IERC20(_wldToken);
-        rlglTokenV1 = IERC20(_rlglTokenV1);
-        rlglTokenV2 = IERC20(_rlglTokenV2);
         _gameIdCounter = 1; // Start from 1
         
         // Mint 1 million tokens to developer wallet for promotions and liquidity
@@ -559,44 +541,7 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     
     // ============ TOKEN MIGRATION ============
     
-    /**
-     * @dev Migrate tokens from V1 and V2 contracts
-     */
-    function migrateTokens() external nonReentrant {
-        require(!players[msg.sender].hasMigratedTokens, "Already migrated");
-        
-        uint256 v1Balance = rlglTokenV1.balanceOf(msg.sender);
-        uint256 v2Balance = rlglTokenV2.balanceOf(msg.sender);
-        
-        require(v1Balance > 0 || v2Balance > 0, "No tokens to migrate");
-        
-        uint256 totalToMigrate = v1Balance + v2Balance;
-        
-        // Transfer tokens from V1 and V2 contracts
-        if (v1Balance > 0) {
-            require(
-                rlglTokenV1.transferFrom(msg.sender, address(this), v1Balance),
-                "V1 transfer failed"
-            );
-            hasMigratedFromV1[msg.sender] = true;
-        }
-        
-        if (v2Balance > 0) {
-            require(
-                rlglTokenV2.transferFrom(msg.sender, address(this), v2Balance),
-                "V2 transfer failed"
-            );
-            hasMigratedFromV2[msg.sender] = true;
-        }
-        
-        // Mint equivalent tokens in V3
-        require(totalSupply() + totalToMigrate <= MAX_SUPPLY, "Would exceed max supply");
-        _mint(msg.sender, totalToMigrate);
-        
-        players[msg.sender].hasMigratedTokens = true;
-        
-        emit TokensMigrated(msg.sender, v1Balance, v2Balance, totalToMigrate);
-    }
+    // Migration functionality removed - V3 starts fresh
     
     // ============ LOCALSTORAGE COMPATIBILITY ============
     
@@ -914,7 +859,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         uint256 weeklyPassExpiry,
         uint256 lastDailyClaim,
         uint256 dailyClaimStreak,
-        bool hasMigratedTokens,
         uint256 extraGoes,
         uint256 passes,
         VerificationLevel verificationLevel,
@@ -935,7 +879,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
             playerData.weeklyPassExpiry,
             playerData.lastDailyClaim,
             playerData.dailyClaimStreak,
-            playerData.hasMigratedTokens,
             playerData.extraGoes,
             playerData.passes,
             playerData.verificationLevel,

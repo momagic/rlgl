@@ -224,7 +224,10 @@
       "unlimitedUntil": "無制限ターン期限:",
       "buttonTitle": "週間パス",
       "buttonSubtitle": "7日間無制限ターン！"
-    }
+    },
+    "verificationBonus": "認証ボーナス",
+    "rewardsMultiplier": "報酬倍率",
+    "loadingMultiplier": "倍率を読み込み中..."
   },
   "gameModeSelector": {
     "title": "ゲームモード選択",
@@ -236,7 +239,15 @@
       "title": "アーケードモード",
       "description": "浮遊パワーアップと特殊能力で強化されたゲームプレイ"
     },
-    "changeAnytime": "メインメニューからいつでもモードを変更できます"
+    "changeAnytime": "メインメニューからいつでもモードを変更できます",
+    "verificationBenefits": {
+      "title": "認証の特典",
+      "description": "認証レベルが高いほど、より良い報酬が得られます",
+      "document": "文書認証：基本報酬100%",
+      "secureDocument": "安全な文書：ボーナス報酬115%",
+      "orb": "Orb認証：ボーナス報酬125%",
+      "orbPlus": "Orb+認証：ボーナス報酬140%"
+    }
   },
   "whackMode": {
     "title": "🔨 ライト叩き",
@@ -252,6 +263,23 @@
        "timing": "時間は限られています - 素早く正確に！"
      }
    },
+  "dailyClaim": {
+    "title": "デイリークレーム",
+    "description": "デイリークレームを受け取る",
+    "claim": "クレーム",
+    "claimed": "クレーム済み",
+    "nextClaim": "次のクレームまで",
+    "streak": "連続",
+    "available": "デイリーリワード利用可能",
+    "dayStreak": "日間連続",
+    "claiming": "受け取り中...",
+    "nextReward": "次のリワード",
+    "nextAvailable": "次に利用可能まで",
+    "days": "日",
+    "success": "デイリーリワードの受け取りに成功しました！",
+    "claimError": "デイリーリワードの受け取りに失敗しました",
+    "loadError": "デイリークレームステータスの読み込みに失敗しました"
+  },
    "proTips": {
     "timing": "タイミングがすべて：タップする前に緑のライトを待って！",
     "speed": "スピードアップ：スコアが上がるにつれてゲームが速くなります。",
