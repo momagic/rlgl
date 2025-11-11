@@ -199,7 +199,7 @@
     "verifiedTitle": "🎉 Welcome to the Arena!",
     "verifiedSubtitle": "You're verified and ready to compete! Time to show off those lightning reflexes.",
     "tapInstructions": "Tap the green button to verify humanity using World ID",
-    "error": "⚠️ Verification failed. Make sure you're Orb verified and try again!"
+    "error": "⚠️ Verification failed. Make sure you're Document verified and try again!"
   },
   "turnDisplay": {
     "yourTurns": "Your Turns",

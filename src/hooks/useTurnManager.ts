@@ -164,24 +164,24 @@ export function useTurnManager(): UseTurnManagerReturn {
 
   // Helper function to check if current user is a dev user
   const isDevUser = useCallback((): boolean => {
-    return user?.walletAddress === '0xDEV1234567890123456789012345678901234ABCD' ||
-           user?.walletAddress === '0xDEV2345678901234567890123456789012345BCDE' ||
-           user?.walletAddress === '0xDEV3456789012345678901234567890123456CDEF'
+    return user?.walletAddress === '0x1234567890123456789012345678901234567890' ||
+           user?.walletAddress === '0x2345678901234567890123456789012345678901' ||
+           user?.walletAddress === '0x3456789012345678901234567890123456789012'
   }, [user?.walletAddress])
 
   // Helper function to check if current user is dev user 1 (with weekly pass)
   const isDevUser1 = useCallback((): boolean => {
-    return user?.walletAddress === '0xDEV1234567890123456789012345678901234ABCD'
+    return user?.walletAddress === '0x1234567890123456789012345678901234567890'
   }, [user?.walletAddress])
 
   // Helper function to check if current user is dev user 2 (without weekly pass)
   const isDevUser2 = useCallback((): boolean => {
-    return user?.walletAddress === '0xDEV2345678901234567890123456789012345BCDE'
+    return user?.walletAddress === '0x2345678901234567890123456789012345678901'
   }, [user?.walletAddress])
 
   // Helper function to check if current user is dev user 3 (no turns remaining)
   const isDevUser3 = useCallback((): boolean => {
-    return user?.walletAddress === '0xDEV3456789012345678901234567890123456CDEF'
+    return user?.walletAddress === '0x3456789012345678901234567890123456789012'
   }, [user?.walletAddress])
 
   const cleanupOldPurchases = useCallback(() => {

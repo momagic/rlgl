@@ -632,17 +632,34 @@ export function useContract(): UseContractReturn {
         functionName: 'getCurrentPricing'
       }) as any
       
+      // The contract returns only 3 values: tokensPerPoint, turnCost, passCost
+      // For additionalTurnsCost and weeklyPassCost, we need to call separate functions
+      let additionalTurnsCost = '0.2'
+      let weeklyPassCost = '5.0'
+      
+      try {
+        additionalTurnsCost = await getAdditionalTurnsCost()
+      } catch (e) {
+        console.warn('Failed to fetch additional turns cost, using default')
+      }
+      
+      try {
+        weeklyPassCost = await getWeeklyPassCost()
+      } catch (e) {
+        console.warn('Failed to fetch weekly pass cost, using default')
+      }
+      
       return {
         tokensPerPoint: formatEther(result.tokensPerPoint),
         turnCost: formatEther(result.turnCost),
         passCost: formatEther(result.passCost),
-        additionalTurnsCost: formatEther(result.additionalTurnsCost),
-        weeklyPassCost: formatEther(result.weeklyPassCost)
+        additionalTurnsCost,
+        weeklyPassCost
       }
     } catch (err) {
       throw new Error(`Failed to get current pricing: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
-  }, [])
+  }, [getAdditionalTurnsCost, getWeeklyPassCost])
 
   const getVerificationMultipliers = useCallback(async (): Promise<VerificationMultipliers> => {
     try {

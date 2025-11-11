@@ -105,7 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           nullifierHash: 'dev-bypass-nullifier-hash',
           verificationLevel: 'orb' as any,
           verified: true,
-          walletAddress: '0xDEV1234567890123456789012345678901234ABCD',
+          walletAddress: '0x1234567890123456789012345678901234567890',
           username: 'Developer',
           profilePictureUrl: undefined,
           walletAuthenticated: true
@@ -116,7 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           nullifierHash: 'dev-bypass-nullifier-hash-2',
           verificationLevel: 'orb' as any,
           verified: true,
-          walletAddress: '0xDEV2345678901234567890123456789012345BCDE',
+          walletAddress: '0x2345678901234567890123456789012345678901',
           username: 'Developer 2',
           profilePictureUrl: undefined,
           walletAuthenticated: true
@@ -127,7 +127,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           nullifierHash: 'dev-bypass-nullifier-hash-3',
           verificationLevel: 'orb' as any,
           verified: true,
-          walletAddress: '0xDEV3456789012345678901234567890123456CDEF',
+          walletAddress: '0x3456789012345678901234567890123456789012',
           username: 'Developer 3',
           profilePictureUrl: undefined,
           walletAuthenticated: true
@@ -147,9 +147,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true)
     
     try {
+      // Request Document verification (which accepts higher levels like Orb)
       const verifyPayload: VerifyCommandInput = {
         action: 'play-game',
-        verification_level: VerificationLevel.Orb
+        verification_level: VerificationLevel.Document
       }
 
       const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload)
@@ -167,7 +168,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return
       }
       
-      // Trust MiniKit's verification - no need for cloud verification in frontend
+      // Trust MiniKit's verification - MiniKit handles the verification level hierarchy
+      // If user is Orb-verified, MiniKit will accept Document verification requests
       const worldIDUser: WorldIDUser = {
         nullifierHash: finalPayload.nullifier_hash,
         verificationLevel: finalPayload.verification_level,
@@ -182,7 +184,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [haptics])
+  }, [haptics, saveSession])
 
   const authenticateWallet = useCallback(async () => {
     console.log('🔐 Wallet authentication started:', {

@@ -199,7 +199,7 @@
     "verifiedTitle": "🎉 ¡Bienvenido a la Arena!",
     "verifiedSubtitle": "¡Estás verificado y listo para competir! Es hora de mostrar esos reflejos ultrarrápidos.",
     "tapInstructions": "Toca el botón verde para verificar tu humanidad usando World ID",
-    "error": "⚠️ Verificación fallida. Asegúrate de estar verificado con Orb e inténtalo de nuevo!"
+    "error": "⚠️ Verificación fallida. Asegúrate de estar verificado con Documento e inténtalo de nuevo!"
   },
   "turnDisplay": {
     "yourTurns": "Tus Turnos",
@@ -328,7 +328,7 @@
     "verifiedDescription": "Ahora estás verificado como humano y puedes disfrutar de recompensas y características mejoradas.",
     "continue": "Continuar",
     "note": "Puedes verificar tu humanidad más tarde desde el menú de configuración.",
-    "error": "⚠️ Verificación fallida. ¡Asegúrate de estar verificado con Orb e inténtalo de nuevo!"
+    "error": "⚠️ Verificación fallida. ¡Asegúrate de estar verificado con Documento e inténtalo de nuevo!"
   },
   "common": {
     "loading": "Cargando...",
