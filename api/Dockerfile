@@ -34,24 +34,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "
-    const http = require('http');
-    const options = {
-      hostname: 'localhost',
-      port: process.env.PORT || 3000,
-      path: '/health',
-      method: 'GET',
-      timeout: 5000
-    };
-    
-    const req = http.request(options, (res) => {
-      process.exit(res.statusCode === 200 ? 0 : 1);
-    });
-    
-    req.on('error', () => process.exit(1));
-    req.on('timeout', () => process.exit(1));
-    req.end();
-  "
+  CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
