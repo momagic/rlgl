@@ -11,9 +11,11 @@ function resolveApiBaseUrl(): string {
   // Prefer Vite-style envs, then Next-style, then CRA-style, then default
   const viteUrl = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WORLD_ID_API_URL)
     || (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL)
-  const nextUrl = typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_WORLD_ID_API_URL)
+  const nextUrl = typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_WORLD_ID_API_URL || process.env.NEXT_PUBLIC_API_URL)
   const craUrl = typeof process !== 'undefined' && process.env.REACT_APP_WORLD_ID_API_URL
-  return (viteUrl || nextUrl || craUrl || 'http://localhost:3000/api') as string
+
+  const base = (viteUrl || nextUrl || craUrl || 'http://localhost:3000') as string
+  return base.replace(/\/+$/, '')
 }
 
 const API_BASE_URL = resolveApiBaseUrl()
