@@ -4,7 +4,7 @@
 Your Red Light Green Light game now requires World ID verification to play. Only verified humans can access the game, ensuring a sybil-resistant gaming experience.
 
 ## Configuration
-- **App ID**: `app_f11a49a98aab37a10e7dcfd20139f605`
+- **App ID**: `app_29198ecfe21e2928536961a63cc85606`
 - **Action**: `play-game`
 - **Verification Level**: Orb (can be changed to Device for testing)
 

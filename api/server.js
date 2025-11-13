@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // Environment variables
-const APP_ID = process.env.WORLD_ID_APP_ID || 'app_f11a49a98aab37a10e7dcfd20139f605';
+const APP_ID = process.env.WORLD_ID_APP_ID || 'app_29198ecfe21e2928536961a63cc85606';
 const ACTION_ID = process.env.WORLD_ID_ACTION_ID || 'play-game';
 const PRIVATE_KEY = process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const RPC_URL = process.env.RPC_URL || 'https://worldchain-mainnet.g.alchemy.com/public';
@@ -21,7 +21,9 @@ const CONTRACT_ADDRESS = process.env.GAME_CONTRACT_ADDRESS;
 // Contract ABI for setUserVerification function
 const CONTRACT_ABI = [
   "function setUserVerification(address user, uint8 verificationLevel, bool isVerified) external",
-  "function getUserVerificationStatus(address user) external view returns (uint8 verificationLevel, bool isVerified)"
+  "function getUserVerificationStatus(address user) external view returns (uint8 verificationLevel, bool isVerified)",
+  "function authorizedSubmitters(address submitter) external view returns (bool)",
+  "function owner() external view returns (address)"
 ];
 
 // Verification level mapping
@@ -82,18 +84,26 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
 
   try {
     const provider = new ethers.JsonRpcProvider(RPC_URL);
+    const network = await provider.getNetwork();
     const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
 
-    // Convert verification level to contract enum
-    const level = VERIFICATION_LEVELS[verificationLevel];
+    const submitterAddress = wallet.address;
+    const contractOwner = await contract.owner();
+    const isAuthorized = await contract.authorizedSubmitters(submitterAddress);
+
+    console.log(
+      `🔑 Submitter ${submitterAddress} | Owner ${contractOwner} | Authorized=${isAuthorized} | ChainId=${network.chainId} | Contract=${CONTRACT_ADDRESS}`
+    );
+
+    const normalizedLevel = (verificationLevel || '').toLowerCase();
+    const level = VERIFICATION_LEVELS[normalizedLevel];
     if (level === undefined) {
       throw new Error(`Invalid verification level: ${verificationLevel}`);
     }
 
     console.log(`Submitting verification for ${userAddress}: level=${level}, verified=${isVerified}`);
 
-    // Call setUserVerification function
     const tx = await contract.setUserVerification(userAddress, level, isVerified);
     console.log('Transaction submitted:', tx.hash);
 
