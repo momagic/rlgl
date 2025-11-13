@@ -174,11 +174,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return
       }
       
+      let walletAddress = user?.walletAddress
+      let username: string | undefined
+      let profilePictureUrl: string | undefined
+      if (!walletAddress) {
+        const nonce = generateSecureId('auth-', 13)
+        const { finalPayload: walletPayload } = await MiniKit.commandsAsync.walletAuth({ nonce })
+        if (walletPayload.status !== 'error') {
+          walletAddress = (walletPayload as any).address
+          try {
+            if (MiniKit.user?.username) {
+              username = MiniKit.user.username
+              profilePictureUrl = MiniKit.user.profilePictureUrl
+            } else if (walletAddress) {
+              const worldIdUser = await MiniKit.getUserByAddress(walletAddress)
+              if (worldIdUser) {
+                username = worldIdUser.username
+                profilePictureUrl = worldIdUser.profilePictureUrl
+              }
+            }
+          } catch {}
+        }
+      }
+
       // Create the World ID user object
       const worldIDUser: WorldIDUser = {
         nullifierHash: finalPayload.nullifier_hash,
         verificationLevel: finalPayload.verification_level,
-        verified: true
+        verified: true,
+        walletAddress,
+        username,
+        profilePictureUrl,
+        walletAuthenticated: !!walletAddress
       }
       
       // Submit verification to backend API for on-chain submission
@@ -186,7 +213,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('🔄 Submitting verification to backend API...')
         const verificationResult = await worldIDVerificationService.submitVerification(
           finalPayload,
-          worldIDUser.walletAddress || '', // Will be empty for now, will be filled after wallet auth
+          worldIDUser.walletAddress || '',
           true // Submit on-chain
         )
         

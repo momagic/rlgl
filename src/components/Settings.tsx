@@ -83,7 +83,7 @@ function Settings({ onClose }: SettingsProps) {
   // Fetch contract stats when component mounts or user changes
   useEffect(() => {
     const fetchContractStats = async () => {
-      if (!user?.walletAddress) return
+      if (!user?.walletAddress || !user?.onChainVerified) return
       
       try {
         setIsLoadingStats(true)
@@ -101,7 +101,7 @@ function Settings({ onClose }: SettingsProps) {
     }
 
     fetchContractStats()
-  }, [user?.walletAddress, getPlayerStats])
+  }, [user?.walletAddress, user?.onChainVerified, getPlayerStats])
 
   return (
     <div className="h-full flex flex-col animate-fade-in overflow-hidden" style={{ background: 'linear-gradient(135deg, #0A0A0F 0%, #1A1A20 50%, #0A0A0F 100%)' }}>

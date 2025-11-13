@@ -13,7 +13,7 @@ export function UserInfo() {
 
   useEffect(() => {
     const fetchTokenBalance = async () => {
-      if (!user?.walletAddress) return
+      if (!user?.walletAddress || !user?.onChainVerified) return
       
       try {
         setIsLoadingBalance(true)
@@ -32,7 +32,7 @@ export function UserInfo() {
     // Refresh balance every 30 seconds
     const interval = setInterval(fetchTokenBalance, 30000)
     return () => clearInterval(interval)
-  }, [user?.walletAddress, getPlayerStats])
+  }, [user?.walletAddress, user?.onChainVerified, getPlayerStats])
 
   if (!user?.verified) return null
 
