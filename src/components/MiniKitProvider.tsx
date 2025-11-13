@@ -10,8 +10,12 @@ interface MiniKitProviderProps {
 
 export function MiniKitProvider({ children }: MiniKitProviderProps) {
   useEffect(() => {
-    // Initialize MiniKit with our app ID
-    MiniKit.install('app_29198ecfe21e2928536961a63cc85606')
+    // Initialize MiniKit with app ID from env (supports Vite/Next/CRA) with fallback
+    const viteAppId = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WORLD_ID_APP_ID) as string | undefined
+    const nextAppId = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_WORLD_ID_APP_ID
+    const craAppId = typeof process !== 'undefined' && process.env.REACT_APP_WORLD_ID_APP_ID
+    const appId = viteAppId || nextAppId || craAppId || 'app_29198ecfe21e2928536961a63cc85606'
+    MiniKit.install(appId)
   }, [])
 
   return <>{children}</>

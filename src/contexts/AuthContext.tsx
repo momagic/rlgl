@@ -149,8 +149,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     try {
       // Request Document verification (which accepts higher levels like Orb)
+      const viteActionId = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WORLD_ID_ACTION_ID) as string | undefined
+      const nextActionId = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_WORLD_ID_ACTION_ID
+      const craActionId = typeof process !== 'undefined' && process.env.REACT_APP_WORLD_ID_ACTION_ID
+      const actionId = viteActionId || nextActionId || craActionId || 'play-game'
+
       const verifyPayload: VerifyCommandInput = {
-        action: 'play-game',
+        action: actionId,
         verification_level: VerificationLevel.Document
       }
 

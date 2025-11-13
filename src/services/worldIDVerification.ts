@@ -1,8 +1,22 @@
 import { VerificationLevel } from '@worldcoin/minikit-js'
-import type { WorldIDProof } from '@worldcoin/minikit-js'
+type MiniKitProofPayload = {
+  nullifier_hash: string
+  merkle_root: string
+  proof: any
+  verification_level: string
+}
 
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'
+function resolveApiBaseUrl(): string {
+  // Prefer Vite-style envs, then Next-style, then CRA-style, then default
+  const viteUrl = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WORLD_ID_API_URL)
+    || (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL)
+  const nextUrl = typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_WORLD_ID_API_URL)
+  const craUrl = typeof process !== 'undefined' && process.env.REACT_APP_WORLD_ID_API_URL
+  return (viteUrl || nextUrl || craUrl || 'http://localhost:3000/api') as string
+}
+
+const API_BASE_URL = resolveApiBaseUrl()
 
 // Verification level mapping for contract
 const VERIFICATION_LEVELS = {
@@ -45,13 +59,9 @@ export interface VerificationCheckResult {
  */
 export class WorldIDVerificationService {
   private apiUrl: string
-  private appId: string
-  private actionId: string
 
-  constructor(apiUrl: string = API_BASE_URL, appId?: string, actionId?: string) {
+  constructor(apiUrl: string = API_BASE_URL) {
     this.apiUrl = apiUrl
-    this.appId = appId || process.env.NEXT_PUBLIC_WORLD_ID_APP_ID || 'app_f11a49a98aab37a10e7dcfd20139f605'
-    this.actionId = actionId || 'play-game'
   }
 
   /**
@@ -59,7 +69,7 @@ export class WorldIDVerificationService {
    * This will verify the proof and optionally submit it on-chain
    */
   async submitVerification(
-    proof: WorldIDProof, 
+    proof: MiniKitProofPayload, 
     userAddress: string, 
     submitOnChain: boolean = true
   ): Promise<VerificationResult> {
@@ -147,9 +157,23 @@ export class WorldIDVerificationService {
   }
 
   /**
+   * Check API health endpoint
+   */
+  async checkApiHealth(): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.apiUrl}/health`, { method: 'GET' })
+      if (!res.ok) return false
+      const data = await res.json().catch(() => null)
+      return !!data && data.status === 'healthy'
+    } catch {
+      return false
+    }
+  }
+
+  /**
    * Verify proof locally (fallback if API is unavailable)
    */
-  async verifyLocally(proof: WorldIDProof): Promise<boolean> {
+  async verifyLocally(proof: MiniKitProofPayload): Promise<boolean> {
     try {
       // This is a simplified local verification
       // In production, you'd want to implement proper proof verification

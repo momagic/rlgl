@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGameLogic } from './hooks/useGameLogic'
 import { useAuth } from './contexts/AuthContext'
 import { useHapticFeedback } from './hooks/useHapticFeedback'
@@ -14,6 +14,7 @@ import Settings from './components/Settings'
 import HowTo from './components/HowTo'
 import BottomNavigation from './components/BottomNavigation'
 import MaintenanceScreen from './components/MaintenanceScreen'
+import { worldIDVerificationService } from './services/worldIDVerification'
 import type { TabType } from './components/BottomNavigation'
 
 function GameApp() {
@@ -24,9 +25,22 @@ function GameApp() {
   const lastTapTime = useRef(0)
   const [activeTab, setActiveTab] = useState<TabType>('game')
   
-  // Maintenance mode flag - set to true to enable maintenance mode
-  // To disable maintenance mode and restore game functionality, change this to false
-  const isMaintenanceMode = false
+  // Maintenance mode: toggled by API health
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    const checkHealth = async () => {
+      const healthy = await worldIDVerificationService.checkApiHealth()
+      if (mounted) setIsMaintenanceMode(!healthy)
+    }
+    checkHealth()
+    const interval = setInterval(checkHealth, 60_000)
+    return () => {
+      mounted = false
+      clearInterval(interval)
+    }
+  }, [])
 
 
 
