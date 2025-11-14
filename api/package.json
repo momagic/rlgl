@@ -17,6 +17,7 @@
     "dotenv": "^16.3.1",
     "ethers": "^6.9.0",
     "@worldcoin/idkit-core": "^2.1.0",
+    "@worldcoin/minikit-js": "^1.9.8",
     "axios": "^1.6.0"
   },
   "devDependencies": {

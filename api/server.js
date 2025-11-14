@@ -4,22 +4,34 @@ const { ethers } = require('ethers');
 let verifyCloudProof
 try {
   const idkitCore = require('@worldcoin/idkit-core')
-  verifyCloudProof = idkitCore.verifyCloudProof || (idkitCore.default && idkitCore.default.verifyCloudProof)
-} catch (e) {
-  verifyCloudProof = undefined
+  verifyCloudProof = idkitCore.verifyCloudProof || idkitCore.default?.verifyCloudProof || idkitCore.default
+} catch {}
+if (typeof verifyCloudProof !== 'function') {
+  try {
+    const mk = require('@worldcoin/minikit-js')
+    verifyCloudProof = mk.verifyCloudProof || mk.default?.verifyCloudProof
+  } catch {}
 }
 
 async function getVerifyCloudProof() {
   if (typeof verifyCloudProof === 'function') return verifyCloudProof
   try {
     const mod = await import('@worldcoin/idkit-core')
-    const fn = (mod && (mod.verifyCloudProof || (mod.default && mod.default.verifyCloudProof)))
-    if (typeof fn !== 'function') throw new Error('verifyCloudProof not available')
-    verifyCloudProof = fn
-    return fn
-  } catch (err) {
-    throw new Error('verifyCloudProof is not a function')
-  }
+    const fn = mod.verifyCloudProof || mod.default?.verifyCloudProof || mod.default
+    if (typeof fn === 'function') {
+      verifyCloudProof = fn
+      return fn
+    }
+  } catch {}
+  try {
+    const mod = await import('@worldcoin/minikit-js')
+    const fn = mod.verifyCloudProof || mod.default?.verifyCloudProof
+    if (typeof fn === 'function') {
+      verifyCloudProof = fn
+      return fn
+    }
+  } catch {}
+  throw new Error('verifyCloudProof is not a function')
 }
 require('dotenv').config();
 
