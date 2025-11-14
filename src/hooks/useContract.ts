@@ -211,10 +211,18 @@ export function useContract(): UseContractReturn {
         throw new Error(result.finalPayload.error_code || 'Transaction failed')
       }
 
+      let tokensEarned = '0'
+      try {
+        const pricing = await getCurrentPricing()
+        const tokensPerPoint = BigInt(pricing.tokensPerPoint)
+        const minted = tokensPerPoint * BigInt(score)
+        tokensEarned = formatEther(minted)
+      } catch {}
+
       return {
         score,
         round,
-        tokensEarned: '0', // This should be calculated from the contract response
+        tokensEarned,
         transactionHash: result.finalPayload.transaction_id
       }
     } catch (err) {
@@ -325,7 +333,7 @@ export function useContract(): UseContractReturn {
         abi: GAME_CONTRACT_ABI,
         functionName: 'getTopScores',
         args: [BigInt(gameModeValue), BigInt(topN)]
-      }) as readonly { player: Address; score: bigint; timestamp: bigint; round: bigint; tokensEarned: bigint }[]
+      }) as readonly { player: Address; score: bigint; timestamp: bigint; round: bigint; gameMode: number; gameId: bigint }[]
 
       const leaderboard: LeaderboardEntry[] = result.map((entry, index) => ({
         player: entry.player,
@@ -333,7 +341,6 @@ export function useContract(): UseContractReturn {
         timestamp: Number(entry.timestamp) * 1000, // Convert to milliseconds
         round: Number(entry.round),
         rank: index + 1,
-        tokensEarned: formatEther(entry.tokensEarned),
         gameMode
       }))
       
@@ -377,51 +384,17 @@ export function useContract(): UseContractReturn {
 
   const getLeaderboardPaginated = useCallback(async (offset: number, limit: number, gameMode: GameMode = 'Classic'): Promise<LeaderboardEntry[]> => {
     try {
-      const result = await rpcManager.readContract({
-        address: GAME_CONTRACT_ADDRESS,
-        abi: GAME_CONTRACT_ABI,
-        functionName: 'getLeaderboardPaginated',
-        args: [BigInt(offset), BigInt(limit)]
-      }) as readonly { player: Address; score: bigint; timestamp: bigint; round: bigint }[]
-
-      const leaderboard: LeaderboardEntry[] = result.map((entry, index) => ({
-        player: entry.player,
-        score: Number(entry.score),
-        timestamp: Number(entry.timestamp) * 1000, // Convert to milliseconds
-        round: Number(entry.round),
-        rank: offset + index + 1,
-        gameMode
-      }))
-      
-      return leaderboard
+      const topN = offset + limit
+      const full = await getLeaderboard(gameMode, topN)
+      return full.slice(offset, offset + limit)
     } catch (err) {
       throw new Error(`Failed to get paginated leaderboard: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
-  }, [])
+  }, [getLeaderboard])
 
   const getTopScores = useCallback(async (count: number, gameMode: GameMode = 'Classic'): Promise<LeaderboardEntry[]> => {
-    try {
-      const result = await rpcManager.readContract({
-        address: GAME_CONTRACT_ADDRESS,
-        abi: GAME_CONTRACT_ABI,
-        functionName: 'getTopScores',
-        args: [BigInt(count)]
-      }) as readonly { player: Address; score: bigint; timestamp: bigint; round: bigint }[]
-
-      const topScores: LeaderboardEntry[] = result.map((entry, index) => ({
-        player: entry.player,
-        score: Number(entry.score),
-        timestamp: Number(entry.timestamp) * 1000, // Convert to milliseconds
-        round: Number(entry.round),
-        rank: index + 1,
-        gameMode
-      }))
-      
-      return topScores
-    } catch (err) {
-      throw new Error(`Failed to get top scores: ${err instanceof Error ? err.message : 'Unknown error'}`)
-    }
-  }, [])
+    return getLeaderboard(gameMode, count)
+  }, [getLeaderboard])
 
   const getBatchPlayerStats = useCallback(async (playerAddresses: string[]): Promise<any[]> => {
     try {

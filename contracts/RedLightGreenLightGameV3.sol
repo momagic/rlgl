@@ -97,6 +97,7 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     mapping(GameMode => mapping(address => uint256)) public playerHighScores;
     mapping(address => uint256[]) public playerGameIds;
     mapping(address => bool) public authorizedSubmitters;
+    mapping(address => bool) public hasActiveGame;
     
     uint256 private _gameIdCounter;
     uint256 public totalGamesPlayed;
@@ -308,19 +309,24 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
             require(player.extraGoes > 0, "No extra goes available");
             player.extraGoes--;
         }
+
+        hasActiveGame[msg.sender] = true;
     }
     
     /**
      * @dev Submit game score and mint reward tokens
      */
     function submitScore(
-        address playerAddress,
         uint256 score,
         uint256 round,
         GameMode gameMode
-    ) external onlyAuthorizedSubmitter validGameMode(gameMode) whenNotPaused {
+    ) external validGameMode(gameMode) whenNotPaused {
+        address playerAddress = msg.sender;
+        require(hasActiveGame[playerAddress], "No active game session");
         require(score > 0, "Score must be greater than 0");
         require(round > 0, "Round must be greater than 0");
+        require(round <= 1000, "Round exceeds reasonable maximum");
+        require(score <= calculateMaxTheoreticalScore(gameMode, round), "Score exceeds theoretical maximum");
         require(_hasRequiredVerification(playerAddress), "Document verification or higher required");
         
         Player storage player = players[playerAddress];
@@ -358,7 +364,7 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         
         require(totalSupply() + tokensToMint <= MAX_SUPPLY, "Would exceed max supply");
         _mint(playerAddress, tokensToMint);
-        
+
         // Update leaderboard
         _updateLeaderboard(gameMode, playerAddress, score, round, gameId);
         
@@ -370,6 +376,19 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
             gameId,
             isNewHighScore
         );
+
+        hasActiveGame[playerAddress] = false;
+    }
+
+    function calculateMaxTheoreticalScore(GameMode gameMode, uint256 round) public pure returns (uint256) {
+        uint256 r = round > 1000 ? 1000 : round;
+        if (gameMode == GameMode.Classic) {
+            return r * 30;
+        } else if (gameMode == GameMode.Arcade) {
+            return r * 40;
+        } else {
+            return r * 20;
+        }
     }
     
     // ============ DAILY CLAIM SYSTEM ============

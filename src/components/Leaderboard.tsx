@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { MiniKit } from '@worldcoin/minikit-js'
 import { useAuth } from '../contexts/AuthContext'
 import { useContract } from '../hooks/useContract'
+import type { GameMode } from '../types/contract'
 import { getDisplayName } from '../utils'
 import type { LeaderboardEntry } from '../types/contract'
 import { sanitizeLocalStorageData, sanitizeJSONData } from '../utils/inputSanitizer'
@@ -254,6 +255,7 @@ function Leaderboard() {
   }, [user])
 
   const { getTopScores } = useContract()
+  const [selectedMode, setSelectedMode] = useState<GameMode>('Classic')
 
   // Cache management functions
   const getCachedLeaderboard = useCallback((forceExpired = false) => {
@@ -354,8 +356,7 @@ function Leaderboard() {
     try {
       
       console.log('🌐 Fetching fresh data from contract...')
-      // Use new V2 contract function for better performance
-       const contractData = await getTopScores(10) // Get top 10 scores
+       const contractData = await getTopScores(10, selectedMode)
 
         console.log('📊 Contract data received:', {
           leaderboard: contractData.length
@@ -365,7 +366,7 @@ function Leaderboard() {
        const processedData = contractData.map((entry: any, index: number) => ({
          ...entry,
          rank: index + 1,
-         displayName: getPlayerDisplayName(entry.player), // Now synchronous with background resolution
+         displayName: getPlayerDisplayName(entry.player),
          avatar: getPlayerAvatar(entry.player),
          isCurrentUser: isCurrentUser(entry.player)
        }))
@@ -400,7 +401,7 @@ function Leaderboard() {
       console.log('🏁 Leaderboard fetch completed, isLoading set to false')
       setIsLoading(false)
     }
-  }, [getTopScores, isLoading, getCachedLeaderboard, setCachedLeaderboard, getPlayerDisplayName, getPlayerAvatar, isCurrentUser])
+  }, [getTopScores, isLoading, getCachedLeaderboard, setCachedLeaderboard, getPlayerDisplayName, getPlayerAvatar, isCurrentUser, selectedMode])
 
   // Fetch leaderboard on component mount
   useEffect(() => {
@@ -455,12 +456,16 @@ function Leaderboard() {
         <div className="flex-1 flex flex-col rounded-lg shadow-2xl p-3 mx-2 border-3 border-squid-border bg-squid-gray overflow-hidden" style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
           
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Header */}
             <div className="flex-shrink-0 mb-4">
               <h3 className="text-squid-white text-xl font-squid-heading font-bold uppercase tracking-wider flex items-center">
                 <span className="mr-2 text-2xl">🏆</span>
                 Leaderboard
               </h3>
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => setSelectedMode('Classic')} className="px-2 py-1 border-2 border-squid-black text-squid-black font-squid-heading text-xs" style={{ background: selectedMode === 'Classic' ? '#00A878' : '#fff' }}>Classic</button>
+                <button onClick={() => setSelectedMode('Arcade')} className="px-2 py-1 border-2 border-squid-black text-squid-black font-squid-heading text-xs" style={{ background: selectedMode === 'Arcade' ? '#00A878' : '#fff' }}>Arcade</button>
+                <button onClick={() => setSelectedMode('WhackLight')} className="px-2 py-1 border-2 border-squid-black text-squid-black font-squid-heading text-xs" style={{ background: selectedMode === 'WhackLight' ? '#00A878' : '#fff' }}>Whack</button>
+              </div>
             </div>
             
             {/* Loading skeleton */}
@@ -524,12 +529,16 @@ function Leaderboard() {
         <div className="flex-1 flex flex-col rounded-2xl shadow-2xl p-4 mx-4 border border-white/20 bg-white/8 backdrop-blur-sm overflow-hidden">
           
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Header */}
             <div className="flex-shrink-0 mb-4">
               <h3 className="text-white text-lg font-bold tracking-wide flex items-center">
                 <span className="mr-2 text-xl">🏆</span>
                 {t('leaderboard.title').replace(/🏆/g, '').trim()}
               </h3>
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => setSelectedMode('Classic')} className="px-2 py-1 rounded-xl border border-white/20 text-white text-xs" style={{ background: selectedMode === 'Classic' ? 'rgba(16,185,129,0.6)' : 'transparent' }}>Classic</button>
+                <button onClick={() => setSelectedMode('Arcade')} className="px-2 py-1 rounded-xl border border-white/20 text-white text-xs" style={{ background: selectedMode === 'Arcade' ? 'rgba(16,185,129,0.6)' : 'transparent' }}>Arcade</button>
+                <button onClick={() => setSelectedMode('WhackLight')} className="px-2 py-1 rounded-xl border border-white/20 text-white text-xs" style={{ background: selectedMode === 'WhackLight' ? 'rgba(16,185,129,0.6)' : 'transparent' }}>Whack</button>
+              </div>
             </div>
             
             {/* Error content */}
@@ -566,12 +575,16 @@ function Leaderboard() {
         <div className="flex-1 flex flex-col rounded-2xl shadow-2xl p-4 mx-4 border border-white/20 bg-white/8 backdrop-blur-sm overflow-hidden">
           
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Header */}
             <div className="flex-shrink-0 mb-4">
               <h3 className="text-white text-lg font-bold tracking-wide flex items-center">
                 <span className="mr-2 text-xl">🏆</span>
                 {t('leaderboard.title').replace(/🏆/g, '').trim()}
               </h3>
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => setSelectedMode('Classic')} className="px-2 py-1 rounded-xl border border-white/20 text-white text-xs" style={{ background: selectedMode === 'Classic' ? 'rgba(16,185,129,0.6)' : 'transparent' }}>Classic</button>
+                <button onClick={() => setSelectedMode('Arcade')} className="px-2 py-1 rounded-xl border border-white/20 text-white text-xs" style={{ background: selectedMode === 'Arcade' ? 'rgba(16,185,129,0.6)' : 'transparent' }}>Arcade</button>
+                <button onClick={() => setSelectedMode('WhackLight')} className="px-2 py-1 rounded-xl border border-white/20 text-white text-xs" style={{ background: selectedMode === 'WhackLight' ? 'rgba(16,185,129,0.6)' : 'transparent' }}>Whack</button>
+              </div>
             </div>
             
             {/* Empty state content */}
