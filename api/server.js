@@ -1,7 +1,26 @@
 const express = require('express');
 const cors = require('cors');
 const { ethers } = require('ethers');
-const { verifyCloudProof } = require('@worldcoin/idkit-core');
+let verifyCloudProof
+try {
+  const idkitCore = require('@worldcoin/idkit-core')
+  verifyCloudProof = idkitCore.verifyCloudProof || (idkitCore.default && idkitCore.default.verifyCloudProof)
+} catch (e) {
+  verifyCloudProof = undefined
+}
+
+async function getVerifyCloudProof() {
+  if (typeof verifyCloudProof === 'function') return verifyCloudProof
+  try {
+    const mod = await import('@worldcoin/idkit-core')
+    const fn = (mod && (mod.verifyCloudProof || (mod.default && mod.default.verifyCloudProof)))
+    if (typeof fn !== 'function') throw new Error('verifyCloudProof not available')
+    verifyCloudProof = fn
+    return fn
+  } catch (err) {
+    throw new Error('verifyCloudProof is not a function')
+  }
+}
 require('dotenv').config();
 
 const app = express();
@@ -44,7 +63,8 @@ const CACHE_TTL = (process.env.CACHE_TTL_MINUTES || 5) * 60 * 1000; // 5 minutes
  */
 async function verifyWorldIDProof(proof, userAddress) {
   try {
-    const verifyRes = await verifyCloudProof(proof, APP_ID, ACTION_ID);
+    const v = await getVerifyCloudProof()
+    const verifyRes = await v(proof, APP_ID, ACTION_ID);
     
     if (!verifyRes.success) {
       throw new Error(`World ID verification failed: ${verifyRes.code}`);
