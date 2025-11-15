@@ -296,18 +296,12 @@ export function useTurnManager(): UseTurnManagerReturn {
         return false
       }
 
-      // Initial refresh
       await refreshTurnStatus(true)
-
-      // If turns didn't update yet, poll a few times while the tx is confirmed
-      const maxAttempts = 5
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        const before = turnStatus?.availableTurns ?? 0
-        await new Promise(r => setTimeout(r, 1500))
-        await refreshTurnStatus(true)
-        const after = (prev => prev?.availableTurns ?? before)(turnStatus)
-        if (after > before) break
-      }
+      const playerAddress = getPlayerAddress()
+      try {
+        const status = await contract.getTurnStatus(playerAddress)
+        setTurnStatus(status)
+      } catch {}
 
       console.log('🎉 Turn purchase completed successfully!')
       return true

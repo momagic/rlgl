@@ -10,12 +10,12 @@ async function main() {
   console.log(`Network: ${networkName} (Chain ID: ${network.chainId})`);
   console.log(`Owner: ${owner.address}`);
   
-  // Contract addresses (V2)
-  const gameContractAddress = "0x20B5fED73305260b82A3bD027D791C9769E22a9A";
+  // Contract addresses (V3)
+  const gameContractAddress = "0xc4201D1C64625C45944Ef865f504F995977733F7";
   const wldTokenAddress = "0x2cfc85d8e48f8eab294be644d9e25c3030863003";
   
   // Get contract instances
-  const gameContract = await ethers.getContractAt("RedLightGreenLightGameV2", gameContractAddress);
+  const gameContract = await ethers.getContractAt("RedLightGreenLightGameV3", gameContractAddress);
   const wldToken = await ethers.getContractAt("IERC20", wldTokenAddress);
   
   // Check contract WLD balance
@@ -39,11 +39,11 @@ async function main() {
     return;
   }
   
-  console.log(`\n💸 Withdrawing ${balanceInWld} WLD to your wallet...`);
+  console.log(`\n💸 Withdrawing ${balanceInWld} WLD to owner wallet...`);
   
   try {
-    // Execute withdrawal
-    const tx = await gameContract.withdrawFees(owner.address);
+    // Execute withdrawal (V3 sends to owner())
+    const tx = await gameContract.withdrawFees();
     console.log(`🔗 Transaction sent: ${tx.hash}`);
     
     console.log("⏳ Waiting for confirmation...");
@@ -64,11 +64,12 @@ async function main() {
     
   } catch (error) {
     console.error("❌ Withdrawal failed:", error.message);
-    
-    if (error.message.includes("No fees to withdraw")) {
+    if (error.message.includes("No WLD to withdraw")) {
       console.log("💡 No earnings available for withdrawal yet.");
-    } else if (error.message.includes("Ownable: caller is not the owner")) {
+    } else if (error.message.includes("OwnableUnauthorizedAccount")) {
       console.log("💡 Only the contract owner can withdraw earnings.");
+    } else if (error.message.toLowerCase().includes("paused")) {
+      console.log("💡 Contract is paused. Unpause before withdrawing.");
     }
   }
 }

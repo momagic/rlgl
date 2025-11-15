@@ -9,22 +9,25 @@ async function main() {
   console.log("==================================");
   console.log(`Network: ${networkName} (Chain ID: ${network.chainId})`);
   
-  // Contract addresses (V2)
-  const gameContractAddress = "0x20B5fED73305260b82A3bD027D791C9769E22a9A";
+  // Contract addresses (V3)
+  const gameContractAddress = "0xc4201D1C64625C45944Ef865f504F995977733F7";
   const wldTokenAddress = "0x2cfc85d8e48f8eab294be644d9e25c3030863003";
   
   // Get contract instances
-  const gameContract = await ethers.getContractAt("RedLightGreenLightGameV2", gameContractAddress);
+  const gameContract = await ethers.getContractAt("RedLightGreenLightGameV3", gameContractAddress);
   const wldToken = await ethers.getContractAt("IERC20", wldTokenAddress);
   
   // Get contract stats
   const contractWldBalance = await wldToken.balanceOf(gameContractAddress);
-  const totalGamesPlayed = await gameContract.getTotalGamesPlayed();
-  const currentTurnCost = await gameContract.getCurrentTurnCost();
+  // V3: get pricing and stats via dedicated getters
+  const pricing = await gameContract.getCurrentPricing();
+  const currentTurnCost = pricing.turnCost !== undefined ? pricing.turnCost : pricing[1];
+  const stats = await gameContract.getContractStats();
+  const totalGamesPlayed = stats.totalGames !== undefined ? stats.totalGames : stats[2];
   const contractOwner = await gameContract.owner();
   
   // Calculate estimated purchases (rough calculation)
-  const estimatedPurchases = contractWldBalance / currentTurnCost;
+  const estimatedPurchases = currentTurnCost > 0n ? (contractWldBalance / currentTurnCost) : 0n;
   
   console.log(`\n💰 Earnings Summary:`);
   console.log(`   WLD Balance: ${ethers.formatEther(contractWldBalance)} WLD`);
