@@ -16,7 +16,7 @@ import type {
   GameMode,
   VerificationLevel
 } from '../types/contract'
-import { GAME_CONTRACT_ABI, CONTRACT_CONFIG, PERMIT2_ABI } from '../types/contract'
+import { GAME_CONTRACT_ABI, CONTRACT_CONFIG } from '../types/contract'
 import { rpcManager } from '../utils/rpcManager'
 
 // Contract addresses
@@ -109,28 +109,24 @@ export function useContract(): UseContractReturn {
         throw new Error('MiniKit not installed')
       }
 
-      const permitSingle = [
-        [CONTRACT_CONFIG.worldchain.wldToken, parseEther('0.2')],
-        Date.now().toString(),
-        Math.floor((Date.now() + 30 * 60 * 1000) / 1000).toString()
-      ]
-      const transferDetails = [
-        [GAME_CONTRACT_ADDRESS, parseEther('0.2')]
-      ]
-
       const result = await MiniKit.commandsAsync.sendTransaction({
-        permit2: [{
-          permitted: { token: CONTRACT_CONFIG.worldchain.wldToken, amount: parseEther('0.2').toString() },
-          spender: GAME_CONTRACT_ADDRESS,
-          nonce: Date.now().toString(),
-          deadline: Math.floor((Date.now() + 30 * 60 * 1000) / 1000).toString()
-        }],
         transaction: [
           {
-            address: CONTRACT_CONFIG.worldchain.permit2 as Address,
-            abi: PERMIT2_ABI,
-            functionName: 'signatureTransfer',
-            args: [permitSingle, transferDetails, 'PERMIT2_SIGNATURE_PLACEHOLDER_0']
+            address: CONTRACT_CONFIG.worldchain.wldToken as Address,
+            abi: [
+              {
+                inputs: [
+                  { internalType: 'address', name: 'to', type: 'address' },
+                  { internalType: 'uint256', name: 'amount', type: 'uint256' }
+                ],
+                name: 'transfer',
+                outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+                stateMutability: 'nonpayable',
+                type: 'function'
+              }
+            ] as const,
+            functionName: 'transfer',
+            args: [GAME_CONTRACT_ADDRESS, parseEther('0.2')]
           },
           {
             address: GAME_CONTRACT_ADDRESS,
@@ -167,28 +163,24 @@ export function useContract(): UseContractReturn {
         throw new Error('MiniKit not installed')
       }
 
-      const permitSingle = [
-        [CONTRACT_CONFIG.worldchain.wldToken, parseEther('5')],
-        Date.now().toString(),
-        Math.floor((Date.now() + 30 * 60 * 1000) / 1000).toString()
-      ]
-      const transferDetails = [
-        [GAME_CONTRACT_ADDRESS, parseEther('5')]
-      ]
-
       const result = await MiniKit.commandsAsync.sendTransaction({
-        permit2: [{
-          permitted: { token: CONTRACT_CONFIG.worldchain.wldToken, amount: parseEther('5').toString() },
-          spender: GAME_CONTRACT_ADDRESS,
-          nonce: Date.now().toString(),
-          deadline: Math.floor((Date.now() + 30 * 60 * 1000) / 1000).toString()
-        }],
         transaction: [
           {
-            address: CONTRACT_CONFIG.worldchain.permit2 as Address,
-            abi: PERMIT2_ABI,
-            functionName: 'signatureTransfer',
-            args: [permitSingle, transferDetails, 'PERMIT2_SIGNATURE_PLACEHOLDER_0']
+            address: CONTRACT_CONFIG.worldchain.wldToken as Address,
+            abi: [
+              {
+                inputs: [
+                  { internalType: 'address', name: 'to', type: 'address' },
+                  { internalType: 'uint256', name: 'amount', type: 'uint256' }
+                ],
+                name: 'transfer',
+                outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+                stateMutability: 'nonpayable',
+                type: 'function'
+              }
+            ] as const,
+            functionName: 'transfer',
+            args: [GAME_CONTRACT_ADDRESS, parseEther('5')]
           },
           {
             address: GAME_CONTRACT_ADDRESS,
