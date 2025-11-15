@@ -726,6 +726,64 @@ export const GAME_CONTRACT_ABI = [
     "name": "LeaderboardSeeded",
     "type": "event"
   }
+  {
+    "inputs": [],
+    "name": "startGame",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "purchaseAdditionalTurnsDirect",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "purchaseHundredTurnsDirect",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "score", "type": "uint256"},
+      {"internalType": "uint256", "name": "round", "type": "uint256"},
+      {"internalType": "uint8", "name": "gameMode", "type": "uint8"}
+    ],
+    "name": "submitScore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint8", "name": "gameMode", "type": "uint8"},
+      {"internalType": "uint256", "name": "topN", "type": "uint256"}
+    ],
+    "name": "getTopScores",
+    "outputs": [
+      {"components": [
+        {"internalType": "address", "name": "player", "type": "address"},
+        {"internalType": "uint256", "name": "score", "type": "uint256"},
+        {"internalType": "uint256", "name": "timestamp", "type": "uint256"},
+        {"internalType": "uint256", "name": "round", "type": "uint256"},
+        {"internalType": "uint8", "name": "gameMode", "type": "uint8"},
+        {"internalType": "uint256", "name": "gameId", "type": "uint256"}
+      ], "internalType": "struct LeaderboardEntry[]", "name": "", "type": "tuple[]"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "claimDailyReward",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
 ] as const
 
 // Contract configuration for different networks
