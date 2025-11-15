@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useWaitForTransactionReceipt } from '@worldcoin/minikit-react'
+import { createPublicClient, http } from 'viem'
 import { useContract } from './useContract'
 import { useAuth } from '../contexts/AuthContext'
 import type { UseTurnManagerReturn, TurnStatus } from '../types/contract'
@@ -33,6 +35,7 @@ export function useTurnManager(): UseTurnManagerReturn {
   const [retryCount, setRetryCount] = useState(0)
   const [lastPurchaseTime] = useState<number>(0)
   const maxRetries = 5
+  const [pendingTransactionId, setPendingTransactionId] = useState<string>('')
 
   // Helper functions for localStorage persistence
   
@@ -108,6 +111,27 @@ export function useTurnManager(): UseTurnManagerReturn {
   const isDevUser3 = useCallback((): boolean => {
     return user?.walletAddress === '0x3456789012345678901234567890123456789012'
   }, [user?.walletAddress])
+
+  const viteAppId = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WORLD_ID_APP_ID) as string | undefined
+  const nextAppId = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_WORLD_ID_APP_ID
+  const craAppId = typeof process !== 'undefined' && process.env.REACT_APP_WORLD_ID_APP_ID
+  const appId = viteAppId || nextAppId || craAppId || 'app_29198ecfe21e2928536961a63cc85606'
+
+  const client = createPublicClient({
+    chain: {
+      id: 480,
+      name: 'worldchain',
+      nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+      rpcUrls: { default: { http: ['https://worldchain-mainnet.g.alchemy.com/public'] } }
+    },
+    transport: http('https://worldchain-mainnet.g.alchemy.com/public')
+  })
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    client,
+    appConfig: { app_id: appId },
+    transactionId: pendingTransactionId
+  })
 
   const cleanupOldPurchases = useCallback(() => {
     try {
@@ -293,15 +317,12 @@ export function useTurnManager(): UseTurnManagerReturn {
       if (!paymentResult.success) {
         console.error('❌ Payment failed in turn manager:', paymentResult.error)
         setError(paymentResult.error || 'Payment failed')
+        setIsLoading(false)
         return false
       }
-
-      await refreshTurnStatus(true)
-
-      // Note: We don't auto-refresh after payment since it would overwrite 
-      // our local update with stale contract data. Manual refresh is available.
-      
-      console.log('🎉 Turn purchase completed successfully!')
+      if (paymentResult.transactionId) {
+        setPendingTransactionId(paymentResult.transactionId)
+      }
       return true
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to purchase turns'
@@ -313,8 +334,6 @@ export function useTurnManager(): UseTurnManagerReturn {
       setError(errorMessage)
       return false
     } finally {
-      console.log('🏁 Turn purchase process completed, setting isLoading to false')
-      setIsLoading(false)
     }
   }, [contract, getPlayerAddress, refreshTurnStatus])
 
@@ -426,6 +445,14 @@ export function useTurnManager(): UseTurnManagerReturn {
     }
   }, [user?.verified, user?.walletAuthenticated]) // Only depend on auth state changes, remove cleanupOldPurchases
 
+  useEffect(() => {
+    if (pendingTransactionId && isConfirmed) {
+      refreshTurnStatus(true)
+      setPendingTransactionId('')
+      setIsLoading(false)
+    }
+  }, [pendingTransactionId, isConfirmed, refreshTurnStatus])
+
   // Format time until reset for display
   const formatTimeUntilReset = useCallback((milliseconds: number): string => {
     if (milliseconds <= 0) return 'Available now'
@@ -450,6 +477,7 @@ export function useTurnManager(): UseTurnManagerReturn {
   return {
     turnStatus: enhancedTurnStatus,
     isLoading,
+    isConfirming,
     error,
     refreshTurnStatus,
     purchaseTurns,

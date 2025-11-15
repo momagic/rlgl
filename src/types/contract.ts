@@ -60,6 +60,7 @@ export interface TurnStatus {
 export interface PaymentResult {
   success: boolean
   transactionHash?: string
+  transactionId?: string
   error?: string
 }
 
@@ -210,6 +211,7 @@ export interface UseContractReturn {
 export interface UseTurnManagerReturn {
   turnStatus: TurnStatus | null
   isLoading: boolean
+  isConfirming?: boolean
   error: string | null
   refreshTurnStatus: (manual?: boolean) => Promise<void>
   purchaseTurns: (dynamicCost?: string) => Promise<boolean>

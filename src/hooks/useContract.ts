@@ -146,7 +146,8 @@ export function useContract(): UseContractReturn {
 
       return {
         success: true,
-        transactionHash: result.finalPayload.transaction_id
+        transactionHash: result.finalPayload.transaction_id,
+        transactionId: result.finalPayload.transaction_id
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Purchase failed'
@@ -203,7 +204,8 @@ export function useContract(): UseContractReturn {
 
       return {
         success: true,
-        transactionHash: result.finalPayload.transaction_id
+        transactionHash: result.finalPayload.transaction_id,
+        transactionId: result.finalPayload.transaction_id
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Purchase failed'

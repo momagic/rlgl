@@ -116,8 +116,9 @@ Before running any scripts, ensure you have:
 
 Scripts run on **World Chain mainnet** by default. The contract addresses are:
 
-- **Game Contract**: `0x9F0cd199d9200AD1A4eAdd6aD54C45D63c87B9C1`
+- **Game Contract (V3 Proxy)**: `0xc4201D1C64625C45944Ef865f504F995977733F7`
 - **WLD Token**: `0x2cfc85d8e48f8eab294be644d9e25c3030863003`
+- **Game Contract (V2)**: `0x20B5fED73305260b82A3bD027D791C9769E22a9A`
 
 ## 🔒 Security Notes
 
@@ -133,6 +134,9 @@ Scripts run on **World Chain mainnet** by default. The contract addresses are:
 3. **Update price** when needed for promotions or market changes
 4. **Withdraw earnings** periodically to your wallet
 
+### V2 Still Live
+- While finalizing V3, the V2 contract may still accrue WLD. Use the V2 withdrawal script below to collect funds from V2 without impacting V3.
+
 ## 🆘 Troubleshooting
 
 ### Common Issues:
@@ -145,6 +149,10 @@ Scripts run on **World Chain mainnet** by default. The contract addresses are:
 - Players need to purchase additional turns first
 - Check earnings with `npm run check-earnings`
 
+**"Insufficient WLD deposit" during purchase (GS013)**
+- After a full withdrawal, the V3 contract ledger is reset automatically.
+- If WLD was moved externally, resync the deposit ledger with `reset-ledger.cjs`.
+
 **"Gas estimation failed"**
 - Ensure you have enough ETH for gas fees
 - Network might be congested, try again later
@@ -156,8 +164,66 @@ Scripts run on **World Chain mainnet** by default. The contract addresses are:
 ## 🔗 Useful Links
 
 - **World Chain Explorer**: https://worldchain-explorer.alchemy.com/
-- **Contract Address**: https://worldchain-explorer.alchemy.com/address/0x9F0cd199d9200AD1A4eAdd6aD54C45D63c87B9C1
+- **V3 Proxy Address**: https://worldchain-explorer.alchemy.com/address/0xc4201D1C64625C45944Ef865f504F995977733F7
+- **V2 Address**: https://worldchain-explorer.alchemy.com/address/0x20B5fED73305260b82A3bD027D791C9769E22a9A
 - **WLD Token Info**: https://worldchain-explorer.alchemy.com/address/0x2cfc85d8e48f8eab294be644d9e25c3030863003
+
+---
+
+## 🆕 Additional Scripts
+
+### 6. 🔧 Upgrade V3 Proxy (`upgrade-v3.cjs`)
+Upgrades the V3 implementation while keeping the same proxy address.
+
+**Usage:**
+```
+npx hardhat run scripts/upgrade-v3.cjs --network worldchain
+```
+
+---
+
+### 7. 🧮 Reset V3 WLD Ledger (`reset-ledger.cjs`)
+Resynchronizes the V3 deposit ledger to match the current WLD balance when needed.
+
+**Usage:**
+```
+npx hardhat run scripts/reset-ledger.cjs --network worldchain
+```
+
+**Notes:**
+- Normal `withdrawFees()` on V3 already resets the ledger to zero.
+- Use this script only if WLD balance changed externally.
+
+---
+
+### 8. 🔎 Check WLD Balance (`check-wld-balance.cjs`)
+Checks WLD balance for any contract address (defaults to V2).
+
+**Usage:**
+```
+npx hardhat run scripts/check-wld-balance.cjs --network worldchain
+```
+
+**Env override:**
+```
+CONTRACT_ADDRESS=<address>
+```
+
+---
+
+### 9. 💸 Withdraw V2 Earnings (`withdraw-v2.cjs`)
+Withdraws accumulated WLD from V2 to the owner wallet.
+
+**Usage:**
+```
+npx hardhat run scripts/withdraw-v2.cjs --network worldchain
+```
+
+**What it does:**
+- Checks V2 contract WLD balance
+- Verifies ownership
+- Withdraws all WLD to the owner
+- Prints post-withdraw balances
 
 ## 💡 Tips
 

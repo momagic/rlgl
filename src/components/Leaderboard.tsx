@@ -75,32 +75,11 @@ function Leaderboard() {
     return (saved as TimeFilter) || 'weekly'
   })
   
-  // Initialize with cached data if available
-  const initializeLeaderboard = () => {
-    const cachedData = localStorage.getItem('leaderboard-cache')
-    const cacheTimestamp = localStorage.getItem('leaderboard-cache-timestamp')
-    const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
-    
-    if (cachedData && cacheTimestamp) {
-      const age = Date.now() - parseInt(cacheTimestamp)
-      if (age < CACHE_DURATION) {
-        console.log('🚀 Loading from cache on initialization')
-        return {
-          data: JSON.parse(cachedData),
-          lastUpdated: new Date(parseInt(cacheTimestamp)),
-          isLoading: false
-        }
-      }
-    }
-    return { data: [], lastUpdated: null, isLoading: true }
-  }
-  
-  const initialState = initializeLeaderboard()
-  const [allLeaderboardData, setAllLeaderboardData] = useState<LeaderboardEntry[]>(initialState.data)
+  const [allLeaderboardData, setAllLeaderboardData] = useState<LeaderboardEntry[]>([])
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [isLoading, setIsLoading] = useState(initialState.isLoading)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(initialState.lastUpdated)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   
   console.log('📊 Current leaderboard state:', {
     leaderboardLength: leaderboard.length,
@@ -257,11 +236,19 @@ function Leaderboard() {
   const { getTopScores } = useContract()
   const [selectedMode, setSelectedMode] = useState<GameMode>('Classic')
 
+  const getCacheKeys = useCallback((mode: GameMode) => {
+    return {
+      dataKey: `leaderboard-cache-${mode.toLowerCase()}`,
+      tsKey: `leaderboard-cache-timestamp-${mode.toLowerCase()}`
+    }
+  }, [])
+
   // Cache management functions
-  const getCachedLeaderboard = useCallback((forceExpired = false) => {
+  const getCachedLeaderboard = useCallback((mode: GameMode, forceExpired = false) => {
     try {
-      const cachedData = localStorage.getItem('leaderboard-cache')
-      const cacheTimestamp = localStorage.getItem('leaderboard-cache-timestamp')
+      const { dataKey, tsKey } = getCacheKeys(mode)
+      const cachedData = localStorage.getItem(dataKey)
+      const cacheTimestamp = localStorage.getItem(tsKey)
       const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
       
       if (cachedData && cacheTimestamp) {
@@ -274,8 +261,8 @@ function Leaderboard() {
           const validation = sanitizeJSONData(parsedData)
           if (!validation.isValid) {
             console.warn('Cached leaderboard data validation failed:', validation.errors)
-            localStorage.removeItem('leaderboard-cache')
-            localStorage.removeItem('leaderboard-cache-timestamp')
+            localStorage.removeItem(dataKey)
+            localStorage.removeItem(tsKey)
             return null
           }
           
@@ -298,13 +285,14 @@ function Leaderboard() {
     } catch (error) {
       console.error('Failed to parse cached leaderboard data:', error)
       // Clear corrupted cache
-      localStorage.removeItem('leaderboard-cache')
-      localStorage.removeItem('leaderboard-cache-timestamp')
+      const { dataKey, tsKey } = getCacheKeys(mode)
+      localStorage.removeItem(dataKey)
+      localStorage.removeItem(tsKey)
     }
     return null
-  }, [])
+  }, [getCacheKeys])
 
-  const setCachedLeaderboard = useCallback((data: LeaderboardEntry[]) => {
+  const setCachedLeaderboard = useCallback((mode: GameMode, data: LeaderboardEntry[]) => {
     try {
       // Ensure all BigInt values are converted to numbers before caching
       const serializedData = data.map(entry => ({
@@ -316,19 +304,20 @@ function Leaderboard() {
       }))
       
       // Sanitize data before caching
-      const validation = sanitizeLocalStorageData('leaderboard-cache', serializedData)
+      const { dataKey, tsKey } = getCacheKeys(mode)
+      const validation = sanitizeLocalStorageData(dataKey, serializedData)
       if (!validation.isValid) {
         console.warn('Leaderboard cache data validation failed:', validation.errors)
         return
       }
       
-      localStorage.setItem('leaderboard-cache', JSON.stringify(serializedData))
-      localStorage.setItem('leaderboard-cache-timestamp', Date.now().toString())
+      localStorage.setItem(dataKey, JSON.stringify(serializedData))
+      localStorage.setItem(tsKey, Date.now().toString())
     } catch (error) {
       console.error('Failed to cache leaderboard data:', error)
       // Don't throw error, just log it so the app continues to work
     }
-  }, [])
+  }, [getCacheKeys])
 
   const fetchLeaderboard = useCallback(async () => {
     if (isLoading) {
@@ -337,11 +326,12 @@ function Leaderboard() {
     }
     
     // Check cache first before setting loading state
-    const cached = getCachedLeaderboard()
+    const cached = getCachedLeaderboard(selectedMode)
     if (cached) {
       console.log('📦 Using cached leaderboard data:', cached.length, 'entries')
       setAllLeaderboardData(cached)
-      const cacheTimestamp = localStorage.getItem('leaderboard-cache-timestamp')
+      const { tsKey } = getCacheKeys(selectedMode)
+      const cacheTimestamp = localStorage.getItem(tsKey)
       if (cacheTimestamp) {
         setLastUpdated(new Date(parseInt(cacheTimestamp)))
       }
@@ -363,7 +353,7 @@ function Leaderboard() {
         })
        
        // Process data with optimized username resolution (no async blocking)
-       const processedData = contractData.map((entry: any, index: number) => ({
+       const processedData = contractData.slice(0, 10).map((entry: any, index: number) => ({
          ...entry,
          rank: index + 1,
          displayName: getPlayerDisplayName(entry.player),
@@ -375,7 +365,7 @@ function Leaderboard() {
        console.log('📊 First entry sample:', processedData[0])
        
        setAllLeaderboardData(processedData)
-       setCachedLeaderboard(processedData)
+       setCachedLeaderboard(selectedMode, processedData)
         setLastUpdated(new Date())
         
         console.log('✅ Leaderboard state updated successfully')
@@ -388,7 +378,7 @@ function Leaderboard() {
       })
       
       // Try to use cached data as last resort
-      const cached = getCachedLeaderboard(true) // Force return even if expired
+      const cached = getCachedLeaderboard(selectedMode, true)
       if (cached && cached.length > 0) {
         console.log('🔄 Using cached data as fallback:', cached.length, 'entries')
         setAllLeaderboardData(cached)
@@ -401,7 +391,7 @@ function Leaderboard() {
       console.log('🏁 Leaderboard fetch completed, isLoading set to false')
       setIsLoading(false)
     }
-  }, [getTopScores, isLoading, getCachedLeaderboard, setCachedLeaderboard, getPlayerDisplayName, getPlayerAvatar, isCurrentUser, selectedMode])
+  }, [getTopScores, isLoading, getCachedLeaderboard, setCachedLeaderboard, getPlayerDisplayName, getPlayerAvatar, isCurrentUser, selectedMode, getCacheKeys])
 
   // Fetch leaderboard on component mount
   useEffect(() => {
@@ -433,6 +423,18 @@ function Leaderboard() {
       clearInterval(refreshInterval)
     }
   }, [fetchLeaderboard, isLoading, allLeaderboardData.length])
+
+  useEffect(() => {
+    setIsLoading(false)
+    setAllLeaderboardData([])
+    setLeaderboard([])
+    setError(null)
+    setLastUpdated(null)
+    setTimeout(() => {
+      setIsLoading(true)
+      fetchLeaderboard()
+    }, 0)
+  }, [selectedMode, fetchLeaderboard])
 
   // Remove the old formatAddress function since we now use getPlayerDisplayName
   const formatDate = (timestamp: number) => {

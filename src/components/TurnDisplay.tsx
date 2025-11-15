@@ -12,7 +12,7 @@ interface TurnDisplayProps {
 function TurnDisplay({ turnManager }: TurnDisplayProps) {
   const { t } = useTranslation()
   const { verificationLevel } = useAuth()
-  const { turnStatus, isLoading, error, purchaseTurns, refreshTurnStatus } = turnManager
+  const { turnStatus, isLoading, isConfirming, error, purchaseTurns, refreshTurnStatus } = turnManager
   const payment = usePayment()
   const { getVerificationMultipliers, purchaseHundredTurns } = useContract()
   
@@ -253,33 +253,33 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
                   <p className="text-xs text-squid-white/70 mb-4 font-squid font-semibold">Get 3 additional turns to continue playing</p>
                   <button
                     onClick={handlePurchaseTurns}
-                    disabled={isLoading || payment.isProcessing}
+                    disabled={isLoading || isConfirming || payment.isProcessing}
                     className={`w-full py-3 px-4 rounded border-3 border-squid-black font-squid-heading font-bold uppercase tracking-wider transition-all duration-150 ${
-                      isLoading || payment.isProcessing
+                      isLoading || isConfirming || payment.isProcessing
                         ? 'cursor-not-allowed text-squid-black/50'
                         : 'text-squid-black'
                     }`}
                     style={{
-                      background: isLoading || payment.isProcessing ? '#2D2D35' : '#00D9C0',
+                      background: isLoading || isConfirming || payment.isProcessing ? '#2D2D35' : '#00D9C0',
                       boxShadow: '4px 4px 0px 0px #0A0A0F'
                     }}
                     onPointerDown={(e) => {
-                      if (!isLoading && !payment.isProcessing) {
+                      if (!isLoading && !isConfirming && !payment.isProcessing) {
                         e.currentTarget.style.transform = 'translate(2px, 2px)'
                         e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
                       }
                     }}
                     onPointerUp={(e) => {
-                      if (!isLoading && !payment.isProcessing) {
+                      if (!isLoading && !isConfirming && !payment.isProcessing) {
                         e.currentTarget.style.transform = 'translate(0, 0)'
                         e.currentTarget.style.boxShadow = '4px 4px 0px 0px #0A0A0F'
                       }
                     }}
                   >
-                    {isLoading || payment.isProcessing ? (
+                    {isLoading || isConfirming || payment.isProcessing ? (
                       <div className="flex items-center justify-center space-x-2">
                         <div className="w-4 h-4 border-2 border-squid-white/50 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-squid-white">{t('turnDisplay.processing')}</span>
+                        <span className="text-squid-white">{isConfirming ? 'Confirming…' : t('turnDisplay.processing')}</span>
                       </div>
                     ) : (
                       <span>🎮 Buy More Turns</span>

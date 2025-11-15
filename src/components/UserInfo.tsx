@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useContract } from '../hooks/useContract'
 import { getDisplayName } from '../utils'
 import { useEffect, useState } from 'react'
+import { formatEther } from 'viem'
 
 export function UserInfo() {
   const { t } = useTranslation()
@@ -38,6 +39,24 @@ export function UserInfo() {
 
   const displayName = getDisplayName(user)
   const hasProfilePicture = user.profilePictureUrl
+  const getVerificationLabel = () => {
+    const raw = (user?.onChainVerified && user?.onChainVerificationLevel)
+      ? (user?.onChainVerificationLevel as string)
+      : (user?.verificationLevel as unknown as string) || ''
+    const level = raw.toLowerCase()
+    if (level === 'orb_plus' || level === 'orbplus' || level === 'orb+'){ return 'Orb+' }
+    if (level === 'orb'){ return 'Orb' }
+    if (level === 'secure_document' || level === 'securedocument'){ return 'Secure Document' }
+    if (level === 'document'){ return 'Document' }
+    return raw || ''
+  }
+  const formattedBalance = (() => {
+    try {
+      return formatEther(BigInt(tokenBalance))
+    } catch {
+      return '0'
+    }
+  })()
 
   return (
     <header 
@@ -88,7 +107,7 @@ export function UserInfo() {
               {displayName}
             </p>
             <p className="text-gray-300 text-xs truncate">
-              {user.verificationLevel} {t('userInfo.verified')}
+              {getVerificationLabel()} {t('userInfo.verified')}
             </p>
           </div>
         </div>
@@ -115,7 +134,7 @@ export function UserInfo() {
               {isLoadingBalance ? (
                 <span className="animate-pulse">...</span>
               ) : (
-                `${parseFloat(tokenBalance).toFixed(2)}`
+                `${parseFloat(formattedBalance).toFixed(2)}`
               )}
             </div>
             <div className="text-gray-300 text-xs hidden sm:block">
