@@ -16,7 +16,7 @@ import type {
   GameMode,
   VerificationLevel
 } from '../types/contract'
-import { GAME_CONTRACT_ABI, CONTRACT_CONFIG } from '../types/contract'
+import { GAME_CONTRACT_ABI, CONTRACT_CONFIG, WLD_TOKEN_ABI } from '../types/contract'
 import { rpcManager } from '../utils/rpcManager'
 
 // Contract addresses
@@ -67,18 +67,6 @@ export function useContract(): UseContractReturn {
           {
             address: GAME_CONTRACT_ADDRESS,
             abi: GAME_CONTRACT_ABI,
-            functionName: 'hasActiveWeeklyPass',
-            args: [playerAddress as Address]
-          },
-          {
-            address: GAME_CONTRACT_ADDRESS,
-            abi: GAME_CONTRACT_ABI,
-            functionName: 'getWeeklyPassExpiry',
-            args: [playerAddress as Address]
-          },
-          {
-            address: GAME_CONTRACT_ADDRESS,
-            abi: GAME_CONTRACT_ABI,
             functionName: 'getDailyClaimStatus',
             args: [playerAddress as Address]
           }
@@ -89,9 +77,7 @@ export function useContract(): UseContractReturn {
       
       const availableTurns = results[0].status === 'success' ? results[0].result : BigInt(0)
       const timeUntilReset = results[1].status === 'success' ? results[1].result : BigInt(0)
-      const hasWeeklyPass = results[2].status === 'success' ? results[2].result : false
-      const weeklyPassExpiry = results[3].status === 'success' ? results[3].result : BigInt(0)
-      const dailyClaimStatus = results[4].status === 'success' ? results[4].result : null
+      const dailyClaimStatus = results[2].status === 'success' ? results[2].result : null
 
       const turns = Number(availableTurns)
       const resetTime = Number(timeUntilReset) * 1000 // Convert to milliseconds
@@ -99,10 +85,10 @@ export function useContract(): UseContractReturn {
       const result: TurnStatus = {
         availableTurns: turns,
         timeUntilReset: resetTime,
-        canPurchaseMoreTurns: turns === 0 && !hasWeeklyPass,
+        canPurchaseMoreTurns: turns === 0,
         nextResetTime: new Date(Date.now() + resetTime),
-        hasActiveWeeklyPass: hasWeeklyPass,
-        weeklyPassExpiry: hasWeeklyPass ? new Date(Number(weeklyPassExpiry) * 1000) : undefined,
+        hasActiveWeeklyPass: false,
+        weeklyPassExpiry: undefined,
         dailyClaimAvailable: dailyClaimStatus?.canClaim || false,
         dailyClaimStreak: dailyClaimStatus?.currentStreak ? Number(dailyClaimStatus.currentStreak) : undefined,
         nextDailyReward: dailyClaimStatus?.nextReward ? Number(dailyClaimStatus.nextReward) : undefined
@@ -123,11 +109,19 @@ export function useContract(): UseContractReturn {
         throw new Error('MiniKit not installed')
       }
 
-      // WARNING: This contract function expects the user to have approved 
-      // the contract to spend their WLD tokens via transferFrom.
-      // For MiniKit payments, use the payment hook instead.
-      
-      // Call the smart contract function through MiniKit
+      const approve = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [{
+          address: CONTRACT_CONFIG.worldchain.wldToken as Address,
+          abi: WLD_TOKEN_ABI,
+          functionName: 'approve',
+          args: [GAME_CONTRACT_ADDRESS, parseEther('0.2')]
+        }]
+      })
+
+      if (approve.finalPayload.status === 'error') {
+        throw new Error(approve.finalPayload.error_code || 'Approval failed')
+      }
+
       const result = await MiniKit.commandsAsync.sendTransaction({
         transaction: [{
           address: GAME_CONTRACT_ADDRESS,
@@ -213,11 +207,20 @@ export function useContract(): UseContractReturn {
 
       let tokensEarned = '0'
       try {
-        const pricing = await getCurrentPricing()
-        const tokensPerPoint = BigInt(pricing.tokensPerPoint)
-        const minted = tokensPerPoint * BigInt(score)
-        tokensEarned = formatEther(minted)
-      } catch {}
+        const playerAddress = (MiniKit.user as any)?.address as string | undefined
+        const base = BigInt(round) * 100000000000000000n
+        if (playerAddress) {
+          const stats = await getPlayerStats(playerAddress)
+          const multiplier = BigInt((stats.verificationMultiplier ?? 100))
+          const minted = (base * multiplier) / 100n
+          tokensEarned = formatEther(minted)
+        } else {
+          tokensEarned = formatEther(base)
+        }
+      } catch {
+        const base = BigInt(round) * 100000000000000000n
+        tokensEarned = formatEther(base)
+      }
 
       return {
         score,

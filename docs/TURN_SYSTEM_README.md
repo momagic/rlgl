@@ -7,13 +7,13 @@ The Red Light Green Light game now features a comprehensive turn-based economy w
 ## 🎮 Game Economy
 
 ### Turn System
-- **3 Free Turns per 24 hours** for all verified players
-- **Additional 3 turns** available for **0.5 WLD**
-- Automatic turn reset every 24 hours
-- Real-time turn counter and reset timer
+- **100 turns** allocated per player (no expiry)
+- **Additional turns** available for **0.5 WLD**
+- Real-time turn counter
 
 ### Token Rewards
-- **0.1 RLGL tokens** earned per point scored
+- **1 RLGL token per round** earned
+- Verification multipliers apply to per-round rewards
 - Tokens automatically minted after game completion
 - RLGL tokens tracked on-chain via smart contract
 - Viewable token balance in leaderboard display
@@ -26,12 +26,12 @@ The Red Light Green Light game now features a comprehensive turn-based economy w
 
 ## 🏗️ Technical Architecture
 
-### Smart Contract (`contracts/RedLightGreenLightGame.sol`)
+### Smart Contract (`contracts/RedLightGreenLightGameV3.sol`)
 - **ERC20 Token**: RLGL reward tokens with 18 decimals
 - **Turn Management**: Tracks free turns and reset times per player
 - **Payment Processing**: Handles WLD payments for additional turns
 - **Score Tracking**: On-chain leaderboard and game history
-- **Token Minting**: Automatic reward distribution (0.1 tokens per point)
+- **Token Minting**: Automatic reward distribution (1 token per round × verification bonus)
 
 ### Frontend Components
 
@@ -67,7 +67,7 @@ The Red Light Green Light game now features a comprehensive turn-based economy w
 
 ### 4. Game Completion
 - Final score submitted to smart contract
-- 0.1 RLGL tokens minted per point earned
+- 1 RLGL token minted per round (verification bonus applies)
 - Leaderboard automatically updated
 - New high scores recorded on-chain
 
@@ -142,10 +142,8 @@ Contract Updated → 3 New Turns Available
 ## 📊 Contract Constants
 
 ```solidity
-uint256 public constant FREE_TURNS_PER_DAY = 3;
-uint256 public constant ADDITIONAL_TURNS_COST = 5e17; // 0.5 WLD
-uint256 public constant TOKENS_PER_POINT = 1e17; // 0.1 tokens
-uint256 public constant TURN_RESET_PERIOD = 24 hours;
+uint256 public constant TOKENS_PER_ROUND = 1e18; // 1.0 RLGL
+// Fixed 100-turn system (no expiry)
 ```
 
 ## 🎨 UI Features

@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useContract } from './useContract'
-import { usePayment } from './usePayment'
 import { useAuth } from '../contexts/AuthContext'
 import type { UseTurnManagerReturn, TurnStatus } from '../types/contract'
-import { sanitizeLocalStorageData, sanitizeJSONData } from '../utils/inputSanitizer'
+import { sanitizeJSONData } from '../utils/inputSanitizer'
 
 // Local storage keys for persisting purchases
 const TURN_PURCHASES_KEY = 'rlgl-turn-purchases'
@@ -26,88 +25,22 @@ interface WeeklyPassPurchase {
 export function useTurnManager(): UseTurnManagerReturn {
   const { user } = useAuth()
   const contract = useContract()
-  const payment = usePayment()
+  
   
   const [turnStatus, setTurnStatus] = useState<TurnStatus | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
-  const [lastPurchaseTime, setLastPurchaseTime] = useState<number>(0)
+  const [lastPurchaseTime] = useState<number>(0)
   const maxRetries = 5
 
   // Helper functions for localStorage persistence
-  const saveTurnPurchase = useCallback((purchase: TurnPurchase) => {
-    try {
-      const existing = JSON.parse(localStorage.getItem(TURN_PURCHASES_KEY) || '[]')
-      const updatedPurchases = [...existing, purchase]
-      
-      // Sanitize data before storing - with graceful fallback
-      const validation = sanitizeLocalStorageData(TURN_PURCHASES_KEY, updatedPurchases)
-      if (!validation.isValid) {
-        console.warn('Turn purchase data validation failed:', validation.errors)
-        // Try to save anyway since this is critical user data
-        try {
-          localStorage.setItem(TURN_PURCHASES_KEY, JSON.stringify(updatedPurchases))
-          console.log('Turn purchase saved despite validation warnings')
-        } catch (fallbackError) {
-          console.error('Critical: Failed to save turn purchase even with fallback:', fallbackError)
-        }
-        return
-      }
-      
-      localStorage.setItem(TURN_PURCHASES_KEY, JSON.stringify(updatedPurchases))
-    } catch (error) {
-      console.warn('Failed to save turn purchase:', error)
-    }
-  }, [])
+  
 
-  const saveWeeklyPassPurchase = useCallback((purchase: WeeklyPassPurchase) => {
-    try {
-      const existing = JSON.parse(localStorage.getItem(WEEKLY_PASS_PURCHASES_KEY) || '[]')
-      const updatedPurchases = [...existing, purchase]
-      
-      // Sanitize data before storing - with graceful fallback
-      const validation = sanitizeLocalStorageData(WEEKLY_PASS_PURCHASES_KEY, updatedPurchases)
-      if (!validation.isValid) {
-        console.warn('Weekly pass purchase data validation failed:', validation.errors)
-        // Try to save anyway since this is critical user data
-        try {
-          localStorage.setItem(WEEKLY_PASS_PURCHASES_KEY, JSON.stringify(updatedPurchases))
-          console.log('Weekly pass purchase saved despite validation warnings')
-        } catch (fallbackError) {
-          console.error('Critical: Failed to save weekly pass purchase even with fallback:', fallbackError)
-        }
-        return
-      }
-      
-      localStorage.setItem(WEEKLY_PASS_PURCHASES_KEY, JSON.stringify(updatedPurchases))
-    } catch (error) {
-      console.warn('Failed to save weekly pass purchase:', error)
-    }
-  }, [])
+  
 
-  const getTurnPurchases = useCallback((walletAddress: string): TurnPurchase[] => {
-    try {
-      const stored = localStorage.getItem(TURN_PURCHASES_KEY) || '[]'
-      const purchases = JSON.parse(stored)
-      
-      // Sanitize loaded data with graceful fallback
-      const validation = sanitizeJSONData(purchases)
-      if (!validation.isValid) {
-        console.warn('Turn purchases data validation failed:', validation.errors)
-        // Try to use the original data if validation fails but data is parseable
-        if (Array.isArray(purchases)) {
-          console.log('Using original turn purchases data despite validation warnings')
-          return purchases.filter((p: TurnPurchase) => p.walletAddress === walletAddress)
-        }
-        return []
-      }
-      
-      return validation.sanitizedValue.filter((p: TurnPurchase) => p.walletAddress === walletAddress)
-    } catch (error) {
-      console.warn('Failed to load turn purchases:', error)
-      return []
-    }
+  const getTurnPurchases = useCallback((_walletAddress: string): TurnPurchase[] => {
+    return []
   }, [])
 
   const getWeeklyPassPurchases = useCallback((walletAddress: string): WeeklyPassPurchase[] => {
@@ -134,15 +67,7 @@ export function useTurnManager(): UseTurnManagerReturn {
     }
   }, [])
 
-  const calculateBonusTurns = useCallback((walletAddress: string): number => {
-    const purchases = getTurnPurchases(walletAddress)
-    const now = Date.now()
-    const validPurchases = purchases.filter(p => now - p.timestamp < 24 * 60 * 60 * 1000) // Valid for 24 hours
-    
-    const bonusTurns = validPurchases.reduce((total, p) => total + p.turnsGranted, 0)
-    
-    return Math.min(bonusTurns, 3) // Cap at 3 additional turns
-  }, [getTurnPurchases])
+  const calculateBonusTurns = useCallback((_walletAddress: string): number => 0, [])
 
   const hasActiveWeeklyPassFromStorage = useCallback((walletAddress: string): { hasActive: boolean; expiryTime?: number } => {
     const purchases = getWeeklyPassPurchases(walletAddress)
@@ -307,19 +232,15 @@ export function useTurnManager(): UseTurnManagerReturn {
         timeoutPromise
       ])
       
-      // Add bonus turns from localStorage purchases
-      const bonusTurns = calculateBonusTurns(playerAddress)
       
-      // Check for active weekly pass from localStorage
-      const weeklyPassFromStorage = hasActiveWeeklyPassFromStorage(playerAddress)
       
       // Merge contract data with localStorage data
       const enhancedStatus = {
         ...status,
-        availableTurns: weeklyPassFromStorage.hasActive ? Number.MAX_SAFE_INTEGER : status.availableTurns + bonusTurns,
-        canPurchaseMoreTurns: weeklyPassFromStorage.hasActive ? false : (status.availableTurns + bonusTurns) === 0,
-        hasActiveWeeklyPass: weeklyPassFromStorage.hasActive || status.hasActiveWeeklyPass,
-        weeklyPassExpiry: weeklyPassFromStorage.hasActive ? new Date(weeklyPassFromStorage.expiryTime!) : status.weeklyPassExpiry
+        availableTurns: status.availableTurns,
+        canPurchaseMoreTurns: status.availableTurns === 0,
+        hasActiveWeeklyPass: false,
+        weeklyPassExpiry: undefined
       }
       
       setTurnStatus(enhancedStatus)
@@ -344,9 +265,9 @@ export function useTurnManager(): UseTurnManagerReturn {
     }
   }, [user, contract, getPlayerAddress, calculateBonusTurns, hasActiveWeeklyPassFromStorage, lastPurchaseTime, retryCount, maxRetries, isDevUser])
 
-  const purchaseTurns = useCallback(async (dynamicCost?: string): Promise<boolean> => {
+  const purchaseTurns = useCallback(async (_dynamicCost?: string): Promise<boolean> => {
     console.log('🎮 Turn purchase initiated:', { 
-      dynamicCost, 
+      _dynamicCost, 
       timestamp: new Date().toISOString(),
       user: user?.walletAddress
     })
@@ -360,7 +281,7 @@ export function useTurnManager(): UseTurnManagerReturn {
 
       // Initiate the payment through MiniKit
       console.log('💳 Starting payment through MiniKit...')
-      const paymentResult = await payment.purchaseAdditionalTurns(dynamicCost)
+      const paymentResult = await contract.purchaseAdditionalTurns()
       
       console.log('💳 Payment result received:', {
         success: paymentResult.success,
@@ -375,38 +296,7 @@ export function useTurnManager(): UseTurnManagerReturn {
         return false
       }
 
-      // Save the purchase to localStorage for persistence
-      const purchaseTimestamp = Date.now()
-      const purchase: TurnPurchase = {
-        walletAddress,
-        timestamp: purchaseTimestamp,
-        transactionId: paymentResult.transactionHash || 'unknown',
-        turnsGranted: 3
-      }
-      
-      console.log('💾 Saving turn purchase to localStorage:', purchase)
-      saveTurnPurchase(purchase)
-      
-      // Set last purchase time to protect against overwrites
-      setLastPurchaseTime(purchaseTimestamp)
-      console.log('⏰ Set last purchase time:', purchaseTimestamp)
-      
-      // Update turn status optimistically after successful payment
-      setTurnStatus(prevStatus => {
-        console.log('🔄 Updating turn status optimistically. Previous status:', prevStatus)
-        if (prevStatus) {
-          const newStatus = {
-            ...prevStatus,
-            availableTurns: prevStatus.availableTurns + 3, // Add 3 additional turns
-            canPurchaseMoreTurns: false, // Can't purchase more since we have turns
-            timeUntilReset: prevStatus.timeUntilReset // Keep existing reset time
-          }
-          console.log('✅ New turn status after purchase:', newStatus)
-          return newStatus
-        }
-        console.log('⚠️ No previous status to update')
-        return prevStatus
-      })
+      await refreshTurnStatus(true)
 
       // Note: We don't auto-refresh after payment since it would overwrite 
       // our local update with stale contract data. Manual refresh is available.
@@ -426,62 +316,12 @@ export function useTurnManager(): UseTurnManagerReturn {
       console.log('🏁 Turn purchase process completed, setting isLoading to false')
       setIsLoading(false)
     }
-  }, [payment, getPlayerAddress, saveTurnPurchase])
+  }, [contract, getPlayerAddress, refreshTurnStatus])
 
-  const purchaseWeeklyPass = useCallback(async (dynamicCost?: string): Promise<boolean> => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const walletAddress = getPlayerAddress()
-
-      // Initiate the payment through MiniKit
-      const paymentResult = await payment.purchaseWeeklyPass(dynamicCost)
-      
-      if (!paymentResult.success) {
-        setError(paymentResult.error || 'Weekly pass purchase failed')
-        return false
-      }
-
-      // Save the weekly pass purchase to localStorage for persistence
-      const purchaseTimestamp = Date.now()
-      const weeklyPassExpiryTime = purchaseTimestamp + 7 * 24 * 60 * 60 * 1000 // 7 days from now
-      const purchase: WeeklyPassPurchase = {
-        walletAddress,
-        timestamp: purchaseTimestamp,
-        transactionId: paymentResult.transactionHash || 'unknown',
-        expiryTime: weeklyPassExpiryTime
-      }
-      saveWeeklyPassPurchase(purchase)
-
-      // Set last purchase time to protect against overwrites
-      setLastPurchaseTime(purchaseTimestamp)
-      
-      // Update turn status optimistically after successful weekly pass purchase
-      const weeklyPassExpiry = new Date(weeklyPassExpiryTime)
-      setTurnStatus(prevStatus => {
-        if (prevStatus) {
-          const newStatus = {
-            ...prevStatus,
-            availableTurns: Number.MAX_SAFE_INTEGER, // Unlimited turns with weekly pass
-            canPurchaseMoreTurns: false, // Can't purchase more with active weekly pass
-            hasActiveWeeklyPass: true,
-            weeklyPassExpiry: weeklyPassExpiry
-          }
-          return newStatus
-        }
-        return prevStatus
-      })
-
-      return true
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to purchase weekly pass'
-      setError(errorMessage)
-      return false
-    } finally {
-      setIsLoading(false)
-    }
-  }, [payment, getPlayerAddress, saveWeeklyPassPurchase])
+  const purchaseWeeklyPass = useCallback(async (_dynamicCost?: string): Promise<boolean> => {
+    setError('Weekly pass is no longer available')
+    return false
+  }, [])
 
   const consumeTurn = useCallback(async (): Promise<boolean> => {
     try {

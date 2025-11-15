@@ -12,7 +12,7 @@ interface TurnDisplayProps {
 function TurnDisplay({ turnManager }: TurnDisplayProps) {
   const { t } = useTranslation()
   const { verificationLevel } = useAuth()
-  const { turnStatus, isLoading, error, purchaseTurns, purchaseWeeklyPass, refreshTurnStatus } = turnManager
+  const { turnStatus, isLoading, error, purchaseTurns, refreshTurnStatus } = turnManager
   const payment = usePayment()
   const { getVerificationMultipliers } = useContract()
   
@@ -25,7 +25,7 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
   
   // Use dynamic pricing from contract, with fallbacks
   const additionalTurnsCost = payment.dynamicPricing?.turnCost || '0.2'
-  const weeklyPassCost = payment.dynamicPricing?.passCost || '5.0'
+  
 
   // Load verification multipliers
   useEffect(() => {
@@ -80,21 +80,7 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
     }
   }
 
-  const handlePurchaseWeeklyPass = async () => {
-    console.log('🎫 Purchase weekly pass button clicked:', {
-      cost: weeklyPassCost,
-      isLoading,
-      isProcessing: payment.isProcessing,
-      timestamp: new Date().toISOString()
-    })
-    
-    try {
-      const result = await purchaseWeeklyPass(weeklyPassCost)
-      console.log('🎫 Purchase weekly pass result:', result)
-    } catch (error) {
-      console.error('🎫 Purchase weekly pass failed:', error)
-    }
-  }
+  
 
   return (
     <div 
@@ -173,21 +159,7 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
         </div>
       )}
 
-      {/* Weekly Pass Status */}
-      {turnStatus.hasActiveWeeklyPass && (
-        <div 
-          className="mb-4 p-4 rounded-lg border-3 border-squid-teal bg-squid-teal/20"
-          style={{ boxShadow: '4px 4px 0px 0px #00D9C0' }}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl animate-pulse">✨</span>
-            <span className="text-squid-teal font-squid-heading font-bold text-sm uppercase">{t('turnDisplay.weeklyPass.active')}</span>
-          </div>
-          <div className="text-xs text-squid-white/70 font-squid font-semibold">
-            {t('turnDisplay.weeklyPass.unlimitedUntil')} {turnStatus.weeklyPassExpiry?.toLocaleDateString()}
-          </div>
-        </div>
-      )}
+      
 
       {/* Available Turns */}
       <div className="mb-6">
@@ -203,12 +175,12 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
             style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}
           >
             <span className="text-squid-white text-2xl font-squid-mono font-bold neon-text-pink">
-              {turnStatus.hasActiveWeeklyPass ? '∞' : turnStatus.availableTurns}
+              {turnStatus.availableTurns}
             </span>
           </div>
         </div>
         
-        {!turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns > 0 ? (
+        {turnStatus.availableTurns > 0 ? (
           <div className="flex flex-wrap gap-2 mb-4">
             {Array.from({ length: Math.max(turnStatus.availableTurns, 5) }, (_, i) => (
               <div
@@ -225,20 +197,16 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
               />
             ))}
           </div>
-        ) : !turnStatus.hasActiveWeeklyPass ? (
-          <div className="text-squid-white/60 text-xs font-squid font-semibold mb-4">
-            {t('turnDisplay.noTurnsRemaining')}
-          </div>
         ) : (
           <div className="text-squid-white/60 text-xs font-squid font-semibold mb-4">
-            Enjoy unlimited gameplay!
+            {t('turnDisplay.noTurnsRemaining')}
           </div>
         )}
       </div>
 
       {/* Reset Timer or Purchase Buttons */}
       {(() => {
-        const showPurchaseButtons = !turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns === 0 && turnStatus.canPurchaseMoreTurns
+        const showPurchaseButtons = turnStatus.availableTurns === 0 && turnStatus.canPurchaseMoreTurns
         
         if (showPurchaseButtons) {
           return (
@@ -256,61 +224,7 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
 
               {/* Purchase Options */}
               <div className="border-t-2 border-squid-border pt-4 space-y-3">
-                {/* Weekly Pass Option */}
-                <div 
-                  className="p-4 rounded-lg border-3 border-squid-pink bg-squid-pink/10"
-                  style={{ boxShadow: '4px 4px 0px 0px #FF1F8C' }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-squid-black" style={{ background: '#FF1F8C' }}>
-                        <span className="text-squid-white text-lg">🎫</span>
-                      </div>
-                      <span className="text-squid-pink font-squid-heading font-bold text-sm uppercase">{t('turnDisplay.weeklyPass.buttonTitle')}</span>
-                    </div>
-                    <div 
-                      className="px-3 py-1 rounded border-2 border-squid-black bg-squid-black"
-                      style={{ boxShadow: '2px 2px 0px 0px #FF1F8C' }}
-                    >
-                      <span className="text-squid-white font-squid-mono font-bold">{weeklyPassCost} WLD</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-squid-white/70 mb-4 font-squid font-semibold">{t('turnDisplay.weeklyPass.buttonSubtitle')}</p>
-                  <button
-                    onClick={handlePurchaseWeeklyPass}
-                    disabled={isLoading || payment.isProcessing}
-                    className={`w-full py-3 px-4 rounded border-3 border-squid-black font-squid-heading font-bold uppercase tracking-wider transition-all duration-150 ${
-                      isLoading || payment.isProcessing
-                        ? 'cursor-not-allowed text-squid-white/50'
-                        : 'text-squid-white'
-                    }`}
-                    style={{
-                      background: isLoading || payment.isProcessing ? '#2D2D35' : '#FF1F8C',
-                      boxShadow: '4px 4px 0px 0px #0A0A0F'
-                    }}
-                    onPointerDown={(e) => {
-                      if (!isLoading && !payment.isProcessing) {
-                        e.currentTarget.style.transform = 'translate(2px, 2px)'
-                        e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
-                      }
-                    }}
-                    onPointerUp={(e) => {
-                      if (!isLoading && !payment.isProcessing) {
-                        e.currentTarget.style.transform = 'translate(0, 0)'
-                        e.currentTarget.style.boxShadow = '4px 4px 0px 0px #0A0A0F'
-                      }
-                    }}
-                  >
-                    {isLoading || payment.isProcessing ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-squid-white/50 border-t-transparent rounded-full animate-spin"></div>
-                        <span>{t('turnDisplay.processing')}</span>
-                      </div>
-                    ) : (
-                      <span>✨ Purchase Weekly Pass ✨</span>
-                    )}
-                  </button>
-                </div>
+                
 
                 {/* Additional Turns Option */}
                 <div 

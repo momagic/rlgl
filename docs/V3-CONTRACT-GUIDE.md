@@ -68,13 +68,12 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
 
 ```solidity
 // Configurable parameters with bounds
-uint256 public tokensPerPoint = 1e17; // 0.1 tokens per point (default)
+uint256 public constant TOKENS_PER_ROUND = 1e18; // 1.0 RLGL per round
 uint256 public additionalTurnsCost = 5e17; // 0.5 WLD (default)
-uint256 public weeklyPassCost = 5e18; // 5 WLD (default)
+// Weekly pass removed
 
 // Price bounds for safety
-uint256 public constant MIN_TOKENS_PER_POINT = 1e16; // 0.01 tokens
-uint256 public constant MAX_TOKENS_PER_POINT = 1e18; // 1 token
+// Tokens per round are fixed; pricing applies to turn purchases
 uint256 public constant MIN_TURN_COST = 1e17; // 0.1 WLD
 uint256 public constant MAX_TURN_COST = 5e18; // 5 WLD
 ```
@@ -102,9 +101,9 @@ await v3Contract.setPasses(2); // Set passes
 
 ### How It Works
 
-1. **Base Reward**: 100 RLGL tokens per day
-2. **Streak Bonus**: +10 RLGL per consecutive day
-3. **Maximum Streak**: 30 days (400 RLGL total reward)
+1. **Base Reward**: 10 RLGL on day one
+2. **Streak Bonus**: +1 RLGL per additional consecutive day
+3. **Maximum Streak**: 365 days
 4. **Cooldown**: 24 hours between claims
 
 ### Usage
@@ -123,12 +122,12 @@ await v3Contract.claimDailyReward();
 
 ### Streak Calculation
 
-- Day 1: 100 RLGL
-- Day 2: 100 + 10 = 110 RLGL
-- Day 3: 100 + 20 = 120 RLGL
+- Day 1: 10 RLGL
+- Day 2: 10 + 1 = 11 RLGL
+- Day 3: 10 + 2 = 12 RLGL
 - ...
-- Day 30: 100 + 290 = 390 RLGL
-- Day 31+: 100 + 300 = 400 RLGL (capped)
+- Day 30: 10 + 29 = 39 RLGL
+- Day 365: 10 + 364 = 374 RLGL (capped)
 
 ## localStorage Compatibility
 
@@ -142,7 +141,7 @@ await v3Contract.claimDailyReward();
 ```javascript
 // Get localStorage data from frontend
 const extraGoes = localStorage.getItem('extraGoes') || 0;
-const passes = localStorage.getItem('passes') || 0;
+const passes = 0;
 
 // Set in V3 contract
 await v3Contract.setExtraGoes(parseInt(extraGoes));
@@ -162,17 +161,11 @@ The contract automatically considers localStorage data when calculating availabl
 function getAvailableTurns(address player) public view returns (uint256) {
     Player memory playerData = players[player];
     
-    // Check if weekly pass is active
-    if (block.timestamp < playerData.weeklyPassExpiry) {
-        return type(uint256).max; // Unlimited turns
-    }
-    
-    // Return free turns + localStorage extra goes
-    if (block.timestamp >= playerData.lastResetTime + TURN_RESET_PERIOD) {
-        return FREE_TURNS_PER_DAY + playerData.extraGoes;
-    }
-    
-    return (FREE_TURNS_PER_DAY - playerData.freeTurnsUsed) + playerData.extraGoes;
+uint256 maxTurns = 100;
+if (playerData.freeTurnsUsed >= maxTurns) {
+    return playerData.extraGoes;
+}
+return (maxTurns - playerData.freeTurnsUsed) + playerData.extraGoes;
 }
 ```
 
@@ -217,11 +210,9 @@ struct LeaderboardEntry {
 ### Pricing Management
 
 ```javascript
-// Update all pricing parameters
+// Update pricing parameters
 await v3Contract.updatePricing(
-    ethers.parseEther("0.15"), // tokens per point (0.15 RLGL)
-    ethers.parseEther("0.3"),  // turn cost (0.3 WLD)
-    ethers.parseEther("3")     // weekly pass cost (3 WLD)
+    ethers.parseEther("0.3")  // turn cost (0.3 WLD)
 );
 ```
 

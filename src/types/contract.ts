@@ -182,8 +182,8 @@ export interface UseContractReturn {
   getPlayerStats: (playerAddress: string) => Promise<PlayerStats>
   getLeaderboard: (gameMode: GameMode, topN: number) => Promise<LeaderboardEntry[]>
   getPlayerRank: (playerAddress: string, gameMode: GameMode) => Promise<number>
-  getLeaderboardPaginated: (offset: number, limit: number) => Promise<LeaderboardEntry[]>
-  getTopScores: (count: number) => Promise<LeaderboardEntry[]>
+  getLeaderboardPaginated: (offset: number, limit: number, gameMode: GameMode) => Promise<LeaderboardEntry[]>
+  getTopScores: (count: number, gameMode: GameMode) => Promise<LeaderboardEntry[]>
   getBatchPlayerStats: (playerAddresses: string[]) => Promise<any>
   getLeaderboardStats: () => Promise<{ totalGames: number; totalPlayers: number; leaderboardSize: number; highestScore: number }>
   getPlayerGameHistory: (playerAddress: string, offset: number, limit: number) => Promise<GameResult[]>
@@ -737,12 +737,22 @@ export const WLD_TOKEN_ABI = [
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "spender", "type": "address"},
+      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "approve",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ] as const
 
 export const CONTRACT_CONFIG = {
   worldchain: {
-    gameContract: '0x0b0Df717B5A83DA0451d537e75c7Ab091ac1e6Aa', // V3 Contract with migration support
+    gameContract: '0x4425A30f07C47e51eb297d1AFa643f5954BbCe73',
     wldToken: '0x2cfc85d8e48f8eab294be644d9e25c3030863003', // WLD token on World Chain
   },
   worldchainSepolia: {

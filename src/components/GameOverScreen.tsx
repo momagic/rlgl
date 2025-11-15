@@ -22,8 +22,9 @@ function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain,
     ? Math.round((playerStats.correctTaps / playerStats.totalTaps) * 100) 
     : 100
 
-  // Calculate tokens earned (0.1 tokens per point)
-  const tokensEarned = (playerStats.currentScore * 0.1).toFixed(1)
+  // Calculate tokens earned (0.1 tokens per round)
+  const completedRounds = Math.max(playerStats.round - 1, 0)
+  const tokensEarned = tokenReward?.tokensEarned ?? (completedRounds * 0.1).toFixed(1)
 
   // Check if user has turns available
   const hasTurnsAvailable = turnStatus && (turnStatus.hasActiveWeeklyPass || turnStatus.availableTurns > 0)
@@ -105,7 +106,7 @@ function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain,
             <span className="text-squid-white/70 text-xs font-squid-heading font-bold uppercase">RLGL</span>
           </div>
           <div className="text-squid-white/60 text-xs mt-1 font-squid font-semibold">
-            0.1 tokens per point earned
+            1 token per round + verification bonus
           </div>
         </div>
 

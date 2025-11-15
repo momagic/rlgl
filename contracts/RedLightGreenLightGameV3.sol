@@ -18,21 +18,24 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
 
     // ============ CONSTANTS ============
     uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10**18; // 1 billion tokens
-    uint256 public constant DAILY_CLAIM_AMOUNT = 100 * 10**18; // 100 RLGL tokens
-    uint256 public constant MAX_DAILY_CLAIM_STREAK = 30; // Max streak bonus days
-    uint256 public constant STREAK_BONUS_MULTIPLIER = 10 * 10**18; // 10 tokens per streak day
+    uint256 public constant DAILY_CLAIM_AMOUNT = 10 * 10**18;
+    uint256 public constant MAX_DAILY_CLAIM_STREAK = 365;
+    uint256 public constant STREAK_BONUS_MULTIPLIER = 1 * 10**18;
     uint256 public constant FREE_TURNS_PER_DAY = 3;
     uint256 public constant TURN_RESET_PERIOD = 24 hours;
-    uint256 public constant WEEKLY_PASS_DURATION = 7 days;
     uint256 public constant DAILY_CLAIM_COOLDOWN = 24 hours;
+    uint256 public constant TOKENS_PER_ROUND = 1e18;
+    uint256 public constant MIN_WEEKLY_PASS_COST = 1e18;
+    uint256 public constant MAX_WEEKLY_PASS_COST = 20e18;
     
     // ============ STATE VARIABLES ============
     IERC20 public immutable wldToken;
     
     // Dynamic pricing (owner configurable)
-    uint256 public tokensPerPoint = 1e17; // 0.1 tokens per point (default)
+    uint256 public tokensPerPoint = 1e17; // legacy field
     uint256 public additionalTurnsCost = 5e17; // 0.5 WLD (default)
-    uint256 public weeklyPassCost = 5e18; // 5 WLD (default)
+    uint256 public weeklyPassCost = 5e18; // legacy field
+    
     
     // Verification-based pricing multipliers (Document verification and above required)
     uint256 public orbPlusMultiplier = 140; // 140% (40% bonus for Orb+ verified)
@@ -45,8 +48,7 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     uint256 public constant MAX_TOKENS_PER_POINT = 1e18; // 1 token
     uint256 public constant MIN_TURN_COST = 1e17; // 0.1 WLD
     uint256 public constant MAX_TURN_COST = 5e18; // 5 WLD
-    uint256 public constant MIN_WEEKLY_PASS_COST = 1e18; // 1 WLD
-    uint256 public constant MAX_WEEKLY_PASS_COST = 20e18; // 20 WLD
+    
     
     // Game modes
     enum GameMode { Classic, Arcade, WhackLight }
@@ -61,7 +63,7 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         uint256 totalGamesPlayed;
         uint256 highScore;
         uint256 totalPointsEarned;
-        uint256 weeklyPassExpiry;
+        
         uint256 lastDailyClaim;
         uint256 dailyClaimStreak;
         uint256 extraGoes; // localStorage compatibility
@@ -97,7 +99,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     mapping(GameMode => mapping(address => uint256)) public playerHighScores;
     mapping(address => uint256[]) public playerGameIds;
     mapping(address => bool) public authorizedSubmitters;
-    mapping(address => bool) public hasActiveGame;
     
     uint256 private _gameIdCounter;
     uint256 public totalGamesPlayed;
@@ -122,11 +123,7 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         uint256 turnsGranted
     );
     
-    event WeeklyPassPurchased(
-        address indexed player,
-        uint256 cost,
-        uint256 expiryTime
-    );
+    
     
     event DailyClaimed(
         address indexed player,
@@ -222,22 +219,11 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     function getAvailableTurns(address player) public view returns (uint256) {
         Player memory playerData = players[player];
         
-        // Check if weekly pass is active
-        if (block.timestamp < playerData.weeklyPassExpiry) {
-            return type(uint256).max; // Unlimited turns
-        }
-        
-        // Check if reset period has passed
-        if (block.timestamp >= playerData.lastResetTime + TURN_RESET_PERIOD) {
-            return FREE_TURNS_PER_DAY + playerData.extraGoes; // Free turns + localStorage extra goes
-        }
-        
-        // Return remaining free turns + localStorage extra goes
-        if (playerData.freeTurnsUsed >= FREE_TURNS_PER_DAY) {
+        uint256 maxTurns = 100;
+        if (playerData.freeTurnsUsed >= maxTurns) {
             return playerData.extraGoes;
         }
-        
-        return (FREE_TURNS_PER_DAY - playerData.freeTurnsUsed) + playerData.extraGoes;
+        return (maxTurns - playerData.freeTurnsUsed) + playerData.extraGoes;
     }
     
     /**
@@ -257,35 +243,20 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
      * @dev Purchase additional turns with WLD
      */
     function purchaseAdditionalTurns() external nonReentrant whenNotPaused {
-        require(getAvailableTurns(msg.sender) == 0, "Still have turns available");
-        
-        // Transfer WLD from player
         require(
             wldToken.transferFrom(msg.sender, address(this), additionalTurnsCost),
             "WLD transfer failed"
         );
         
-        // Reset the player's turn system to give them 3 more turns
-        players[msg.sender].freeTurnsUsed = 0;
-        players[msg.sender].lastResetTime = block.timestamp;
+        players[msg.sender].extraGoes += 3;
         
-        emit TurnsPurchased(msg.sender, additionalTurnsCost, FREE_TURNS_PER_DAY);
+        emit TurnsPurchased(msg.sender, additionalTurnsCost, 3);
     }
     
     /**
      * @dev Purchase weekly pass for unlimited turns
      */
-    function purchaseWeeklyPass() external nonReentrant whenNotPaused {
-        require(
-            wldToken.transferFrom(msg.sender, address(this), weeklyPassCost),
-            "WLD transfer failed"
-        );
-        
-        Player storage player = players[msg.sender];
-        player.weeklyPassExpiry = block.timestamp + WEEKLY_PASS_DURATION;
-        
-        emit WeeklyPassPurchased(msg.sender, weeklyPassCost, player.weeklyPassExpiry);
-    }
+    
     
     /**
      * @dev Start a game (consume a turn)
@@ -296,21 +267,14 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         
         Player storage player = players[msg.sender];
         
-        // Check if reset period has passed
-        if (block.timestamp >= player.lastResetTime + TURN_RESET_PERIOD) {
-            player.lastResetTime = block.timestamp;
-            player.freeTurnsUsed = 0;
-        }
-        
         // Consume a turn (prioritize free turns over extra goes)
-        if (player.freeTurnsUsed < FREE_TURNS_PER_DAY) {
+        if (player.freeTurnsUsed < 100) {
             player.freeTurnsUsed++;
         } else {
             require(player.extraGoes > 0, "No extra goes available");
             player.extraGoes--;
         }
 
-        hasActiveGame[msg.sender] = true;
     }
     
     /**
@@ -322,7 +286,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         GameMode gameMode
     ) external validGameMode(gameMode) whenNotPaused {
         address playerAddress = msg.sender;
-        require(hasActiveGame[playerAddress], "No active game session");
         require(score > 0, "Score must be greater than 0");
         require(round > 0, "Round must be greater than 0");
         require(round <= 1000, "Round exceeds reasonable maximum");
@@ -355,12 +318,9 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         
         playerGameIds[playerAddress].push(gameId);
         
-        // Calculate base reward tokens
-        uint256 baseTokens = score * tokensPerPoint;
-        
-        // Apply verification multiplier
+        // Reward tokens per round with verification multiplier
         uint256 multiplier = _getVerificationMultiplier(playerAddress);
-        uint256 tokensToMint = (baseTokens * multiplier) / 100;
+        uint256 tokensToMint = (round * TOKENS_PER_ROUND * multiplier) / 100;
         
         require(totalSupply() + tokensToMint <= MAX_SUPPLY, "Would exceed max supply");
         _mint(playerAddress, tokensToMint);
@@ -377,7 +337,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
             isNewHighScore
         );
 
-        hasActiveGame[playerAddress] = false;
     }
 
     function calculateMaxTheoreticalScore(GameMode gameMode, uint256 round) public pure returns (uint256) {
@@ -387,7 +346,7 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         } else if (gameMode == GameMode.Arcade) {
             return r * 40;
         } else {
-            return r * 20;
+            return r * 10;
         }
     }
     
@@ -875,7 +834,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         uint256 tokenBalance,
         uint256 availableTurns,
         uint256 timeUntilReset,
-        uint256 weeklyPassExpiry,
         uint256 lastDailyClaim,
         uint256 dailyClaimStreak,
         uint256 extraGoes,
@@ -895,7 +853,6 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
             balanceOf(player),
             getAvailableTurns(player),
             getTimeUntilReset(player),
-            playerData.weeklyPassExpiry,
             playerData.lastDailyClaim,
             playerData.dailyClaimStreak,
             playerData.extraGoes,
@@ -960,12 +917,7 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         return playerGameIds[player];
     }
     
-    /**
-     * @dev Check if player has active weekly pass
-     */
-    function hasActiveWeeklyPass(address player) external view returns (bool) {
-        return block.timestamp < players[player].weeklyPassExpiry;
-    }
+    
     
     /**
      * @dev Get contract version
