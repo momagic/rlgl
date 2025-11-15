@@ -210,8 +210,12 @@ export function useContract(): UseContractReturn {
 
       return true
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to start game'
-      setError(errorMessage)
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.toLowerCase().includes('invalid_contract')) {
+        setError('Contract not authorized for send-transaction. Add the proxy address to Contract Entrypoints and retry.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to start game')
+      }
       return false
     } finally {
       setIsLoading(false)
@@ -290,24 +294,43 @@ export function useContract(): UseContractReturn {
       }) as any
       
       console.log('✅ Player stats result:', result)
-      
+
+      if (Array.isArray(result)) {
+        return {
+          freeTurnsUsed: Number(result[0] ?? 0),
+          lastResetTime: Number(result[1] ?? 0),
+          totalGamesPlayed: Number(result[2] ?? 0),
+          highScore: Number(result[3] ?? 0),
+          totalPointsEarned: Number(result[4] ?? 0),
+          tokenBalance: (result[5] ?? 0n).toString(),
+          availableTurns: Number(result[6] ?? 0),
+          timeUntilReset: Number(result[7] ?? 0),
+          lastDailyClaim: Number(result[8] ?? 0),
+          dailyClaimStreak: Number(result[9] ?? 0),
+          extraGoes: Number(result[10] ?? 0),
+          passes: Number(result[11] ?? 0),
+          verificationLevel: (result[12] as VerificationLevel) ?? 'Document',
+          isVerified: Boolean(result[13]),
+          verificationMultiplier: Number(result[14] ?? 100)
+        }
+      }
+
       return {
-        freeTurnsUsed: Number(result.freeTurnsUsed),
-        lastResetTime: Number(result.lastResetTime),
-        totalGamesPlayed: Number(result.totalGamesPlayed),
-        highScore: Number(result.highScore),
-        totalPointsEarned: Number(result.totalPointsEarned),
-        tokenBalance: result.tokenBalance.toString(),
-        availableTurns: Number(result.availableTurns),
-        timeUntilReset: Number(result.timeUntilReset),
-        weeklyPassExpiry: Number(result.weeklyPassExpiry),
-        lastDailyClaim: Number(result.lastDailyClaim),
-        dailyClaimStreak: Number(result.dailyClaimStreak),
-        extraGoes: Number(result.extraGoes),
-        passes: Number(result.passes),
-        verificationLevel: result.verificationLevel as VerificationLevel,
-        isVerified: result.isVerified,
-        verificationMultiplier: Number(result.verificationMultiplier)
+        freeTurnsUsed: Number(result.freeTurnsUsed ?? 0),
+        lastResetTime: Number(result.lastResetTime ?? 0),
+        totalGamesPlayed: Number(result.totalGamesPlayed ?? 0),
+        highScore: Number(result.highScore ?? 0),
+        totalPointsEarned: Number(result.totalPointsEarned ?? 0),
+        tokenBalance: (result.tokenBalance ?? 0n).toString(),
+        availableTurns: Number(result.availableTurns ?? 0),
+        timeUntilReset: Number(result.timeUntilReset ?? 0),
+        lastDailyClaim: Number(result.lastDailyClaim ?? 0),
+        dailyClaimStreak: Number(result.dailyClaimStreak ?? 0),
+        extraGoes: Number(result.extraGoes ?? 0),
+        passes: Number(result.passes ?? 0),
+        verificationLevel: (result.verificationLevel as VerificationLevel) ?? 'Document',
+        isVerified: Boolean(result.isVerified),
+        verificationMultiplier: Number(result.verificationMultiplier ?? 100)
       }
     } catch (err) {
       console.error('❌ Failed to get player stats:', {
