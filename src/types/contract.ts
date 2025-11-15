@@ -725,7 +725,7 @@ export const GAME_CONTRACT_ABI = [
     ],
     "name": "LeaderboardSeeded",
     "type": "event"
-  }
+  },
   {
     "inputs": [],
     "name": "startGame",
