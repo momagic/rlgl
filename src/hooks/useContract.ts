@@ -109,7 +109,7 @@ export function useContract(): UseContractReturn {
         throw new Error('MiniKit not installed')
       }
 
-      const result = await MiniKit.commandsAsync.sendTransaction({
+      const txPromise = MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
             address: CONTRACT_CONFIG.worldchain.wldToken as Address,
@@ -139,6 +139,9 @@ export function useContract(): UseContractReturn {
         formatPayload: false
       })
 
+      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('transaction_timeout')), 20000))
+      const result: any = await Promise.race([txPromise as any, timeout])
+
       if (result.finalPayload.status === 'error') {
         throw new Error(result.finalPayload.error_code || 'Transaction failed')
       }
@@ -165,7 +168,7 @@ export function useContract(): UseContractReturn {
         throw new Error('MiniKit not installed')
       }
 
-      const result = await MiniKit.commandsAsync.sendTransaction({
+      const txPromise = MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
             address: CONTRACT_CONFIG.worldchain.wldToken as Address,
@@ -194,6 +197,9 @@ export function useContract(): UseContractReturn {
         ,
         formatPayload: false
       })
+
+      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('transaction_timeout')), 20000))
+      const result: any = await Promise.race([txPromise as any, timeout])
 
       if (result.finalPayload.status === 'error') {
         throw new Error(result.finalPayload.error_code || 'Transaction failed')
