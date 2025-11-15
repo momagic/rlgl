@@ -135,6 +135,8 @@ export function useContract(): UseContractReturn {
             args: []
           }
         ]
+        ,
+        formatPayload: false
       })
 
       if (result.finalPayload.status === 'error') {
@@ -189,6 +191,8 @@ export function useContract(): UseContractReturn {
             args: []
           }
         ]
+        ,
+        formatPayload: false
       })
 
       if (result.finalPayload.status === 'error') {

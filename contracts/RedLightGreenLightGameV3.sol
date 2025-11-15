@@ -871,6 +871,11 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
         uint256 balance = wldToken.balanceOf(address(this));
         require(balance > 0, "No WLD to withdraw");
         require(wldToken.transfer(owner(), balance), "WLD transfer failed");
+        wldCreditedTotal = 0;
+    }
+
+    function resetWldLedger() external onlyOwner {
+        wldCreditedTotal = wldToken.balanceOf(address(this));
     }
     
     /**
