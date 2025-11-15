@@ -14,7 +14,7 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
   const { verificationLevel } = useAuth()
   const { turnStatus, isLoading, error, purchaseTurns, refreshTurnStatus } = turnManager
   const payment = usePayment()
-  const { getVerificationMultipliers } = useContract()
+  const { getVerificationMultipliers, purchaseHundredTurns } = useContract()
   
   const [verificationBenefits, setVerificationBenefits] = useState<{
     orbPlusMultiplier: number
@@ -250,7 +250,7 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
                       <span className="text-squid-white font-squid-mono font-bold">{additionalTurnsCost} WLD</span>
                     </div>
                   </div>
-                  <p className="text-xs text-squid-white/70 mb-4 font-squid font-semibold">Get 5 additional turns to continue playing</p>
+                  <p className="text-xs text-squid-white/70 mb-4 font-squid font-semibold">Get 3 additional turns to continue playing</p>
                   <button
                     onClick={handlePurchaseTurns}
                     disabled={isLoading || payment.isProcessing}
@@ -283,6 +283,52 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
                       </div>
                     ) : (
                       <span>🎮 Buy More Turns</span>
+                    )}
+                  </button>
+                </div>
+                {/* 100 Turns Pack */}
+                <div 
+                  className="p-4 rounded-lg border-3 border-squid-teal bg-squid-teal/10"
+                  style={{ boxShadow: '4px 4px 0px 0px #00D9C0' }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-squid-black" style={{ background: '#00D9C0' }}>
+                        <span className="text-squid-black text-lg">💯</span>
+                      </div>
+                      <span className="text-squid-teal font-squid-heading font-bold text-sm uppercase">Buy 100 Turns</span>
+                    </div>
+                    <div 
+                      className="px-3 py-1 rounded border-2 border-squid-black bg-squid-black"
+                      style={{ boxShadow: '2px 2px 0px 0px #00D9C0' }}
+                    >
+                      <span className="text-squid-white font-squid-mono font-bold">5.0 WLD</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-squid-white/70 mb-4 font-squid font-semibold">Instantly add 100 turns to your account.</p>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const ok = await purchaseHundredTurns()
+                        if (ok.success) await refreshTurnStatus(true)
+                      } catch {}
+                    }}
+                    disabled={isLoading}
+                    className={`w-full py-3 px-4 rounded border-3 border-squid-black font-squid-heading font-bold uppercase tracking-wider transition-all duration-150 ${
+                      isLoading ? 'cursor-not-allowed text-squid-white/50' : 'text-squid-white'
+                    }`}
+                    style={{
+                      background: isLoading ? '#2D2D35' : '#00D9C0',
+                      boxShadow: '4px 4px 0px 0px #0A0A0F'
+                    }}
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-squid-white/50 border-t-transparent rounded-full animate-spin"></div>
+                        <span>Processing...</span>
+                      </div>
+                    ) : (
+                      <span>Buy 100 Turns</span>
                     )}
                   </button>
                 </div>

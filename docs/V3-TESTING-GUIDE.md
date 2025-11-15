@@ -7,9 +7,9 @@ This guide covers the comprehensive test suite for the Red Light Green Light Gam
 ## Test Files
 
 ### Core Test Files
-- **`test/RedLightGreenLightGameV3.test.js`** - Main test suite
+- **`test/RedLightGreenLightGameV3.test.cjs`** - Main test suite
+- **`test/RedLightGreenLightGameV3.updated.test.cjs`** - Updated spec smoke tests
 - **`contracts/mocks/MockERC20.sol`** - Mock ERC20 tokens for testing
-- **`scripts/test-v3-contract.js`** - Test runner script
 
 ## Running Tests
 
@@ -25,7 +25,7 @@ npm run test:v3
 
 ### Manual Test Execution
 ```bash
-npx hardhat test test/RedLightGreenLightGameV3.test.js
+npx hardhat test test/RedLightGreenLightGameV3.test.cjs
 ```
 
 ### Test with Coverage
@@ -75,10 +75,9 @@ npx hardhat coverage
 - ✅ Claim status tracking
 
 ### 7. Purchase System Tests
-- ✅ Additional turns purchase
-- ✅ Weekly pass purchase
-- ✅ Unlimited turns with pass
-- ✅ WLD token integration
+- ✅ Additional turns purchase (3 turns)
+- ✅ 100-turn pack purchase
+- ✅ WLD token approval/integration
 
 ### 8. LocalStorage Compatibility Tests
 - ✅ Extra goes setting/getting
@@ -126,10 +125,10 @@ npx hardhat coverage
 ## Test Scenarios
 
 ### Basic Game Flow
-1. Player starts with 3 free turns
+1. Player starts with 3 free daily turns
 2. Player starts a game (consumes 1 turn)
-3. Player submits score (gets tokens)
-4. Player can purchase more turns or wait for reset
+3. Player submits score (mints tokens per round × multiplier)
+4. Player can purchase 3 or 100 turns or wait for reset
 
 ### Developer Allocation Flow
 1. Contract deploys with valid developer wallet

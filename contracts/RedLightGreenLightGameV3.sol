@@ -219,11 +219,18 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     function getAvailableTurns(address player) public view returns (uint256) {
         Player memory playerData = players[player];
         
-        uint256 maxTurns = 100;
-        if (playerData.freeTurnsUsed >= maxTurns) {
+        // If reset period passed, free turns are available again
+        if (block.timestamp >= playerData.lastResetTime + TURN_RESET_PERIOD) {
+            return FREE_TURNS_PER_DAY + playerData.extraGoes;
+        }
+        
+        // If free turns used up, only extra goes remain
+        if (playerData.freeTurnsUsed >= FREE_TURNS_PER_DAY) {
             return playerData.extraGoes;
         }
-        return (maxTurns - playerData.freeTurnsUsed) + playerData.extraGoes;
+        
+        // Remaining free turns plus any extra goes
+        return (FREE_TURNS_PER_DAY - playerData.freeTurnsUsed) + playerData.extraGoes;
     }
     
     /**
@@ -252,6 +259,17 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         
         emit TurnsPurchased(msg.sender, additionalTurnsCost, 3);
     }
+
+    function purchaseHundredTurns() external nonReentrant whenNotPaused {
+        require(
+            wldToken.transferFrom(msg.sender, address(this), weeklyPassCost),
+            "WLD transfer failed"
+        );
+        
+        players[msg.sender].extraGoes += 100;
+        
+        emit TurnsPurchased(msg.sender, weeklyPassCost, 100);
+    }
     
     /**
      * @dev Purchase weekly pass for unlimited turns
@@ -262,19 +280,25 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
      * @dev Start a game (consume a turn)
      */
     function startGame() external whenNotPaused {
-        require(getAvailableTurns(msg.sender) > 0, "No turns available");
         require(_hasRequiredVerification(msg.sender), "Document verification or higher required");
         
         Player storage player = players[msg.sender];
         
+        // Reset daily free turns if period has passed
+        if (block.timestamp >= player.lastResetTime + TURN_RESET_PERIOD) {
+            player.lastResetTime = block.timestamp;
+            player.freeTurnsUsed = 0;
+        }
+        
+        require(getAvailableTurns(msg.sender) > 0, "No turns available");
+        
         // Consume a turn (prioritize free turns over extra goes)
-        if (player.freeTurnsUsed < 100) {
+        if (player.freeTurnsUsed < FREE_TURNS_PER_DAY) {
             player.freeTurnsUsed++;
         } else {
             require(player.extraGoes > 0, "No extra goes available");
             player.extraGoes--;
         }
-
     }
     
     /**

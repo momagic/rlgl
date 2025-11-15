@@ -7,9 +7,10 @@ The Red Light Green Light game now features a comprehensive turn-based economy w
 ## 🎮 Game Economy
 
 ### Turn System
-- **100 turns** allocated per player (no expiry)
-- **Additional turns** available for **0.5 WLD**
-- Real-time turn counter
+- **3 free turns per 24 hours** for verified players
+- **Buy 3 extra turns** for **0.2 WLD** (on-chain)
+- **Buy 100-turn pack** for **5.0 WLD** (on-chain)
+- Real-time counter and daily reset timer
 
 ### Token Rewards
 - **1 RLGL token per round** earned
@@ -21,7 +22,7 @@ The Red Light Green Light game now features a comprehensive turn-based economy w
 ### Payment Integration
 - Seamless **MiniKit payment flow** for purchasing turns
 - Native World App payment experience
-- **WLD payments only** (0.5 WLD per 3 additional turns)
+- **WLD payments**: 0.2 WLD for 3 turns, 5.0 WLD for 100 turns
 - Secure on-chain transaction verification
 
 ## 🏗️ Technical Architecture
@@ -56,9 +57,9 @@ The Red Light Green Light game now features a comprehensive turn-based economy w
 
 ### 2. Turn Management
 - Check available turns before game start
-- Consume turn when game begins
-- Display real-time turn countdown
-- Purchase additional turns with WLD when needed
+- Consume 1 turn on game start
+- Daily reset restores free turns
+- Purchase 3 or 100 additional turns with WLD when needed
 
 ### 3. Game Session
 - Standard Red Light Green Light gameplay
@@ -73,18 +74,18 @@ The Red Light Green Light game now features a comprehensive turn-based economy w
 
 ### 5. Payment Flow
 ```
-No Turns Available → Click "Buy 3 More Turns" → 
-MiniKit Payment (0.5 WLD) → World App Confirmation → 
-Contract Updated → 3 New Turns Available
+No Turns Available → Click "Buy 3 Turns (0.2 WLD)" → MiniKit Payment → Contract credits +3
+or
+No Turns Available → Click "Buy 100 Turns (5.0 WLD)" → MiniKit Payment → Contract credits +100
 ```
 
 ## 🎯 Key Features
 
 ### For Players
-- **Fair Play**: 3 free turns daily for all verified humans
-- **Instant Gratification**: Immediate token rewards after each game
-- **Competitive Spirit**: Global leaderboard with real rankings
-- **Flexible Gaming**: Purchase additional turns when needed
+- **Fair Play**: 3 free turns daily
+- **Immediate Rewards**: Tokens minted per round at game end
+- **Competitive Spirit**: Global leaderboard rankings
+- **Flexible Gaming**: Buy 3 or 100 turns on-chain
 
 ### For Developers
 - **Frontend-Only Auth**: All MiniKit authentication handled client-side
@@ -143,7 +144,7 @@ Contract Updated → 3 New Turns Available
 
 ```solidity
 uint256 public constant TOKENS_PER_ROUND = 1e18; // 1.0 RLGL
-// Fixed 100-turn system (no expiry)
+uint256 public constant FREE_TURNS_PER_DAY = 3;
 ```
 
 ## 🎨 UI Features

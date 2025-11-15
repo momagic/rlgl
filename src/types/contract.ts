@@ -163,11 +163,11 @@ export interface UseContractReturn {
   getAvailableTurns: (playerAddress: string) => Promise<number>
   getTurnStatus: (playerAddress: string) => Promise<TurnStatus>
   purchaseAdditionalTurns: () => Promise<PaymentResult>
+  purchaseHundredTurns: () => Promise<PaymentResult>
   
   // Weekly pass management
   hasActiveWeeklyPass: (playerAddress: string) => Promise<boolean>
   getWeeklyPassExpiry: (playerAddress: string) => Promise<Date | null>
-  purchaseWeeklyPass: () => Promise<PaymentResult>
   getWeeklyPassCost: () => Promise<string>
   
   // Daily claim system
@@ -752,7 +752,7 @@ export const WLD_TOKEN_ABI = [
 
 export const CONTRACT_CONFIG = {
   worldchain: {
-    gameContract: '0x4425A30f07C47e51eb297d1AFa643f5954BbCe73',
+    gameContract: '0x79013CED9a6Adaaa6219e24B7587c8f4aa17D78e',
     wldToken: '0x2cfc85d8e48f8eab294be644d9e25c3030863003', // WLD token on World Chain
   },
   worldchainSepolia: {

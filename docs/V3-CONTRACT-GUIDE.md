@@ -7,8 +7,8 @@ Red Light Green Light Game V3 is a comprehensive upgrade that introduces full co
 ## Key Features
 
 ### 🎯 **Fully Updatable System**
-- **Dynamic Token Rewards**: Adjustable tokens per point (0.01 - 1.0 RLGL)
-- **Configurable Pricing**: Owner can update turn costs, weekly pass costs
+- **Per-Round Rewards**: 1 RLGL per round with verification multipliers
+- **Configurable Pricing**: Owner can update additional turn cost and 100-turn pack cost
 - **Real-time Updates**: Changes take effect immediately
 - **Bounded Parameters**: All configurable values have min/max bounds for safety
 
@@ -19,8 +19,8 @@ Red Light Green Light Game V3 is a comprehensive upgrade that introduces full co
 - **Optional Import**: Users can choose to import localStorage data
 
 ### 🎁 **Daily Claim System**
-- **Base Reward**: 100 RLGL tokens per day
-- **Streak Bonus**: +10 RLGL per consecutive day (max 30 days)
+- **Base Reward**: 10 RLGL on day one
+- **Streak Bonus**: +1 RLGL per additional consecutive day (max 365 days)
 - **Anti-abuse**: 24-hour cooldown between claims
 - **Maximum Streak**: 30 days with 400 RLGL total reward
 
@@ -69,8 +69,8 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
 ```solidity
 // Configurable parameters with bounds
 uint256 public constant TOKENS_PER_ROUND = 1e18; // 1.0 RLGL per round
-uint256 public additionalTurnsCost = 5e17; // 0.5 WLD (default)
-// Weekly pass removed
+uint256 public additionalTurnsCost = 2e17; // 0.2 WLD (default)
+uint256 public weeklyPassCost = 5e18; // 100-turn pack cost
 
 // Price bounds for safety
 // Tokens per round are fixed; pricing applies to turn purchases
@@ -155,17 +155,18 @@ console.log("Passes:", localStorageData[1].toString());
 
 ### Integration with Turn System
 
-The contract automatically considers localStorage data when calculating available turns:
+The contract calculates daily free turns and includes purchased turns:
 
 ```solidity
 function getAvailableTurns(address player) public view returns (uint256) {
     Player memory playerData = players[player];
-    
-uint256 maxTurns = 100;
-if (playerData.freeTurnsUsed >= maxTurns) {
-    return playerData.extraGoes;
-}
-return (maxTurns - playerData.freeTurnsUsed) + playerData.extraGoes;
+    if (block.timestamp >= playerData.lastResetTime + TURN_RESET_PERIOD) {
+        return FREE_TURNS_PER_DAY + playerData.extraGoes;
+    }
+    if (playerData.freeTurnsUsed >= FREE_TURNS_PER_DAY) {
+        return playerData.extraGoes;
+    }
+    return (FREE_TURNS_PER_DAY - playerData.freeTurnsUsed) + playerData.extraGoes;
 }
 ```
 
@@ -210,10 +211,10 @@ struct LeaderboardEntry {
 ### Pricing Management
 
 ```javascript
-// Update pricing parameters
-await v3Contract.updatePricing(
-    ethers.parseEther("0.3")  // turn cost (0.3 WLD)
-);
+// Update additional turns cost (3 turns)
+await v3Contract.updateAdditionalTurnsCost(ethers.parseEther("0.2"))
+// Update 100-turn pack cost (uses weeklyPassCost variable)
+await v3Contract.updateWeeklyPassCost(ethers.parseEther("5"))
 ```
 
 ### Access Control

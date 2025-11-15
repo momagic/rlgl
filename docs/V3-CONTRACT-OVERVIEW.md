@@ -45,34 +45,32 @@ The Red Light Green Light Game V3 contract represents the next evolution of our 
 
 #### **1. Score-Based Rewards**
 ```
-Base Reward = Score × Tokens Per Point × Verification Multiplier
+Reward = Rounds Completed × 1 RLGL × Verification Multiplier
 ```
 
 **Default Settings:**
-- **Tokens Per Point**: 0.1 RLGL (configurable: 0.01 - 1.0 RLGL)
-- **Verification Multipliers**: 100% - 150% based on verification level
+- **Tokens Per Round**: 1 RLGL
+- **Verification Multipliers**: 100%–140% based on verification level
 
 **Example Calculations:**
-- **Document Verified**: 100 points × 0.1 RLGL × 1.0 = 10 RLGL (baseline)
-- **Secure Document**: 100 points × 0.1 RLGL × 1.15 = 11.5 RLGL
-- **Orb Verified**: 100 points × 0.1 RLGL × 1.25 = 12.5 RLGL
-- **Orb+ Verified**: 100 points × 0.1 RLGL × 1.4 = 14 RLGL
+- **Document Verified**: 1 round × 1 RLGL × 1.0 = 1.0 RLGL
+- **Orb Verified**: 1 round × 1 RLGL × 1.25 = 1.25 RLGL
+- **Orb+ Verified**: 1 round × 1 RLGL × 1.40 = 1.40 RLGL
 
 #### **2. Daily Claim System**
 ```
-Daily Reward = Base Amount + (Streak × Bonus Per Day)
+Daily Reward = 10 RLGL + (Streak × 1 RLGL)
 ```
 
 **Reward Structure:**
-- **Base Amount**: 100 RLGL per day
-- **Streak Bonus**: 10 RLGL per consecutive day
-- **Maximum Streak**: 30 days
-- **Maximum Daily Reward**: 400 RLGL (100 base + 300 streak bonus)
+- **Base Amount**: 10 RLGL on day one
+- **Streak Bonus**: +1 RLGL per day
+- **Maximum Streak**: 365 days
 
 **Example Daily Rewards:**
-- **Day 1**: 100 RLGL
-- **Day 7**: 170 RLGL (100 + 70 bonus)
-- **Day 30**: 400 RLGL (100 + 300 bonus)
+- **Day 1**: 10 RLGL
+- **Day 7**: 16 RLGL (10 + 6 bonus)
+- **Day 30**: 39 RLGL (10 + 29 bonus)
 
 #### **3. Frontend Data Import**
 - **localStorage Compatibility**: Import frontend data like Extra Goes and Passes
@@ -101,10 +99,10 @@ Daily Reward = Base Amount + (Streak × Bonus Per Day)
 ## 🎯 Game Mechanics
 
 ### **Turn System**
-- **Free Turns**: 3 turns per 24-hour period
+- **Free Turns**: 3 turns per 24 hours
 - **Turn Reset**: Automatic daily reset
-- **Additional Turns**: Purchase with WLD tokens
-- **Weekly Pass**: Unlimited turns for 7 days
+- **Additional Turns**: Buy 3 turns for 0.2 WLD
+- **100-Turn Pack**: Buy 100 turns for 5.0 WLD
 
 ### **Game Modes**
 1. **Classic Mode**: Traditional Red Light Green Light gameplay
@@ -114,9 +112,9 @@ Daily Reward = Base Amount + (Streak × Bonus Per Day)
 ### **Pricing Structure**
 | Item | Default Cost | Range | Payment Method |
 |------|-------------|-------|----------------|
-| **Additional Turns** | 0.5 WLD | 0.1 - 5 WLD | WLD Token |
-| **Weekly Pass** | 5 WLD | 1 - 20 WLD | WLD Token |
-| **Score Rewards** | 0.1 RLGL/point | 0.01 - 1 RLGL/point | Auto-minted |
+| **Additional Turns (3)** | 0.2 WLD | 0.1 - 5 WLD | WLD Token |
+| **Hundred-Turn Pack (100)** | 5.0 WLD | 1 - 20 WLD | WLD Token |
+| **Score Rewards** | 1 RLGL/round × multiplier | Fixed | Auto-minted |
 
 ## 📊 Leaderboard System
 

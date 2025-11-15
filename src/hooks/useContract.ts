@@ -148,6 +148,54 @@ export function useContract(): UseContractReturn {
     }
   }, [])
 
+  const purchaseHundredTurns = useCallback(async (): Promise<PaymentResult> => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      if (!MiniKit.isInstalled()) {
+        throw new Error('MiniKit not installed')
+      }
+
+      const approve = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [{
+          address: CONTRACT_CONFIG.worldchain.wldToken as Address,
+          abi: WLD_TOKEN_ABI,
+          functionName: 'approve',
+          args: [GAME_CONTRACT_ADDRESS, parseEther('5')]
+        }]
+      })
+
+      if (approve.finalPayload.status === 'error') {
+        throw new Error(approve.finalPayload.error_code || 'Approval failed')
+      }
+
+      const result = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [{
+          address: GAME_CONTRACT_ADDRESS,
+          abi: GAME_CONTRACT_ABI,
+          functionName: 'purchaseHundredTurns',
+          args: []
+        }]
+      })
+
+      if (result.finalPayload.status === 'error') {
+        throw new Error(result.finalPayload.error_code || 'Transaction failed')
+      }
+
+      return {
+        success: true,
+        transactionHash: result.finalPayload.transaction_id
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Purchase failed'
+      setError(errorMessage)
+      return { success: false, error: errorMessage }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   const startGame = useCallback(async (): Promise<boolean> => {
     try {
       setIsLoading(true)
@@ -819,43 +867,7 @@ export function useContract(): UseContractReturn {
     }
   }, [])
 
-  const purchaseWeeklyPass = useCallback(async (): Promise<PaymentResult> => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      if (!MiniKit.isInstalled()) {
-        throw new Error('MiniKit not installed')
-      }
-
-      const result = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [{
-          address: GAME_CONTRACT_ADDRESS,
-          abi: GAME_CONTRACT_ABI,
-          functionName: 'purchaseWeeklyPass',
-          args: []
-        }]
-      })
-
-      if (result.finalPayload.status === 'error') {
-        throw new Error(result.finalPayload.error_code || 'Transaction failed')
-      }
-
-      return {
-        success: true,
-        transactionHash: result.finalPayload.transaction_id
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to purchase weekly pass'
-      setError(errorMessage)
-      return {
-        success: false,
-        error: errorMessage
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+  
 
   const updateWeeklyPassCost = useCallback(async (newCost: string): Promise<boolean> => {
     try {
@@ -1019,11 +1031,11 @@ export function useContract(): UseContractReturn {
     getAvailableTurns,
     getTurnStatus,
     purchaseAdditionalTurns,
+    purchaseHundredTurns,
     
     // Weekly pass management
     hasActiveWeeklyPass,
     getWeeklyPassExpiry,
-    purchaseWeeklyPass,
     getWeeklyPassCost,
     
     // Daily claim system
