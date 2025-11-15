@@ -310,3 +310,13 @@ constructor(
 The Red Light Green Light Game V3 contract represents a comprehensive gaming platform that balances accessibility, security, and economic sustainability. With its innovative tokenomics and multi-level verification system, V3 provides a solid foundation for the future of blockchain gaming on World Chain.
 
 The careful allocation of 0.1% to developers ensures sufficient resources for growth and liquidity while preserving 99.9% of the token supply for player rewards and ecosystem development. Combined with the progressive verification system and dynamic configuration capabilities, V3 is positioned to drive significant adoption and engagement in the World Chain ecosystem.
+### Upgradeable Architecture
+- UUPS proxy preserves the on-chain address across upgrades.
+- Initialization sets pricing and multipliers; upgrades validated by OZ.
+
+### Purchase Flow (Send Transaction)
+- No approvals; use ERC20 `transfer` then credit entrypoint.
+- Entry points:
+  - `purchaseAdditionalTurnsDirect()` (credits +3 turns)
+  - `purchaseHundredTurnsDirect()` (credits +100 turns)
+- Contract ensures deposit suffices before crediting.

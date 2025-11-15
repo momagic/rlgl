@@ -419,3 +419,32 @@ For technical support:
 ---
 
 **Red Light Green Light Game V3** represents a significant evolution of the game contract, providing unprecedented flexibility, security, and user experience improvements while maintaining full backward compatibility.
+## Upgradeability
+### Proxy Pattern
+- Uses UUPS proxy for `RedLightGreenLightGameV3` so upgrades preserve the address.
+- Initialization via `initialize(address wldToken, address developerWallet, address initialOwner)`.
+- Owner-authorized upgrades: `_authorizeUpgrade(address newImplementation) onlyOwner`.
+
+### Deployment Steps
+1. Deploy proxy: `upgrades.deployProxy(V3, [WLD, DEV_WALLET, OWNER], { initializer: 'initialize' })`.
+2. Save proxy address and update the frontend config.
+3. To upgrade: `upgrades.upgradeProxy(<proxy>, NewImpl)` (validated by OpenZeppelin upgrades).
+
+## Purchases via Send Transaction
+### Why No Approvals
+- Send Transaction disallows ERC20 approvals. Use ERC20 `transfer` or Permit2 signature transfers.
+
+### Atomic Two-Step Flow
+1. ERC20 `transfer(WLD, gameContract, amount)`
+2. Call credit entrypoint:
+   - `purchaseAdditionalTurnsDirect()` (+3 turns)
+   - `purchaseHundredTurnsDirect()` (+100 turns)
+
+### On-Chain Safety
+- Contract validates deposits before crediting turns:
+  - `_consumeWldForCredit(cost)` checks `balanceOf(this) >= wldCreditedTotal + cost`, then updates `wldCreditedTotal`.
+
+## Frontend Config
+- `CONTRACT_CONFIG.worldchain.gameContract = <proxy_address>`
+- `CONTRACT_CONFIG.worldchain.wldToken = 0x2cfc85d8e48f8eab294be644d9e25c3030863003`
+- Dev Portal → Contract Entrypoints: add `<proxy_address>` and WLD token.

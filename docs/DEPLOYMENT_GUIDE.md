@@ -415,3 +415,19 @@ curl -X POST -H "Content-Type: application/json" \
 ---
 
 🎉 **Ready to deploy?** Run `npm run deploy:sepolia` to get started!
+## Worldchain Proxy Deployment
+### Prerequisites
+- Hardhat configured for `worldchain` network
+- OpenZeppelin Upgrades plugin installed and enabled
+- Deployer wallet funded and PK set in env
+
+### Steps
+1. Run: `npx hardhat run scripts/deploy-v3-proxy.cjs --network worldchain`
+2. Note proxy address in console and `deployments/worldchain-v3-proxy-*.json`
+3. Update frontend: `src/types/contract.ts` → set `CONTRACT_CONFIG.worldchain.gameContract` to proxy address
+4. Dev Portal → Contract Entrypoints: add proxy address and WLD token
+5. Rebuild and redeploy frontend: `pnpm build`
+
+### Upgrades
+- Build new implementation and upgrade: `await upgrades.upgradeProxy(<proxy>, NewImpl)`
+- No address change; frontend remains pointing to the same proxy address

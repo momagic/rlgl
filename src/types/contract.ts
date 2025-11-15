@@ -747,13 +747,24 @@ export const WLD_TOKEN_ABI = [
     "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "to", "type": "address"},
+      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "transfer",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ] as const
 
 export const CONTRACT_CONFIG = {
   worldchain: {
-    gameContract: '0x79013CED9a6Adaaa6219e24B7587c8f4aa17D78e',
+    gameContract: '0xc4201D1C64625C45944Ef865f504F995977733F7',
     wldToken: '0x2cfc85d8e48f8eab294be644d9e25c3030863003', // WLD token on World Chain
+    permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3'
   },
   worldchainSepolia: {
     gameContract: '0x' + '0'.repeat(40), // Replace with testnet address

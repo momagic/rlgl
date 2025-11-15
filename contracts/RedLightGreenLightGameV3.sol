@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 // Removed Counters import - using simple uint256 instead
 
 /**
@@ -13,7 +15,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * @dev Advanced game contract with full configurability, and daily rewards
  * @notice Features: Dynamic pricing, localStorage compatibility, daily claims, enhanced leaderboards
  */
-contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
+contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable, UUPSUpgradeable {
     // Using simple uint256 counter instead of Counters library
 
     // ============ CONSTANTS ============
@@ -29,19 +31,20 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     uint256 public constant MAX_WEEKLY_PASS_COST = 20e18;
     
     // ============ STATE VARIABLES ============
-    IERC20 public immutable wldToken;
+    IERC20 public wldToken;
     
     // Dynamic pricing (owner configurable)
-    uint256 public tokensPerPoint = 1e17; // legacy field
-    uint256 public additionalTurnsCost = 5e17; // 0.5 WLD (default)
-    uint256 public weeklyPassCost = 5e18; // legacy field
+    uint256 public tokensPerPoint; // legacy field
+    uint256 public additionalTurnsCost; // 0.5 WLD (default)
+    uint256 public weeklyPassCost; // legacy field
+    uint256 public wldCreditedTotal; // total WLD accounted for turn credits
     
     
     // Verification-based pricing multipliers (Document verification and above required)
-    uint256 public orbPlusMultiplier = 140; // 140% (40% bonus for Orb+ verified)
-    uint256 public orbMultiplier = 125; // 125% (25% bonus for Orb verified)
-    uint256 public secureDocumentMultiplier = 115; // 115% (15% bonus for Secure Document verified)
-    uint256 public documentMultiplier = 100; // 100% (baseline for Document verified - minimum required)
+    uint256 public orbPlusMultiplier; // 140% (40% bonus for Orb+ verified)
+    uint256 public orbMultiplier; // 125% (25% bonus for Orb verified)
+    uint256 public secureDocumentMultiplier; // 115% (15% bonus for Secure Document verified)
+    uint256 public documentMultiplier; // 100% (baseline for Document verified - minimum required)
     
     // Price bounds
     uint256 public constant MIN_TOKENS_PER_POINT = 1e16; // 0.01 tokens
@@ -195,21 +198,38 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
     
     // Using built-in whenNotPaused modifier from Pausable
     
-    // ============ CONSTRUCTOR ============
-    constructor(
-        address _wldToken,
-        address _developerWallet
-    ) ERC20("Red Light Green Light Token V3", "RLGL") Ownable(msg.sender) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address _wldToken, address _developerWallet, address initialOwner) public initializer {
         require(_developerWallet != address(0), "Developer wallet cannot be zero address");
-        
+
+        __ERC20_init("Red Light Green Light Token V3", "RLGL");
+        __Ownable_init_unchained(initialOwner);
+        __ReentrancyGuard_init_unchained();
+        __Pausable_init_unchained();
+        __UUPSUpgradeable_init_unchained();
+
         wldToken = IERC20(_wldToken);
-        _gameIdCounter = 1; // Start from 1
         
-        // Mint 1 million tokens to developer wallet for promotions and liquidity
+        _gameIdCounter = 1; // Start from 1
+        // Set defaults for upgrade-safe variables
+        tokensPerPoint = 1e17;
+        additionalTurnsCost = 2e17;
+        weeklyPassCost = 5e18;
+        orbPlusMultiplier = 140;
+        orbMultiplier = 125;
+        secureDocumentMultiplier = 115;
+        documentMultiplier = 100;
+
         uint256 developerAllocation = 1_000_000 * 10**18; // 1 million tokens
         require(developerAllocation <= MAX_SUPPLY, "Developer allocation exceeds max supply");
         _mint(_developerWallet, developerAllocation);
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
     
     // ============ CORE GAME FUNCTIONS ============
     
@@ -258,6 +278,26 @@ contract RedLightGreenLightGameV3 is ERC20, Ownable, ReentrancyGuard, Pausable {
         players[msg.sender].extraGoes += 3;
         
         emit TurnsPurchased(msg.sender, additionalTurnsCost, 3);
+    }
+
+    function _consumeWldForCredit(uint256 cost) internal {
+        uint256 balance = wldToken.balanceOf(address(this));
+        require(balance >= wldCreditedTotal + cost, "Insufficient WLD deposit");
+        wldCreditedTotal += cost;
+    }
+
+    function purchaseAdditionalTurnsDirect() external nonReentrant whenNotPaused {
+        require(_hasRequiredVerification(msg.sender), "Document verification or higher required");
+        _consumeWldForCredit(additionalTurnsCost);
+        players[msg.sender].extraGoes += 3;
+        emit TurnsPurchased(msg.sender, additionalTurnsCost, 3);
+    }
+
+    function purchaseHundredTurnsDirect() external nonReentrant whenNotPaused {
+        require(_hasRequiredVerification(msg.sender), "Document verification or higher required");
+        _consumeWldForCredit(weeklyPassCost);
+        players[msg.sender].extraGoes += 100;
+        emit TurnsPurchased(msg.sender, weeklyPassCost, 100);
     }
 
     function purchaseHundredTurns() external nonReentrant whenNotPaused {

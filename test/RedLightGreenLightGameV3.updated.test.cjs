@@ -13,16 +13,17 @@ describe("RedLightGreenLightGameV3 (updated spec)", function () {
     wldToken = await MockERC20.deploy("Worldcoin", "WLD")
     const V3 = await ethers.getContractFactory("RedLightGreenLightGameV3")
     const wldAddr = await wldToken.getAddress()
-    v3Game = await V3.deploy(wldAddr, owner.address)
+    const { upgrades } = require("hardhat")
+    v3Game = await upgrades.deployProxy(V3, [wldAddr, owner.address, owner.address], { initializer: 'initialize' })
     await v3Game.setAuthorizedSubmitter(authorizedSubmitter.address, true)
     await v3Game.connect(authorizedSubmitter).setUserVerification(player.address, LEVELS.Document, true)
     await wldToken.mint(player.address, ethers.parseEther("100"))
   })
 
-  it("starts with 100 turns and consumes on start", async function () {
-    expect(await v3Game.getAvailableTurns(player.address)).to.equal(100)
+  it("starts with 3 daily turns and consumes on start", async function () {
+    expect(await v3Game.getAvailableTurns(player.address)).to.equal(3)
     await v3Game.connect(player).startGame()
-    expect(await v3Game.getAvailableTurns(player.address)).to.equal(99)
+    expect(await v3Game.getAvailableTurns(player.address)).to.equal(2)
   })
 
   it("mints 1 token per round with multiplier", async function () {
@@ -46,15 +47,14 @@ describe("RedLightGreenLightGameV3 (updated spec)", function () {
   })
 
   it("purchases 3 extra turns on-chain", async function () {
-    // Exhaust
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 3; i++) {
       await v3Game.connect(player).startGame()
     }
     expect(await v3Game.getAvailableTurns(player.address)).to.equal(0)
 
     const gameAddr = await v3Game.getAddress()
-    await wldToken.connect(player).approve(gameAddr, ethers.parseEther("1"))
-    await v3Game.connect(player).purchaseAdditionalTurns()
+    await wldToken.connect(player).transfer(gameAddr, ethers.parseEther("0.2"))
+    await v3Game.connect(player).purchaseAdditionalTurnsDirect()
     expect(await v3Game.getAvailableTurns(player.address)).to.equal(3)
   })
 

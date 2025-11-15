@@ -44,9 +44,11 @@ describe("RedLightGreenLightGameV3", function () {
 
         // Deploy V3 game contract
         RedLightGreenLightGameV3 = await ethers.getContractFactory("RedLightGreenLightGameV3");
-        v3Game = await RedLightGreenLightGameV3.deploy(
-            await wldToken.getAddress(),
-            owner.address // Developer wallet (using owner for testing)
+        const { upgrades } = require("hardhat");
+        v3Game = await upgrades.deployProxy(
+            RedLightGreenLightGameV3,
+            [await wldToken.getAddress(), owner.address, owner.address],
+            { initializer: 'initialize' }
         );
 
         // Set up authorized submitter
@@ -93,11 +95,12 @@ describe("RedLightGreenLightGameV3", function () {
 
         it("Should not deploy with zero developer wallet", async function () {
             const RedLightGreenLightGameV3 = await ethers.getContractFactory("RedLightGreenLightGameV3");
-            
+            const impl = await RedLightGreenLightGameV3.deploy();
             try {
-                await RedLightGreenLightGameV3.deploy(
+                await impl.initialize(
                     await wldToken.getAddress(),
-                    "0x0000000000000000000000000000000000000000"
+                    "0x0000000000000000000000000000000000000000",
+                    owner.address
                 );
                 expect.fail("Should have reverted");
             } catch (error) {

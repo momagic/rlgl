@@ -109,26 +109,21 @@ export function useContract(): UseContractReturn {
         throw new Error('MiniKit not installed')
       }
 
-      const approve = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [{
-          address: CONTRACT_CONFIG.worldchain.wldToken as Address,
-          abi: WLD_TOKEN_ABI,
-          functionName: 'approve',
-          args: [GAME_CONTRACT_ADDRESS, parseEther('0.2')]
-        }]
-      })
-
-      if (approve.finalPayload.status === 'error') {
-        throw new Error(approve.finalPayload.error_code || 'Approval failed')
-      }
-
       const result = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [{
-          address: GAME_CONTRACT_ADDRESS,
-          abi: GAME_CONTRACT_ABI,
-          functionName: 'purchaseAdditionalTurns',
-          args: []
-        }]
+        transaction: [
+          {
+            address: CONTRACT_CONFIG.worldchain.wldToken as Address,
+            abi: WLD_TOKEN_ABI,
+            functionName: 'transfer',
+            args: [GAME_CONTRACT_ADDRESS, parseEther('0.2')]
+          },
+          {
+            address: GAME_CONTRACT_ADDRESS,
+            abi: GAME_CONTRACT_ABI,
+            functionName: 'purchaseAdditionalTurnsDirect',
+            args: []
+          }
+        ]
       })
 
       if (result.finalPayload.status === 'error') {
@@ -137,12 +132,12 @@ export function useContract(): UseContractReturn {
 
       return {
         success: true,
-        transactionHash: result.finalPayload.transaction_status || 'success'
+        transactionHash: result.finalPayload.transaction_id
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Purchase failed'
       setError(errorMessage)
-      throw new Error(errorMessage)
+      return { success: false, error: errorMessage }
     } finally {
       setIsLoading(false)
     }
@@ -157,26 +152,21 @@ export function useContract(): UseContractReturn {
         throw new Error('MiniKit not installed')
       }
 
-      const approve = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [{
-          address: CONTRACT_CONFIG.worldchain.wldToken as Address,
-          abi: WLD_TOKEN_ABI,
-          functionName: 'approve',
-          args: [GAME_CONTRACT_ADDRESS, parseEther('5')]
-        }]
-      })
-
-      if (approve.finalPayload.status === 'error') {
-        throw new Error(approve.finalPayload.error_code || 'Approval failed')
-      }
-
       const result = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [{
-          address: GAME_CONTRACT_ADDRESS,
-          abi: GAME_CONTRACT_ABI,
-          functionName: 'purchaseHundredTurns',
-          args: []
-        }]
+        transaction: [
+          {
+            address: CONTRACT_CONFIG.worldchain.wldToken as Address,
+            abi: WLD_TOKEN_ABI,
+            functionName: 'transfer',
+            args: [GAME_CONTRACT_ADDRESS, parseEther('5')]
+          },
+          {
+            address: GAME_CONTRACT_ADDRESS,
+            abi: GAME_CONTRACT_ABI,
+            functionName: 'purchaseHundredTurnsDirect',
+            args: []
+          }
+        ]
       })
 
       if (result.finalPayload.status === 'error') {
