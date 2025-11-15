@@ -296,11 +296,19 @@ export function useTurnManager(): UseTurnManagerReturn {
         return false
       }
 
+      // Initial refresh
       await refreshTurnStatus(true)
 
-      // Note: We don't auto-refresh after payment since it would overwrite 
-      // our local update with stale contract data. Manual refresh is available.
-      
+      // If turns didn't update yet, poll a few times while the tx is confirmed
+      const maxAttempts = 5
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const before = turnStatus?.availableTurns ?? 0
+        await new Promise(r => setTimeout(r, 1500))
+        await refreshTurnStatus(true)
+        const after = (prev => prev?.availableTurns ?? before)(turnStatus)
+        if (after > before) break
+      }
+
       console.log('🎉 Turn purchase completed successfully!')
       return true
     } catch (err) {
