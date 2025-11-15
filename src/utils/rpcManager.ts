@@ -1,9 +1,13 @@
 import { createPublicClient, http, type PublicClient } from 'viem'
 import { worldchain } from 'viem/chains'
 
-// Primary Alchemy RPC endpoint for World Chain
+// Public RPC endpoints for World Chain
 const PUBLIC_RPC_ENDPOINTS = [
-  'https://worldchain-mainnet.g.alchemy.com/v2/mLzne7L6CEdRUufdPJ2ql',
+  'https://worldchain-mainnet.g.alchemy.com/public',
+  'https://480.rpc.thirdweb.com',
+  'https://worldchain-mainnet.gateway.tenderly.co',
+  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro',
+  'https://worldchain.drpc.org',
 ] as const
 
 // Rate limiting configuration

@@ -193,6 +193,34 @@ export const CONTRACT_CONFIG = {
 import GameContractABI from '../artifacts/contracts/RedLightGreenLightGameV3.sol/RedLightGreenLightGameV3.json'
 ```
 
+## 🛰️ RPC Configuration (Backend & Frontend)
+
+To minimize public RPC errors and rate limiting, the project uses multiple World Chain RPCs with rotation and health checks.
+
+- Backend (ethers):
+  - Files: `api/server.js`, `api/world-id.js`
+  - Uses `RPC_URLS` list with round-robin selection and health validation via `getBlockNumber`.
+  - Supports exponential backoff and retries on transient errors (`429`, timeouts, connection issues).
+  - Environment override: set `RPC_URL` to prioritize one RPC first; rotation continues across the list.
+
+- Frontend (viem):
+  - File: `src/utils/rpcManager.ts`
+  - Maintains `PUBLIC_RPC_ENDPOINTS` and performs health checks, request queueing, rate-limiting, caching, and retries.
+
+Default endpoints:
+```
+https://worldchain-mainnet.g.alchemy.com/public
+https://480.rpc.thirdweb.com
+https://worldchain-mainnet.gateway.tenderly.co
+https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro
+https://worldchain.drpc.org
+```
+
+Recommended practices:
+- Keep the list to reliable public endpoints without API keys.
+- Prefer adding/removing endpoints in code rather than relying only on a single env RPC URL.
+- Monitor logs for `No healthy RPC endpoints available` to detect widespread outages.
+
 ### V2 Contract Updates
 
 After V2 deployment, update with V2 contract address and ABI:

@@ -564,3 +564,12 @@ const VerificationOptions = ({ onVerify }) => {
 ## Conclusion
 
 The multi-level verification system provides a comprehensive approach to accessibility and security, allowing users to choose their verification level while maintaining the integrity of the gaming experience. This system encourages World Chain adoption across all verification levels while providing immediate value to all users and clear incentives for higher verification levels.
+
+## RPC Notes for Verification API
+
+Verification endpoints in the backend rotate across multiple public World Chain RPCs to reduce rate limiting and transient failures.
+
+- Files: `api/server.js`, `api/world-id.js`
+- Default endpoints: `https://worldchain-mainnet.g.alchemy.com/public`, `https://480.rpc.thirdweb.com`, `https://worldchain-mainnet.gateway.tenderly.co`, `https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro`, `https://worldchain.drpc.org`
+- Health checks: `getBlockNumber` with timeout before selecting an endpoint.
+- Override: set `RPC_URL` to prefer a specific RPC first; rotation remains enabled.

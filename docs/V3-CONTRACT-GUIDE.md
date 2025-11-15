@@ -448,3 +448,25 @@ For technical support:
 - `CONTRACT_CONFIG.worldchain.gameContract = <proxy_address>`
 - `CONTRACT_CONFIG.worldchain.wldToken = 0x2cfc85d8e48f8eab294be644d9e25c3030863003`
 - Dev Portal → Contract Entrypoints: add `<proxy_address>` and WLD token.
+
+## RPC Access & Reliability
+
+The project uses multiple public World Chain RPCs for contract reads/writes to reduce errors and rate limiting.
+
+- Frontend (viem): `src/utils/rpcManager.ts` maintains a list of public endpoints and rotates among healthy clients with caching and rate-limited request queues.
+- Backend (ethers): `api/server.js` and `api/world-id.js` rotate across the same endpoints, validate health using `getBlockNumber`, and apply exponential backoff retries on transient failures.
+
+Default endpoints:
+- `https://worldchain-mainnet.g.alchemy.com/public`
+- `https://480.rpc.thirdweb.com`
+- `https://worldchain-mainnet.gateway.tenderly.co`
+- `https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro`
+- `https://worldchain.drpc.org`
+
+Configuration:
+- Backend env: set `RPC_URL` to prioritize a specific RPC first; rotation continues across the list.
+- Frontend: edit `PUBLIC_RPC_ENDPOINTS` in `src/utils/rpcManager.ts`.
+
+Expected behavior:
+- Endpoints failing health checks are skipped temporarily.
+- If all endpoints are unhealthy, operations fail with a clear error message.

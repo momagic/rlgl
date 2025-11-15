@@ -4,6 +4,28 @@
 
 This guide documents the critical TypeScript fixes and frontend integration changes required for V3 contract deployment. These fixes ensure type safety and proper integration with Worldcoin MiniKit.
 
+## 🌐 RPC Configuration & Resilience
+
+The app uses multiple public World Chain RPCs with health checks, rotation, caching, and retry/backoff to reduce errors and rate limiting.
+
+- Frontend (viem): `src/utils/rpcManager.ts` maintains a list of public endpoints and performs round-robin among healthy clients with request queuing, rate limits, caching, and retries.
+- Backend (ethers): `api/server.js` and `api/world-id.js` rotate through the same endpoint list, validate health via `getBlockNumber`, and wrap calls with exponential backoff on transient errors.
+
+Default endpoints:
+- `https://worldchain-mainnet.g.alchemy.com/public`
+- `https://480.rpc.thirdweb.com`
+- `https://worldchain-mainnet.gateway.tenderly.co`
+- `https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro`
+- `https://worldchain.drpc.org`
+
+Override via environment:
+- Backend: set `RPC_URL` to prefer a specific RPC first; rotation still falls back to the public list.
+- Frontend: edit `PUBLIC_RPC_ENDPOINTS` in `src/utils/rpcManager.ts` to add or remove endpoints.
+
+Operational notes:
+- If all endpoints are unhealthy, calls fail fast with `No healthy RPC endpoints available`.
+- Avoid adding rate-limited/private RPC keys to the public list. Prefer keyless/public endpoints here.
+
 ## 🔧 Critical TypeScript Fixes Required
 
 ### 1. AuthContext Type Mismatch Fix

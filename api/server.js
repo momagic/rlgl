@@ -46,7 +46,14 @@ app.use(express.json());
 const APP_ID = process.env.WORLD_ID_APP_ID || 'app_29198ecfe21e2928536961a63cc85606';
 const ACTION_ID = process.env.WORLD_ID_ACTION_ID || 'play-game';
 const PRIVATE_KEY = process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
-const RPC_URL = process.env.RPC_URL || 'https://worldchain-mainnet.g.alchemy.com/public';
+const RPC_URLS = [
+  ...(process.env.RPC_URL ? [process.env.RPC_URL] : []),
+  'https://worldchain-mainnet.g.alchemy.com/public',
+  'https://480.rpc.thirdweb.com',
+  'https://worldchain-mainnet.gateway.tenderly.co',
+  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro',
+  'https://worldchain.drpc.org'
+];
 const CONTRACT_ADDRESS = process.env.GAME_CONTRACT_ADDRESS;
 
 // Contract ABI for setUserVerification function
@@ -115,7 +122,7 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
   }
 
   try {
-    const provider = new ethers.JsonRpcProvider(RPC_URL);
+    const provider = await getHealthyProvider();
     const network = await provider.getNetwork();
     const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
@@ -136,7 +143,11 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
 
     console.log(`Submitting verification for ${userAddress}: level=${level}, verified=${isVerified}`);
 
-    const tx = await contract.setUserVerification(userAddress, level, isVerified);
+    const tx = await withProviderRetry(async (p) => {
+      const w = new ethers.Wallet(PRIVATE_KEY, p);
+      const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, w);
+      return c.setUserVerification(userAddress, level, isVerified);
+    });
     console.log('Transaction submitted:', tx.hash);
 
     const receipt = await tx.wait();
@@ -255,9 +266,11 @@ app.get('/world-id', async (req, res) => {
     let onChainStatus = null;
     if (CONTRACT_ADDRESS && PRIVATE_KEY) {
       try {
-        const provider = new ethers.JsonRpcProvider(RPC_URL);
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-        onChainStatus = await contract.getUserVerificationStatus(userAddress);
+        const provider = await getHealthyProvider();
+        onChainStatus = await withProviderRetry(async (p) => {
+          const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, p);
+          return c.getUserVerificationStatus(userAddress);
+        });
       } catch (error) {
         console.warn('Could not fetch on-chain status:', error.message);
       }
@@ -320,3 +333,48 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+let rpcIndex = 0;
+function nextRpcUrl() {
+  const url = RPC_URLS[rpcIndex % RPC_URLS.length];
+  rpcIndex++;
+  return url;
+}
+function isTransientError(error) {
+  const msg = (error && error.message) ? error.message.toLowerCase() : '';
+  return msg.includes('rate') || msg.includes('429') || msg.includes('timeout') || msg.includes('fetch') || msg.includes('connection') || msg.includes('retry');
+}
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+  ]);
+}
+async function getHealthyProvider() {
+  for (let i = 0; i < RPC_URLS.length; i++) {
+    const url = nextRpcUrl();
+    try {
+      const provider = new ethers.JsonRpcProvider(url);
+      await withTimeout(provider.getBlockNumber(), 5000);
+      return provider;
+    } catch {}
+  }
+  throw new Error('No healthy RPC endpoints available');
+}
+async function withProviderRetry(fn, maxRetries = 3) {
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const provider = await getHealthyProvider();
+      return await fn(provider);
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxRetries && isTransientError(err)) {
+        await new Promise(r => setTimeout(r, Math.min(1000 * Math.pow(2, attempt), 10000)));
+        continue;
+      }
+      break;
+    }
+  }
+  throw lastError;
+}
