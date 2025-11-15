@@ -297,12 +297,10 @@ export function useTurnManager(): UseTurnManagerReturn {
       }
 
       await refreshTurnStatus(true)
-      const playerAddress = getPlayerAddress()
-      try {
-        const status = await contract.getTurnStatus(playerAddress)
-        setTurnStatus(status)
-      } catch {}
 
+      // Note: We don't auto-refresh after payment since it would overwrite 
+      // our local update with stale contract data. Manual refresh is available.
+      
       console.log('🎉 Turn purchase completed successfully!')
       return true
     } catch (err) {
