@@ -51,8 +51,8 @@ const RPC_URLS = [
   'https://worldchain-mainnet.g.alchemy.com/public',
   'https://480.rpc.thirdweb.com',
   'https://worldchain-mainnet.gateway.tenderly.co',
-  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro',
-  'https://worldchain.drpc.org'
+  'https://worldchain.drpc.org',
+  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro'
 ];
 const CONTRACT_ADDRESS = process.env.GAME_CONTRACT_ADDRESS;
 
@@ -123,7 +123,6 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
 
   try {
     const provider = await getHealthyProvider();
-    const network = await provider.getNetwork();
     const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
 
@@ -132,7 +131,7 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
     const isAuthorized = await contract.authorizedSubmitters(submitterAddress);
 
     console.log(
-      `🔑 Submitter ${submitterAddress} | Owner ${contractOwner} | Authorized=${isAuthorized} | ChainId=${network.chainId} | Contract=${CONTRACT_ADDRESS}`
+      `🔑 Submitter ${submitterAddress} | Owner ${contractOwner} | Authorized=${isAuthorized} | Contract=${CONTRACT_ADDRESS}`
     );
 
     const normalizedLevel = (verificationLevel || '').toLowerCase();
@@ -142,6 +141,21 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
     }
 
     console.log(`Submitting verification for ${userAddress}: level=${level}, verified=${isVerified}`);
+
+    // Idempotency: skip on-chain submission if already verified at same level
+    const currentStatus = await withProviderRetry(async (p) => {
+      const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, p);
+      return c.getUserVerificationStatus(userAddress);
+    });
+    if (currentStatus && currentStatus.isVerified && Number(currentStatus.verificationLevel) === Number(level)) {
+      console.log('Skipping on-chain submission: user already verified at same level');
+      return {
+        success: true,
+        transactionHash: null,
+        blockNumber: null,
+        gasUsed: '0'
+      };
+    }
 
     const tx = await withProviderRetry(async (p) => {
       const w = new ethers.Wallet(PRIVATE_KEY, p);
@@ -335,6 +349,12 @@ app.listen(PORT, () => {
 module.exports = app;
 
 let rpcIndex = 0;
+const endpointCooldowns = new Map();
+let currentProvider = null;
+let currentUrl = null;
+let lastValidatedAt = 0;
+const VALIDATION_TTL_MS = 30000;
+const RATE_COOLDOWN_MS = 5 * 60 * 1000;
 function nextRpcUrl() {
   const url = RPC_URLS[rpcIndex % RPC_URLS.length];
   rpcIndex++;
@@ -350,12 +370,26 @@ function withTimeout(promise, ms) {
     new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
   ]);
 }
+function isCoolingDown(url) {
+  const until = endpointCooldowns.get(url) || 0;
+  return Date.now() < until;
+}
+function markCooldown(url, ms) {
+  endpointCooldowns.set(url, Date.now() + ms);
+}
 async function getHealthyProvider() {
+  if (currentProvider && currentUrl && !isCoolingDown(currentUrl) && (Date.now() - lastValidatedAt) < VALIDATION_TTL_MS) {
+    return currentProvider;
+  }
   for (let i = 0; i < RPC_URLS.length; i++) {
     const url = nextRpcUrl();
+    if (isCoolingDown(url)) continue;
     try {
       const provider = new ethers.JsonRpcProvider(url);
       await withTimeout(provider.getBlockNumber(), 5000);
+      currentProvider = provider;
+      currentUrl = url;
+      lastValidatedAt = Date.now();
       return provider;
     } catch {}
   }
@@ -371,6 +405,10 @@ async function withProviderRetry(fn, maxRetries = 3) {
       lastError = err;
       if (attempt < maxRetries && isTransientError(err)) {
         await new Promise(r => setTimeout(r, Math.min(1000 * Math.pow(2, attempt), 10000)));
+        if (currentUrl) markCooldown(currentUrl, RATE_COOLDOWN_MS);
+        currentProvider = null;
+        currentUrl = null;
+        lastValidatedAt = 0;
         continue;
       }
       break;

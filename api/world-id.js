@@ -41,8 +41,8 @@ const RPC_URLS = [
   'https://worldchain-mainnet.g.alchemy.com/public',
   'https://480.rpc.thirdweb.com',
   'https://worldchain-mainnet.gateway.tenderly.co',
-  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro',
-  'https://worldchain.drpc.org'
+  'https://worldchain.drpc.org',
+  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro'
 ];
 const CONTRACT_ADDRESS = process.env.GAME_CONTRACT_ADDRESS;
 
@@ -129,6 +129,21 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
     }
 
     console.log(`Submitting verification for ${userAddress}: level=${level}, verified=${isVerified}`);
+
+    // Idempotency: skip on-chain submission if already verified at same level
+    const currentStatus = await withProviderRetry(async (p) => {
+      const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, p);
+      return c.getUserVerificationStatus(userAddress);
+    });
+    if (currentStatus && currentStatus.isVerified && Number(currentStatus.verificationLevel) === Number(level)) {
+      console.log('Skipping on-chain submission: user already verified at same level');
+      return {
+        success: true,
+        transactionHash: null,
+        blockNumber: null,
+        gasUsed: '0'
+      };
+    }
 
     // Call setUserVerification function
     const tx = await withProviderRetry(async (p) => {
