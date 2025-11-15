@@ -135,8 +135,6 @@ export function useContract(): UseContractReturn {
             args: []
           }
         ]
-        ,
-        formatPayload: false
       })
 
       const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('transaction_timeout')), 20000))
@@ -194,8 +192,6 @@ export function useContract(): UseContractReturn {
             args: []
           }
         ]
-        ,
-        formatPayload: false
       })
 
       const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('transaction_timeout')), 20000))
