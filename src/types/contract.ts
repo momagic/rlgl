@@ -818,6 +818,36 @@ export const WLD_TOKEN_ABI = [
   }
 ] as const
 
+export const PERMIT2_ABI = [
+  {
+    "inputs": [
+      {
+        "components": [
+          {"internalType": "address", "name": "token", "type": "address"},
+          {"internalType": "uint256", "name": "amount", "type": "uint256"}
+        ],
+        "internalType": "struct PermitSingle",
+        "name": "permitSingle",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {"internalType": "address", "name": "to", "type": "address"},
+          {"internalType": "uint256", "name": "requestedAmount", "type": "uint256"}
+        ],
+        "internalType": "struct SignatureTransferDetails",
+        "name": "transferDetails",
+        "type": "tuple"
+      },
+      {"internalType": "bytes", "name": "signature", "type": "bytes"}
+    ],
+    "name": "signatureTransfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+] as const
+
 export const CONTRACT_CONFIG = {
   worldchain: {
     gameContract: '0xc4201D1C64625C45944Ef865f504F995977733F7',
