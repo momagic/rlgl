@@ -254,64 +254,15 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
             turnStatus={turnStatus}
             onShowBuyTurns={() => setShowTurnsModal(true)}
             className="!space-y-2"
+            turnLoading={turnLoading}
+            turnError={turnError}
+            onStartGame={handleStartGame}
+            userAuthenticated={!!user?.walletAuthenticated}
+            buttonDisabled={buttonDisabled}
           />
         </div>
 
-        {/* Hero CTA: Start Game placed after mode selection */}
-        {user?.walletAuthenticated && (
-          <div className="mt-1">
-            <Button
-              onClick={handleStartGame}
-              disabled={buttonDisabled}
-              variant={buttonDisabled ? 'secondary' : 'primary'}
-              size="lg"
-              className="w-full"
-            >
-              {turnLoading ? (
-                <Stack spacing="xs" className="items-center justify-center">
-                  <Stack direction="row" spacing="sm" className="items-center">
-                    <div className="w-5 h-5 border-3 border-pure-white border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-base font-bold">{t('startMenu.buttons.checkingTurns')}</span>
-                  </Stack>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      refreshTurnStatus(true)
-                    }}
-                    className="text-xs text-pure-white/70 hover:text-pure-white underline font-medium"
-                  >
-                    {t('startMenu.buttons.forceRefresh')}
-                  </button>
-                </Stack>
-              ) : turnError ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <span className="text-xl">⚠️</span>
-                  <span className="text-base font-bold">{t('startMenu.buttons.startAnyway')}</span>
-                </div>
-              ) : !turnStatus ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-5 h-5 border-3 border-pure-white border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-base font-bold">{t('startMenu.buttons.checkingTurns')}</span>
-                </div>
-              ) : turnStatus.availableTurns <= 0 && !turnStatus.hasActiveWeeklyPass ? (
-                t('startMenu.buttons.noTurns')
-              ) : (
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-lg">🚦</span>
-                  <span>
-                    {turnStatus.hasActiveWeeklyPass
-                      ? t('startMenu.buttons.startGame', { turns: '∞' })
-                      : t('startMenu.buttons.startGame', { turns: turnStatus.availableTurns })}
-                  </span>
-                  <span className="text-lg">🕹</span>
-                </div>
-              )}
-            </Button>
-            <p className="mt-1 text-center text-xs font-squid text-squid-white/70">
-              {t('startMenu.footer.tagline')}
-            </p>
-          </div>
-        )}
+        
 
         {/* Error hint when not authenticated but verified (optional small) */}
         {user?.verified && !user?.walletAuthenticated && turnError && (

@@ -5,6 +5,7 @@ import type { GameMode } from '../types/game'
 import type { TurnStatus } from '../types/contract'
 import { useHapticFeedback } from '../hooks/useHapticFeedback'
 import { useContract } from '../hooks/useContract'
+import { Button, Stack } from './ui'
 
 interface GameModeSelectorProps {
   selectedMode: GameMode
@@ -12,6 +13,11 @@ interface GameModeSelectorProps {
   className?: string
   turnStatus?: TurnStatus | null
   onShowBuyTurns?: () => void
+  turnLoading?: boolean
+  turnError?: string | null
+  onStartGame?: () => void
+  userAuthenticated?: boolean
+  buttonDisabled?: boolean
 }
 
 export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
@@ -19,7 +25,12 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
   onModeChange,
   className = '',
   turnStatus,
-  onShowBuyTurns
+  onShowBuyTurns,
+  turnLoading,
+  turnError,
+  onStartGame,
+  userAuthenticated,
+  buttonDisabled
 }) => {
   const { t } = useTranslation()
   const { verificationLevel } = useAuth()
@@ -92,6 +103,52 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
     onModeChange(mode)
   }
 
+  const StartCTA: React.FC = () => {
+    if (!userAuthenticated) return null
+    return (
+      <div className="mt-3">
+        <Button
+          onClick={onStartGame}
+          disabled={!!buttonDisabled}
+          variant={buttonDisabled ? 'secondary' : 'primary'}
+          size="md"
+          className="w-full"
+        >
+          {turnLoading ? (
+            <Stack spacing="xs" className="items-center justify-center">
+              <Stack direction="row" spacing="sm" className="items-center">
+                <div className="w-4 h-4 border-2 border-pure-white border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm font-bold">{t('startMenu.buttons.checkingTurns')}</span>
+              </Stack>
+            </Stack>
+          ) : turnError ? (
+            <div className="flex items-center justify-center space-x-2">
+              <span className="text-lg">⚠️</span>
+              <span className="text-sm font-bold">{t('startMenu.buttons.startAnyway')}</span>
+            </div>
+          ) : !turnStatus ? (
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-4 h-4 border-2 border-pure-white border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm font-bold">{t('startMenu.buttons.checkingTurns')}</span>
+            </div>
+          ) : turnStatus.availableTurns <= 0 && !turnStatus.hasActiveWeeklyPass ? (
+            t('startMenu.buttons.noTurns')
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-base">🚦</span>
+              <span>
+                {turnStatus.hasActiveWeeklyPass
+                  ? t('startMenu.buttons.startGame', { turns: '∞' })
+                  : t('startMenu.buttons.startGame', { turns: turnStatus.availableTurns })}
+              </span>
+              <span className="text-base">🕹</span>
+            </div>
+          )}
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div className={`space-y-4 ${className}`}>
       <h3 className="font-squid-heading text-squid-white text-2xl font-bold text-center mb-4 flex items-center justify-center uppercase tracking-wider">
@@ -128,6 +185,7 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
               <p className="font-squid text-xs text-squid-white/80 leading-relaxed">
                 {t('gameModeSelector.classicMode.description')}
               </p>
+              {selectedMode === 'classic' && <StartCTA />}
             </div>
           </div>
         </button>
@@ -160,6 +218,7 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
               <p className="font-squid text-xs text-squid-white/80 leading-relaxed">
                 {t('gameModeSelector.arcadeMode.description')}
               </p>
+              {selectedMode === 'arcade' && <StartCTA />}
             </div>
           </div>
         </button>
@@ -191,6 +250,7 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
               <p className="font-squid text-xs text-squid-white/80 leading-relaxed">
                 {t('gameModeSelector.whackMode.description')}
               </p>
+              {selectedMode === 'whack' && <StartCTA />}
             </div>
           </div>
         </button>
