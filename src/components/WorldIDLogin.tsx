@@ -155,6 +155,22 @@ export function WorldIDLogin() {
         </div>
         */}
       </Container>
+
+      {isLoading && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-md">
+          <div className="rounded-2xl border border-white/20 bg-white/10 px-6 py-5 text-center shadow-2xl">
+            <Stack direction="row" spacing="sm" className="items-center justify-center">
+              <div className="w-6 h-6 border-3 border-pure-white border-t-transparent rounded-full animate-spin"></div>
+              <Typography variant="body" className="text-white font-semibold">
+                {t('worldIdLogin.verifying')}
+              </Typography>
+            </Stack>
+            <Typography variant="caption" className="text-white/80 mt-2">
+              {t('worldIdLogin.worldAppNote')}
+            </Typography>
+          </div>
+        </div>
+      )}
     </div>
     
     <WorldIDInfoModal 
