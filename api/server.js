@@ -470,6 +470,7 @@ app.post('/session/start', async (req, res) => {
     const nonce = Math.floor(Date.now());
     const deadline = Math.floor(Date.now() / 1000) + 900;
     const sessionId = ethers.id(`sess:${userAddress}:${nonce}`);
+    console.log('Session started', { userAddress, sessionId, nonce, deadline, chainId });
     res.json({ success: true, sessionId, nonce, deadline, chainId, verificationLevel: verificationResult.verificationLevel });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -488,22 +489,27 @@ app.post('/score/permit', async (req, res) => {
     return res.status(500).json({ error: 'GAME_CONTRACT_ADDRESS not configured' });
   }
   try {
+    console.log('Permit request', { userAddress, score, round, gameMode, nonce, deadline });
     const now = Date.now();
     const arr = permitRateMap.get(userAddress) || [];
     const recent = arr.filter(ts => now - ts <= PERMIT_WINDOW_MS);
     if (recent.length >= PERMIT_MAX) {
+      console.warn('Permit rate limit', { userAddress, count: recent.length });
       return res.status(429).json({ error: 'Rate limit exceeded' });
     }
     recent.push(now);
     permitRateMap.set(userAddress, recent);
     if (round <= 0 || round > 1000) {
+      console.warn('Permit validation failed', { userAddress, reason: 'Invalid round', round });
       return res.status(400).json({ error: 'Invalid round' });
     }
     if (score <= 0) {
+      console.warn('Permit validation failed', { userAddress, reason: 'Invalid score', score });
       return res.status(400).json({ error: 'Invalid score' });
     }
     const maxScore = calculateMaxTheoreticalScore(gameMode, round);
     if (score > maxScore) {
+      console.warn('Permit validation failed', { userAddress, reason: 'Score exceeds theoretical maximum', score, maxScore });
       return res.status(400).json({ error: 'Score exceeds theoretical maximum' });
     }
     const provider = await getHealthyProvider();
@@ -520,8 +526,10 @@ app.post('/score/permit', async (req, res) => {
       deadline: ethers.toBigInt(deadline)
     };
     const signature = await wallet.signTypedData(domain, ScorePermitTypes, value);
+    console.log('Permit issued', { userAddress, score, round, gameMode, nonce, deadline });
     res.json({ success: true, signature, domain, types: ScorePermitTypes, value });
   } catch (error) {
+    console.error('Permit issuance failed', { userAddress, score, round, gameMode, error: error && error.message ? error.message : String(error) });
     res.status(500).json({ error: error.message });
   }
 });
