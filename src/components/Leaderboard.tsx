@@ -369,6 +369,21 @@ function Leaderboard() {
         setLastUpdated(new Date())
         
         console.log('✅ Leaderboard state updated successfully')
+
+        const otherModes: GameMode[] = (['Classic', 'Arcade', 'WhackLight'] as GameMode[]).filter(m => m !== selectedMode)
+        for (const mode of otherModes) {
+          try {
+            const otherContractData = await getTopScores(10, mode)
+            const otherProcessed = otherContractData.slice(0, 10).map((entry: any, index: number) => ({
+              ...entry,
+              rank: index + 1,
+              displayName: getPlayerDisplayName(entry.player),
+              avatar: getPlayerAvatar(entry.player),
+              isCurrentUser: isCurrentUser(entry.player)
+            }))
+            setCachedLeaderboard(mode, otherProcessed)
+          } catch {}
+        }
       
     } catch (err) {
       console.error('❌ Error fetching leaderboard:', err)

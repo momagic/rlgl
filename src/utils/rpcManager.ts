@@ -19,7 +19,7 @@ const RATE_LIMITS = {
 
 // Cache configuration
 const CACHE_CONFIG = {
-  leaderboardTTL: 30000, // 30 seconds
+  leaderboardTTL: 60000, // 60 seconds
   playerStatsTTL: 15000, // 15 seconds
   contractDataTTL: 60000, // 1 minute
   blockNumberTTL: 5000, // 5 seconds
