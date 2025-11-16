@@ -279,19 +279,19 @@ export function useContract(): UseContractReturn {
 
       let tokensEarned = '0'
       try {
+        const pricing = await getCurrentPricing()
+        const tokensPerPointWei = BigInt(pricing.tokensPerPoint)
         const playerAddress = (MiniKit.user as any)?.address as string | undefined
-        const base = BigInt(round) * 100000000000000000n
+        let multiplierPct = 100n
         if (playerAddress) {
           const stats = await getPlayerStats(playerAddress)
-          const multiplier = BigInt((stats.verificationMultiplier ?? 100))
-          const minted = (base * multiplier) / 100n
-          tokensEarned = formatEther(minted)
-        } else {
-          tokensEarned = formatEther(base)
+          multiplierPct = BigInt(stats.verificationMultiplier ?? 100)
         }
+        const mintedWei = (BigInt(score) * tokensPerPointWei * multiplierPct) / 100n
+        tokensEarned = formatEther(mintedWei)
       } catch {
-        const base = BigInt(round) * 100000000000000000n
-        tokensEarned = formatEther(base)
+        const fallbackMint = (BigInt(score) * 100000000000000000n)
+        tokensEarned = formatEther(fallbackMint)
       }
 
       return {
@@ -336,7 +336,22 @@ export function useContract(): UseContractReturn {
       if (result.finalPayload.status === 'error') {
         throw new Error(result.finalPayload.error_code || 'Transaction failed')
       }
-      const tokensEarned = formatEther(BigInt(score) * 100000000000000000n)
+      let tokensEarned = '0'
+      try {
+        const pricing = await getCurrentPricing()
+        const tokensPerPointWei = BigInt(pricing.tokensPerPoint)
+        const playerAddress = (MiniKit.user as any)?.address as string | undefined
+        let multiplierPct = 100n
+        if (playerAddress) {
+          const stats = await getPlayerStats(playerAddress)
+          multiplierPct = BigInt(stats.verificationMultiplier ?? 100)
+        }
+        const mintedWei = (BigInt(score) * tokensPerPointWei * multiplierPct) / 100n
+        tokensEarned = formatEther(mintedWei)
+      } catch {
+        const fallbackMint = (BigInt(score) * 100000000000000000n)
+        tokensEarned = formatEther(fallbackMint)
+      }
       return {
         score,
         round,

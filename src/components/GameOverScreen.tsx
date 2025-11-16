@@ -1,6 +1,9 @@
 import type { PlayerStats, TokenReward } from '../types/game'
 import type { UseTurnManagerReturn } from '../types/contract'
 import SuccessMessage from './SuccessMessage'
+import { useContract } from '../hooks/useContract'
+import { useAuth } from '../contexts/AuthContext'
+import { formatEther } from 'viem'
 import { useState, useEffect, useRef } from 'react'
 
 interface GameOverScreenProps {
@@ -17,13 +20,15 @@ function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain,
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const [hasShownSuccessMessage, setHasShownSuccessMessage] = useState(false)
   const processedTokenRewardRef = useRef<string | null>(null)
+  const { getCurrentPricing, getPlayerStats } = useContract()
+  const { user } = useAuth()
+  const [estimatedTokens, setEstimatedTokens] = useState<string>('0')
   
   const accuracy = playerStats.totalTaps > 0 
     ? Math.round((playerStats.correctTaps / playerStats.totalTaps) * 100) 
     : 100
 
-  // Calculate tokens earned (fallback: 1 token per round; preferred: contract computation)
-  const tokensEarned = tokenReward?.tokensEarned ?? (playerStats.round).toFixed(2)
+  const tokensEarned = tokenReward?.tokensEarned ?? estimatedTokens
 
   // Check if user has turns available
   const hasTurnsAvailable = turnStatus && (turnStatus.hasActiveWeeklyPass || turnStatus.availableTurns > 0)
@@ -31,7 +36,7 @@ function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain,
 
   // Show success message when tokenReward is available (only once per reward)
   useEffect(() => {
-    if (tokenReward && !hasShownSuccessMessage && processedTokenRewardRef.current !== tokenReward.transactionHash) {
+    if (tokenReward && tokenReward.transactionHash && !hasShownSuccessMessage && processedTokenRewardRef.current !== tokenReward.transactionHash) {
       // Mark this reward as processed
       processedTokenRewardRef.current = tokenReward.transactionHash
       setHasShownSuccessMessage(true)
@@ -43,6 +48,33 @@ function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain,
       return () => clearTimeout(timer)
     }
   }, [tokenReward, hasShownSuccessMessage])
+
+  useEffect(() => {
+    let cancelled = false
+    const computeEstimate = async () => {
+      try {
+        const pricing = await getCurrentPricing()
+        const tpp = BigInt(pricing.tokensPerPoint)
+        const addr = user?.walletAddress || (window as any)?.MiniKit?.user?.address || ''
+        let multiplier = 100n
+        if (addr) {
+          try {
+            const stats = await getPlayerStats(addr)
+            multiplier = BigInt(stats.verificationMultiplier ?? 100)
+          } catch {}
+        }
+        const mintedWei = (BigInt(playerStats.currentScore) * tpp * multiplier) / 100n
+        const amount = formatEther(mintedWei)
+        if (!cancelled) setEstimatedTokens(amount)
+      } catch {
+        const fallbackWei = BigInt(playerStats.currentScore) * 100000000000000000n
+        const amount = formatEther(fallbackWei)
+        if (!cancelled) setEstimatedTokens(amount)
+      }
+    }
+    computeEstimate()
+    return () => { cancelled = true }
+  }, [playerStats.currentScore, getCurrentPricing, getPlayerStats, user?.walletAddress])
 
   const getPerformanceMessage = () => {
     if (isNewHighScore) return "🎉 NEW HIGH SCORE! 🎉"
