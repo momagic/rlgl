@@ -26,20 +26,24 @@ describe("RedLightGreenLightGameV3 (updated spec)", function () {
     expect(await v3Game.getAvailableTurns(player.address)).to.equal(2)
   })
 
-  it("mints 1 token per round with multiplier", async function () {
+  it("requires active session for direct submission and mints score-based tokens", async function () {
+    await expect(v3Game.connect(player).submitScore(30, 1, GAME_MODES.Classic)).to.be.revertedWith("No active game session")
+    await v3Game.connect(player).startGame()
     const initial = await v3Game.balanceOf(player.address)
     await v3Game.connect(player).submitScore(30, 1, GAME_MODES.Classic)
     const final = await v3Game.balanceOf(player.address)
-    expect(final - initial).to.equal(ethers.parseEther("1"))
+    expect(final - initial).to.equal(ethers.parseEther("3"))
 
     await v3Game.connect(authorizedSubmitter).setUserVerification(player.address, LEVELS.OrbPlus, true)
+    await v3Game.connect(player).startGame()
     const i2 = await v3Game.balanceOf(player.address)
     await v3Game.connect(player).submitScore(30, 1, GAME_MODES.Classic)
     const f2 = await v3Game.balanceOf(player.address)
-    expect(f2 - i2).to.equal(ethers.parseEther("1.4"))
+    expect(f2 - i2).to.equal(ethers.parseEther("4.2"))
   })
 
   it("updates leaderboard per mode", async function () {
+    await v3Game.connect(player).startGame()
     await v3Game.connect(player).submitScore(30, 1, GAME_MODES.Classic)
     const classic = await v3Game.getTopScores(GAME_MODES.Classic, 10)
     expect(classic.length).to.equal(1)
@@ -70,5 +74,40 @@ describe("RedLightGreenLightGameV3 (updated spec)", function () {
     await v3Game.connect(player).claimDailyReward()
     const f2 = await v3Game.balanceOf(player.address)
     expect(f2 - i2).to.equal(ethers.parseEther("11"))
+  })
+
+  it("submits score with EIP-712 permit", async function () {
+    const chainId = (await ethers.provider.getNetwork()).chainId
+    const domain = { name: 'Red Light Green Light V3', version: '1', chainId, verifyingContract: await v3Game.getAddress() }
+    const types = { ScorePermit: [
+      { name: 'player', type: 'address' },
+      { name: 'score', type: 'uint256' },
+      { name: 'round', type: 'uint256' },
+      { name: 'gameMode', type: 'uint8' },
+      { name: 'sessionId', type: 'bytes32' },
+      { name: 'nonce', type: 'uint256' },
+      { name: 'deadline', type: 'uint256' }
+    ]}
+    const sessionId = ethers.id('sess')
+    const value = { player: player.address, score: 30, round: 1, gameMode: GAME_MODES.Classic, sessionId, nonce: 1, deadline: Math.floor(Date.now()/1000) + 900 }
+    const signature = await owner.signTypedData(domain, types, value)
+    const initial = await v3Game.balanceOf(player.address)
+    await v3Game.connect(player).submitScoreWithPermit(value.score, value.round, value.gameMode, value.sessionId, value.nonce, value.deadline, signature)
+    const final = await v3Game.balanceOf(player.address)
+    expect(final - initial).to.equal(ethers.parseEther("3"))
+
+    await expect(
+      v3Game.connect(player).submitScoreWithPermit(value.score, value.round, value.gameMode, value.sessionId, value.nonce, value.deadline, signature)
+    ).to.be.revertedWith("Permit already used")
+  })
+
+  it("restricts localStorage setters to owner", async function () {
+    await expect(v3Game.connect(player).setExtraGoes(5)).to.be.reverted
+    await expect(v3Game.connect(player).setPasses(3)).to.be.reverted
+    await v3Game.connect(owner).setExtraGoes(5)
+    await v3Game.connect(owner).setPasses(3)
+    const data = await v3Game.getLocalStorageData(owner.address)
+    expect(Number(data.extraGoes)).to.equal(5)
+    expect(Number(data.passes)).to.equal(3)
   })
 })

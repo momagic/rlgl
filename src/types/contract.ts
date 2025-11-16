@@ -178,6 +178,15 @@ export interface UseContractReturn {
   // Game management
   startGame: () => Promise<boolean>
   submitScore: (score: number, round: number, gameMode: GameMode) => Promise<GameSubmission>
+  submitScoreWithPermit: (
+    score: number,
+    round: number,
+    gameMode: GameMode,
+    sessionId: string,
+    nonce: number | bigint,
+    deadline: number | bigint,
+    signature: string
+  ) => Promise<GameSubmission>
   
   // Data retrieval
   getPlayerStats: (playerAddress: string) => Promise<PlayerStats>
@@ -315,6 +324,21 @@ export const GAME_CONTRACT_ABI = [
       {"internalType": "uint8", "name": "gameMode", "type": "uint8"}
     ],
     "name": "submitScore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "score", "type": "uint256"},
+      {"internalType": "uint256", "name": "round", "type": "uint256"},
+      {"internalType": "uint8", "name": "gameMode", "type": "uint8"},
+      {"internalType": "bytes32", "name": "sessionId", "type": "bytes32"},
+      {"internalType": "uint256", "name": "nonce", "type": "uint256"},
+      {"internalType": "uint256", "name": "deadline", "type": "uint256"},
+      {"internalType": "bytes", "name": "signature", "type": "bytes"}
+    ],
+    "name": "submitScoreWithPermit",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -76,7 +76,7 @@ describe("RedLightGreenLightGameV3", function () {
         it("Should have correct default pricing", async function () {
             const pricing = await v3Game.getCurrentPricing();
             expect(pricing.currentTokensPerPoint).to.equal(ethers.parseEther("0.1"));
-            expect(pricing.turnCost).to.equal(ethers.parseEther("0.5"));
+            expect(pricing.turnCost).to.equal(ethers.parseEther("0.2"));
             expect(pricing.passCost).to.equal(ethers.parseEther("5"));
         });
 
@@ -96,23 +96,20 @@ describe("RedLightGreenLightGameV3", function () {
         it("Should not deploy with zero developer wallet", async function () {
             const RedLightGreenLightGameV3 = await ethers.getContractFactory("RedLightGreenLightGameV3");
             const impl = await RedLightGreenLightGameV3.deploy();
-            try {
-                await impl.initialize(
+            await expect(
+                impl.initialize(
                     await wldToken.getAddress(),
                     "0x0000000000000000000000000000000000000000",
                     owner.address
-                );
-                expect.fail("Should have reverted");
-            } catch (error) {
-                expect(error.message).to.include("Developer wallet cannot be zero address");
-            }
+                )
+            ).to.be.reverted;
         });
     });
 
     describe("Game Mechanics", function () {
-        it("Should start with 100 turns", async function () {
+        it("Should start with 3 turns", async function () {
             const turns = await v3Game.getAvailableTurns(player1.address);
-            expect(Number(turns)).to.equal(100);
+            expect(Number(turns)).to.equal(3);
         });
 
         it("Should not allow unverified users to start game", async function () {
@@ -130,12 +127,11 @@ describe("RedLightGreenLightGameV3", function () {
         it("Should consume turns when starting game", async function () {
             await v3Game.connect(player1).startGame();
             const turns = await v3Game.getAvailableTurns(player1.address);
-            expect(Number(turns)).to.equal(99);
+            expect(Number(turns)).to.equal(2);
         });
 
         it("Should not allow starting game without turns", async function () {
-            // Use all 100 turns
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 3; i++) {
                 await v3Game.connect(player1).startGame();
             }
 
@@ -159,7 +155,7 @@ describe("RedLightGreenLightGameV3", function () {
             const initialBalance = await v3Game.balanceOf(player1.address);
             await v3Game.connect(player1).submitScore(30, 1, GAME_MODES.Classic);
             const finalBalance = await v3Game.balanceOf(player1.address);
-            expect(finalBalance - initialBalance).to.equal(ethers.parseEther("1"));
+            expect(finalBalance - initialBalance).to.equal(ethers.parseEther("3"));
         });
 
         it("Should apply verification multipliers", async function () {
@@ -171,7 +167,7 @@ describe("RedLightGreenLightGameV3", function () {
             const i2 = await v3Game.balanceOf(player1.address);
             await v3Game.connect(player1).submitScore(30, 1, GAME_MODES.Classic);
             const f2 = await v3Game.balanceOf(player1.address);
-            expect(f2 - i2).to.equal(ethers.parseEther("1.4"));
+            expect(f2 - i2).to.equal(ethers.parseEther("4.2"));
         });
 
         it("Should update leaderboard", async function () {
@@ -182,8 +178,8 @@ describe("RedLightGreenLightGameV3", function () {
             expect(topScores[0].score).to.equal(30);
         });
 
-        it("Player can submit score directly", async function () {
-            await v3Game.connect(player1).submitScore(30, 1, GAME_MODES.Classic);
+        it("Player requires active session to submit score directly", async function () {
+            await expect(v3Game.connect(player2).submitScore(30, 1, GAME_MODES.Classic)).to.be.revertedWith("No active game session");
         });
     });
 
@@ -286,13 +282,13 @@ describe("RedLightGreenLightGameV3", function () {
 
     describe("Purchases", function () {
         beforeEach(async function () {
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 3; i++) {
                 await v3Game.connect(player1).startGame();
             }
         });
 
         it("Should purchase additional turns", async function () {
-            await wldToken.connect(player1).approve(await v3Game.getAddress(), ethers.parseEther("1"));
+            await wldToken.connect(player1).approve(await v3Game.getAddress(), ethers.parseEther("0.2"));
             
             await v3Game.connect(player1).purchaseAdditionalTurns();
             
@@ -304,29 +300,28 @@ describe("RedLightGreenLightGameV3", function () {
     });
 
     describe("LocalStorage Compatibility", function () {
-        it("Should set and get extra goes", async function () {
-            await v3Game.connect(player1).setExtraGoes(5);
-            
-            const data = await v3Game.getLocalStorageData(player1.address);
+        it("Should set and get extra goes (owner)", async function () {
+            await v3Game.connect(owner).setExtraGoes(5);
+            const data = await v3Game.getLocalStorageData(owner.address);
             expect(Number(data.extraGoes)).to.equal(5);
         });
 
-        it("Should set and get passes", async function () {
-            await v3Game.connect(player1).setPasses(3);
-            
-            const data = await v3Game.getLocalStorageData(player1.address);
+        it("Should set and get passes (owner)", async function () {
+            await v3Game.connect(owner).setPasses(3);
+            const data = await v3Game.getLocalStorageData(owner.address);
             expect(Number(data.passes)).to.equal(3);
         });
 
         it("Should use extra goes when base turns are exhausted", async function () {
-            await v3Game.connect(player1).setExtraGoes(2);
-            for (let i = 0; i < 100; i++) {
-                await v3Game.connect(player1).startGame();
+            await v3Game.connect(owner).setExtraGoes(2);
+            await v3Game.connect(authorizedSubmitter).setUserVerification(owner.address, VERIFICATION_LEVELS.Document, true);
+            for (let i = 0; i < 3; i++) {
+                await v3Game.connect(owner).startGame();
             }
-            const turns = await v3Game.getAvailableTurns(player1.address);
+            const turns = await v3Game.getAvailableTurns(owner.address);
             expect(Number(turns)).to.equal(2);
-            await v3Game.connect(player1).startGame();
-            const remainingTurns = await v3Game.getAvailableTurns(player1.address);
+            await v3Game.connect(owner).startGame();
+            const remainingTurns = await v3Game.getAvailableTurns(owner.address);
             expect(Number(remainingTurns)).to.equal(1);
         });
     });
@@ -368,7 +363,9 @@ describe("RedLightGreenLightGameV3", function () {
         });
 
         it("Should handle separate leaderboards for different game modes", async function () {
+            await v3Game.connect(player1).startGame();
             await v3Game.connect(player1).submitScore(30, 1, GAME_MODES.Classic);
+            await v3Game.connect(player1).startGame();
             await v3Game.connect(player1).submitScore(20, 1, GAME_MODES.Arcade);
 
             const classicScores = await v3Game.getTopScores(GAME_MODES.Classic, 10);

@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 // Removed Counters import - using simple uint256 instead
 
 /**
@@ -109,6 +110,12 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
     
     // Verification tracking
     mapping(address => VerificationLevel) public userVerificationLevels;
+    // Active game sessions per player
+    mapping(address => uint256) public activeSessions;
+    // Trusted signer for EIP-712 permits
+    address public trustedSigner;
+    // Replay protection for permits: player => nonce => used
+    mapping(address => mapping(uint256 => bool)) public usedNonces;
     
     // ============ EVENTS ============
     event GameCompleted(
@@ -223,6 +230,7 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
         orbMultiplier = 125;
         secureDocumentMultiplier = 115;
         documentMultiplier = 100;
+        trustedSigner = initialOwner;
 
         uint256 developerAllocation = 1_000_000 * 10**18; // 1 million tokens
         require(developerAllocation <= MAX_SUPPLY, "Developer allocation exceeds max supply");
@@ -339,6 +347,8 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
             require(player.extraGoes > 0, "No extra goes available");
             player.extraGoes--;
         }
+        // Track active session
+        activeSessions[msg.sender] += 1;
     }
     
     /**
@@ -355,6 +365,7 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
         require(round <= 1000, "Round exceeds reasonable maximum");
         require(score <= calculateMaxTheoreticalScore(gameMode, round), "Score exceeds theoretical maximum");
         require(_hasRequiredVerification(playerAddress), "Document verification or higher required");
+        require(activeSessions[playerAddress] > 0, "No active game session");
         
         Player storage player = players[playerAddress];
         
@@ -382,9 +393,9 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
         
         playerGameIds[playerAddress].push(gameId);
         
-        // Reward tokens per round with verification multiplier
+        // Reward tokens based on score with verification multiplier
         uint256 multiplier = _getVerificationMultiplier(playerAddress);
-        uint256 tokensToMint = (round * TOKENS_PER_ROUND * multiplier) / 100;
+        uint256 tokensToMint = (score * tokensPerPoint * multiplier) / 100;
         
         require(totalSupply() + tokensToMint <= MAX_SUPPLY, "Would exceed max supply");
         _mint(playerAddress, tokensToMint);
@@ -401,6 +412,116 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
             isNewHighScore
         );
 
+        // Close one active session
+        activeSessions[playerAddress] -= 1;
+
+    }
+
+    // ===== Permit-based submission (EIP-712) =====
+    bytes32 private constant EIP712_DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 private constant NAME_HASH = keccak256(bytes("Red Light Green Light V3"));
+    bytes32 private constant VERSION_HASH = keccak256(bytes("1"));
+    bytes32 private constant SCORE_PERMIT_TYPEHASH = keccak256("ScorePermit(address player,uint256 score,uint256 round,uint8 gameMode,bytes32 sessionId,uint256 nonce,uint256 deadline)");
+
+    function _domainSeparator() internal view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                EIP712_DOMAIN_TYPEHASH,
+                NAME_HASH,
+                VERSION_HASH,
+                block.chainid,
+                address(this)
+            )
+        );
+    }
+
+    function _hashScorePermit(
+        address player,
+        uint256 score,
+        uint256 round,
+        GameMode gameMode,
+        bytes32 sessionId,
+        uint256 nonce,
+        uint256 deadline
+    ) internal pure returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                SCORE_PERMIT_TYPEHASH,
+                player,
+                score,
+                round,
+                gameMode,
+                sessionId,
+                nonce,
+                deadline
+            )
+        );
+    }
+
+    function setTrustedSigner(address signer) external onlyOwner {
+        require(signer != address(0), "Invalid signer address");
+        trustedSigner = signer;
+    }
+
+    function submitScoreWithPermit(
+        uint256 score,
+        uint256 round,
+        GameMode gameMode,
+        bytes32 sessionId,
+        uint256 nonce,
+        uint256 deadline,
+        bytes calldata signature
+    ) external validGameMode(gameMode) whenNotPaused {
+        require(score > 0, "Score must be greater than 0");
+        require(round > 0, "Round must be greater than 0");
+        require(round <= 1000, "Round exceeds reasonable maximum");
+        require(block.timestamp <= deadline, "Permit expired");
+        address playerAddress = msg.sender;
+        require(score <= calculateMaxTheoreticalScore(gameMode, round), "Score exceeds theoretical maximum");
+        require(_hasRequiredVerification(playerAddress), "Document verification or higher required");
+        require(!usedNonces[playerAddress][nonce], "Permit already used");
+
+        bytes32 structHash = _hashScorePermit(playerAddress, score, round, gameMode, sessionId, nonce, deadline);
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", _domainSeparator(), structHash));
+        address recovered = ECDSA.recover(digest, signature);
+        require(recovered == trustedSigner, "Invalid signer");
+        usedNonces[playerAddress][nonce] = true;
+
+        Player storage player = players[playerAddress];
+        if (player.totalGamesPlayed == 0) {
+            totalPlayersCount++;
+        }
+        player.totalGamesPlayed++;
+        player.totalPointsEarned += score;
+        totalGamesPlayed++;
+
+        bool isNewHighScore = false;
+        if (score > playerHighScores[gameMode][playerAddress]) {
+            playerHighScores[gameMode][playerAddress] = score;
+            player.highScore = score > player.highScore ? score : player.highScore;
+            isNewHighScore = true;
+            emit HighScoreUpdated(playerAddress, gameMode, score);
+        }
+
+        uint256 gameId = _gameIdCounter;
+        _gameIdCounter++;
+        playerGameIds[playerAddress].push(gameId);
+
+        uint256 multiplier = _getVerificationMultiplier(playerAddress);
+        uint256 tokensToMint = (score * tokensPerPoint * multiplier) / 100;
+        require(totalSupply() + tokensToMint <= MAX_SUPPLY, "Would exceed max supply");
+        _mint(playerAddress, tokensToMint);
+
+        _updateLeaderboard(gameMode, playerAddress, score, round, gameId);
+
+        emit GameCompleted(
+            playerAddress,
+            gameMode,
+            score,
+            tokensToMint,
+            gameId,
+            isNewHighScore
+        );
     }
 
     function calculateMaxTheoreticalScore(GameMode gameMode, uint256 round) public pure returns (uint256) {
@@ -420,6 +541,7 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
      * @dev Claim daily reward (100 RLGL tokens + streak bonus)
      */
     function claimDailyReward() external nonReentrant whenNotPaused {
+        require(_hasRequiredVerification(msg.sender), "Document verification or higher required");
         Player storage player = players[msg.sender];
         
         require(
@@ -590,14 +712,14 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
     /**
      * @dev Set extra goes from localStorage (for compatibility)
      */
-    function setExtraGoes(uint256 extraGoes) external {
+    function setExtraGoes(uint256 extraGoes) external onlyOwner {
         players[msg.sender].extraGoes = extraGoes;
     }
     
     /**
      * @dev Set passes from localStorage (for compatibility)
      */
-    function setPasses(uint256 passes) external {
+    function setPasses(uint256 passes) external onlyOwner {
         players[msg.sender].passes = passes;
     }
     

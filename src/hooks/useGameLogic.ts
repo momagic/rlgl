@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { GameData, GameState, LightState, PlayerStats, GameConfig, PowerUpState, GameMode as GameGameMode, PowerUp, WhackLight } from '../types/game'
-import type { UseTurnManagerReturn, GameMode as ContractGameMode } from '../types/contract'
+import type { UseTurnManagerReturn } from '../types/contract'
 import { useSoundEffects } from './useSoundEffects'
 import { useContract } from './useContract'
 import { useHapticFeedback } from './useHapticFeedback'
@@ -8,15 +8,7 @@ import { usePowerUps } from './usePowerUps'
 import { GameRandomness } from '../utils/secureRandomness'
 import { InputSanitizer } from '../utils/inputSanitizer'
 
-// Helper function to convert game GameMode to contract GameMode
-const mapGameModeToContract = (gameMode: GameGameMode): ContractGameMode => {
-  switch (gameMode) {
-    case 'classic': return 'Classic'
-    case 'arcade': return 'Arcade'
-    case 'whack': return 'WhackLight'
-    default: return 'Classic'
-  }
-}
+ 
 
 const DEFAULT_CONFIG: GameConfig = {
   initialLives: 3,
@@ -182,7 +174,11 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         return false
       }
 
-      // Consume a turn (keeps logic consistent; with weekly pass, turns are effectively unlimited)
+      const onChainStarted = await contract.startGame()
+      if (!onChainStarted) {
+        alert('Failed to start game. Please try again.')
+        return false
+      }
       const success = await turnManager.consumeTurn()
       if (!success) {
         alert('Failed to start game. Please try again.')
@@ -257,6 +253,60 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
     }
   }, [getCurrentInterval, turnManager, haptics])
 
+  const generateSessionId = () => {
+    const arr = new Uint8Array(32)
+    window.crypto.getRandomValues(arr)
+    return '0x' + Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  const submitFinalScore = useCallback(async (finalScore: number, finalRound: number) => {
+    try {
+      const apiBase = (import.meta as any)?.env?.VITE_VERIFICATION_API_BASE || ''
+      const sessionId = generateSessionId()
+      const nonce = Date.now()
+      const deadline = Math.floor(Date.now() / 1000) + 900
+      const gameMode = gameData.gameMode === 'classic' ? 'Classic' : gameData.gameMode === 'arcade' ? 'Arcade' : 'WhackLight'
+      try {
+        const resp = await fetch(`${apiBase}/score/permit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userAddress: (window as any)?.MiniKit?.user?.address || '',
+            score: finalScore,
+            round: finalRound,
+            gameMode,
+            sessionId,
+            nonce,
+            deadline
+          })
+        })
+        if (resp.ok) {
+          const data = await resp.json()
+          const sig = data.signature as string
+          const submission = await contract.submitScoreWithPermit(finalScore, finalRound, gameMode as any, sessionId, nonce, deadline, sig)
+          setGameData(currentData => ({
+            ...currentData,
+            tokenReward: {
+              tokensEarned: submission.tokensEarned,
+              transactionHash: submission.transactionHash,
+              timestamp: Date.now()
+            }
+          }))
+          return
+        }
+      } catch {}
+      const submission = await contract.submitScore(finalScore, finalRound, gameMode as any)
+      setGameData(currentData => ({
+        ...currentData,
+        tokenReward: {
+          tokensEarned: submission.tokensEarned,
+          transactionHash: submission.transactionHash,
+          timestamp: Date.now()
+        }
+      }))
+    } catch {}
+  }, [contract, gameData.gameMode])
+
   // Handle player tap
   const handleTap = useCallback(() => {
     if (gameData.gameState !== 'playing' || gameData.isTransitioning) return
@@ -296,19 +346,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             
             // Only submit score to contract if score is greater than 0
             if (finalScore > 0) {
-              contract.submitScore(finalScore, finalRound, mapGameModeToContract(gameData.gameMode)).then(submission => {
-                // Update game state with successful transaction
-                setGameData(currentData => ({
-                  ...currentData,
-                  tokenReward: {
-                    tokensEarned: submission.tokensEarned,
-                    transactionHash: submission.transactionHash,
-                    timestamp: Date.now()
-                  }
-                }))
-              }).catch(_error => {
-                // Handle error silently
-              })
+              submitFinalScore(finalScore, finalRound)
             }
           
           if (isNewHighScore) {
@@ -579,19 +617,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                     
                     // Only submit score to contract if score is greater than 0
                     if (finalScore > 0) {
-                      contract.submitScore(finalScore, finalRound, mapGameModeToContract(gameData.gameMode)).then(submission => {
-                        // Update game state with successful transaction
-                        setGameData(currentData => ({
-                          ...currentData,
-                          tokenReward: {
-                            tokensEarned: submission.tokensEarned,
-                            transactionHash: submission.transactionHash,
-                            timestamp: Date.now()
-                          }
-                        }))
-                      }).catch(_error => {
-                        // Handle error silently
-                      })
+                      submitFinalScore(finalScore, finalRound)
                     }
                     
                     if (isNewHighScore) {
@@ -689,19 +715,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                     
                     // Only submit score to contract if score is greater than 0
                     if (finalScore > 0) {
-                      contract.submitScore(finalScore, finalRound, mapGameModeToContract(gameData.gameMode)).then(submission => {
-                        // Update game state with successful transaction
-                        setGameData(currentData => ({
-                          ...currentData,
-                          tokenReward: {
-                            tokensEarned: submission.tokensEarned,
-                            transactionHash: submission.transactionHash,
-                            timestamp: Date.now()
-                          }
-                        }))
-                      }).catch(_error => {
-                        // Handle error silently
-                      })
+                      submitFinalScore(finalScore, finalRound)
                     }
                     
                     if (isNewHighScore) {
@@ -889,16 +903,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
           const finalScore = current.playerStats.currentScore
           const finalRound = current.playerStats.round
           if (finalScore > 0) {
-            contract.submitScore(finalScore, finalRound, mapGameModeToContract(gameData.gameMode)).then(submission => {
-              setGameData(prev => ({
-                ...prev,
-                tokenReward: {
-                  tokensEarned: submission.tokensEarned,
-                  transactionHash: submission.transactionHash,
-                  timestamp: Date.now()
-                }
-              }))
-            }).catch(() => {})
+            submitFinalScore(finalScore, finalRound)
           }
           sounds.playGameOver()
           haptics.gameOver()
@@ -973,16 +978,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
           const finalScore = newStats.currentScore
           const finalRound = newStats.round
           if (finalScore > 0) {
-            contract.submitScore(finalScore, finalRound, mapGameModeToContract(gameData.gameMode)).then(submission => {
-              setGameData(currentData => ({
-                ...currentData,
-                tokenReward: {
-                  tokensEarned: submission.tokensEarned,
-                  transactionHash: submission.transactionHash,
-                  timestamp: Date.now()
-                }
-              }))
-            }).catch(() => {})
+            submitFinalScore(finalScore, finalRound)
           }
           sounds.playGameOver()
           haptics.gameOver()

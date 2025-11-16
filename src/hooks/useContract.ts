@@ -309,6 +309,49 @@ export function useContract(): UseContractReturn {
     }
   }, [])
 
+  const submitScoreWithPermit = useCallback(async (
+    score: number,
+    round: number,
+    gameMode: GameMode,
+    sessionId: string,
+    nonce: bigint | number,
+    deadline: bigint | number,
+    signature: string
+  ): Promise<GameSubmission> => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      if (!MiniKit.isInstalled()) {
+        throw new Error('MiniKit not installed')
+      }
+      const gameModeValue = gameMode === 'Classic' ? 0 : gameMode === 'Arcade' ? 1 : 2
+      const result = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [{
+          address: GAME_CONTRACT_ADDRESS,
+          abi: GAME_CONTRACT_ABI,
+          functionName: 'submitScoreWithPermit',
+          args: [BigInt(score), BigInt(round), BigInt(gameModeValue), sessionId as any, BigInt(nonce), BigInt(deadline), signature]
+        }]
+      })
+      if (result.finalPayload.status === 'error') {
+        throw new Error(result.finalPayload.error_code || 'Transaction failed')
+      }
+      const tokensEarned = formatEther(BigInt(score) * 100000000000000000n)
+      return {
+        score,
+        round,
+        tokensEarned,
+        transactionHash: result.finalPayload.transaction_id
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit score'
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
 
 
   const getPlayerStats = useCallback(async (playerAddress: string): Promise<PlayerStats> => {
@@ -1109,6 +1152,7 @@ export function useContract(): UseContractReturn {
     // Game management
     startGame,
     submitScore,
+    submitScoreWithPermit,
     
     // Data retrieval
     getPlayerStats,

@@ -46,6 +46,7 @@ app.use(express.json());
 const APP_ID = process.env.WORLD_ID_APP_ID || 'app_29198ecfe21e2928536961a63cc85606';
 const ACTION_ID = process.env.WORLD_ID_ACTION_ID || 'play-game';
 const PRIVATE_KEY = process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
+const SIGNER_PRIVATE_KEY = process.env.SIGNER_PRIVATE_KEY || process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const RPC_URLS = [
   ...(process.env.RPC_URL ? [process.env.RPC_URL] : []),
   'https://worldchain-mainnet.g.alchemy.com/public',
@@ -76,6 +77,10 @@ const VERIFICATION_LEVELS = {
 // Anti-cheat verification cache
 const verificationCache = new Map();
 const CACHE_TTL = (process.env.CACHE_TTL_MINUTES || 5) * 60 * 1000; // 5 minutes default
+// Simple rate limiter: max 20 permits per 10 minutes per address
+const permitRateMap = new Map();
+const PERMIT_WINDOW_MS = 10 * 60 * 1000;
+const PERMIT_MAX = 20;
 
 /**
  * Verify World ID proof with cloud verification
@@ -416,3 +421,107 @@ async function withProviderRetry(fn, maxRetries = 3) {
   }
   throw lastError;
 }
+
+function gameModeToUint8(mode) {
+  const m = String(mode || '').toLowerCase();
+  if (m === 'classic') return 0;
+  if (m === 'arcade') return 1;
+  return 2;
+}
+
+function calculateMaxTheoreticalScore(mode, round) {
+  const r = Math.min(Number(round || 0), 1000);
+  const m = gameModeToUint8(mode);
+  if (m === 0) return r * 30;
+  if (m === 1) return r * 40;
+  return r * 10;
+}
+
+function buildDomain(chainId, verifyingContract) {
+  return {
+    name: 'Red Light Green Light V3',
+    version: '1',
+    chainId,
+    verifyingContract
+  };
+}
+
+const ScorePermitTypes = {
+  ScorePermit: [
+    { name: 'player', type: 'address' },
+    { name: 'score', type: 'uint256' },
+    { name: 'round', type: 'uint256' },
+    { name: 'gameMode', type: 'uint8' },
+    { name: 'sessionId', type: 'bytes32' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' }
+  ]
+};
+
+app.post('/session/start', async (req, res) => {
+  const { proof, userAddress } = req.body || {};
+  if (!userAddress || !proof) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  try {
+    const verificationResult = await verifyWorldIDProof(proof, userAddress);
+    const provider = await getHealthyProvider();
+    const chainId = await provider.getNetwork().then(n => Number(n.chainId));
+    const nonce = Math.floor(Date.now());
+    const deadline = Math.floor(Date.now() / 1000) + 900;
+    const sessionId = ethers.id(`sess:${userAddress}:${nonce}`);
+    res.json({ success: true, sessionId, nonce, deadline, chainId, verificationLevel: verificationResult.verificationLevel });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.post('/score/permit', async (req, res) => {
+  const { userAddress, score, round, gameMode, sessionId, nonce, deadline } = req.body || {};
+  if (!userAddress || typeof score !== 'number' || typeof round !== 'number' || !sessionId || typeof nonce !== 'number' || typeof deadline !== 'number') {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (!SIGNER_PRIVATE_KEY) {
+    return res.status(500).json({ error: 'SIGNER_PRIVATE_KEY not configured' });
+  }
+  if (!CONTRACT_ADDRESS) {
+    return res.status(500).json({ error: 'GAME_CONTRACT_ADDRESS not configured' });
+  }
+  try {
+    const now = Date.now();
+    const arr = permitRateMap.get(userAddress) || [];
+    const recent = arr.filter(ts => now - ts <= PERMIT_WINDOW_MS);
+    if (recent.length >= PERMIT_MAX) {
+      return res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+    recent.push(now);
+    permitRateMap.set(userAddress, recent);
+    if (round <= 0 || round > 1000) {
+      return res.status(400).json({ error: 'Invalid round' });
+    }
+    if (score <= 0) {
+      return res.status(400).json({ error: 'Invalid score' });
+    }
+    const maxScore = calculateMaxTheoreticalScore(gameMode, round);
+    if (score > maxScore) {
+      return res.status(400).json({ error: 'Score exceeds theoretical maximum' });
+    }
+    const provider = await getHealthyProvider();
+    const wallet = new ethers.Wallet(SIGNER_PRIVATE_KEY, provider);
+    const chainId = await provider.getNetwork().then(n => Number(n.chainId));
+    const domain = buildDomain(chainId, CONTRACT_ADDRESS);
+    const value = {
+      player: userAddress,
+      score: ethers.toBigInt(score),
+      round: ethers.toBigInt(round),
+      gameMode: gameModeToUint8(gameMode),
+      sessionId,
+      nonce: ethers.toBigInt(nonce),
+      deadline: ethers.toBigInt(deadline)
+    };
+    const signature = await wallet.signTypedData(domain, ScorePermitTypes, value);
+    res.json({ success: true, signature, domain, types: ScorePermitTypes, value });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
