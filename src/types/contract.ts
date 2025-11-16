@@ -413,9 +413,9 @@ export const GAME_CONTRACT_ABI = [
       {
         "components": [
           {"internalType": "bool", "name": "canClaim", "type": "bool"},
+          {"internalType": "uint256", "name": "timeUntilNextClaim", "type": "uint256"},
           {"internalType": "uint256", "name": "currentStreak", "type": "uint256"},
-          {"internalType": "uint256", "name": "nextReward", "type": "uint256"},
-          {"internalType": "uint256", "name": "lastClaimTime", "type": "uint256"}
+          {"internalType": "uint256", "name": "nextReward", "type": "uint256"}
         ],
         "internalType": "struct RedLightGreenLightGameV3.DailyClaimStatus",
         "name": "",

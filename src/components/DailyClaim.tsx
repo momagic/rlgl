@@ -88,6 +88,8 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
   }
 
   const timeUntilNext = getTimeUntilNextClaim()
+  const baseReward = 10
+  const bonusReward = claimStatus ? Math.max(0, Math.round((claimStatus.nextReward ?? 0) - baseReward)) : 0
 
   if (variant === 'compact') {
     return (
@@ -106,6 +108,9 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
               <div className="px-2 py-1 rounded border-2 border-squid-border bg-squid-black/30 text-squid-white text-xs font-squid-mono" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
                 <span className="font-bold">{claimStatus.nextReward} RLGL</span>
                 <span className="ml-2 opacity-80">{t('dailyClaim.nextReward')}</span>
+                {bonusReward > 0 && (
+                  <span className="ml-2 text-pure-white/80">(+{bonusReward})</span>
+                )}
               </div>
               {!claimStatus.canClaim && timeUntilNext && (
                 <div className="px-2 py-1 rounded border-2 border-squid-border bg-squid-black/30 text-squid-white text-xs font-squid-mono" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
@@ -183,6 +188,9 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
               <div className="reward-info">
                 <span className="reward-amount">{claimStatus.nextReward} RLGL</span>
                 <span className="reward-label">{t('dailyClaim.nextReward')}</span>
+                {bonusReward > 0 && (
+                  <span className="reward-bonus">(+{bonusReward})</span>
+                )}
               </div>
               {claimStatus.canClaim ? (
                 <button
