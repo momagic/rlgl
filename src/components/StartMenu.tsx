@@ -11,6 +11,7 @@ import GameModeSelector from './GameModeSelector'
 import NotificationBanner from './NotificationBanner'
 import { Button, Typography, Container, Stack } from './ui'
 import { UserInfo } from './UserInfo'
+import { DailyClaim } from './DailyClaim'
 
 interface StartMenuProps {
   highScore: number
@@ -238,6 +239,13 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
           </div>
         )}
 
+        {/* Daily Claim positioned above game mode selector */}
+        {user?.walletAuthenticated && (
+          <div className="mb-2">
+            <DailyClaim variant="compact" onClaimSuccess={() => refreshTurnStatus(true)} />
+          </div>
+        )}
+
         {/* Main focus: Game Mode selection */}
         <div className="mt-1 rounded-lg border-3 border-squid-border bg-squid-gray p-2" style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
           <GameModeSelector
@@ -249,9 +257,9 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
           />
         </div>
 
-        {/* Hero CTA: Start Game */}
+        {/* Hero CTA: Start Game placed after mode selection */}
         {user?.walletAuthenticated && (
-          <div className="mt-2">
+          <div className="mt-1">
             <Button
               onClick={handleStartGame}
               disabled={buttonDisabled}
@@ -285,6 +293,8 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
                   <div className="w-5 h-5 border-3 border-pure-white border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-base font-bold">{t('startMenu.buttons.checkingTurns')}</span>
                 </div>
+              ) : turnStatus.availableTurns <= 0 && !turnStatus.hasActiveWeeklyPass ? (
+                t('startMenu.buttons.noTurns')
               ) : (
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-lg">🚦</span>
@@ -297,8 +307,6 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
                 </div>
               )}
             </Button>
-
-            {/* Tagline */}
             <p className="mt-1 text-center text-xs font-squid text-squid-white/70">
               {t('startMenu.footer.tagline')}
             </p>
@@ -325,60 +333,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
         </div>
       </Container>
 
-      {/* Bottom fixed section retained for no-turns start message (kept compact) */}
-      <Container className="flex-shrink-0 pb-safe-bottom pt-1 relative z-10">
-        <Stack spacing="xs">
-          {user?.verified && user?.walletAuthenticated && (!turnStatus || (!turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns <= 0)) && (
-            <div className="rounded-lg border-3 border-squid-border bg-squid-gray p-3" style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
-              <Stack spacing="sm">
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-squid-black" style={{ background: '#00A878' }}>
-                    <span className="text-squid-black text-sm">🎮</span>
-                  </div>
-                  <Typography variant="h3" className="font-squid-heading font-bold text-squid-white text-base uppercase">
-                    {t('startMenu.gameStart.title')}
-                  </Typography>
-                </div>
-                <Button
-                  onClick={handleStartGame}
-                  disabled={buttonDisabled}
-                  variant={buttonDisabled ? 'secondary' : 'primary'}
-                  size="lg"
-                  className="w-full"
-                >
-                  {turnLoading ? (
-                    <Stack spacing="xs" className="items-center justify-center">
-                      <Stack direction="row" spacing="sm" className="items-center">
-                        <div className="w-4 h-4 border-2 border-pure-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>{t('startMenu.buttons.checkingTurns')}</span>
-                      </Stack>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          refreshTurnStatus(true)
-                        }}
-                        className="text-xs text-pure-white/70 hover:text-pure-white underline"
-                      >
-                        {t('startMenu.buttons.forceRefresh')}
-                      </button>
-                    </Stack>
-                  ) : turnError ? (
-                    t('startMenu.buttons.startAnyway')
-                  ) : !turnStatus ? (
-                    t('startMenu.buttons.checkingTurns')
-                  ) : turnStatus.availableTurns <= 0 ? (
-                    t('startMenu.buttons.noTurns')
-                  ) : (
-                    turnStatus.hasActiveWeeklyPass
-                      ? t('startMenu.buttons.startGame', { turns: '∞' })
-                      : t('startMenu.buttons.startGame', { turns: turnStatus.availableTurns })
-                  )}
-                </Button>
-              </Stack>
-            </div>
-          )}
-        </Stack>
-      </Container>
+      {/* Bottom fixed section removed to avoid duplicate start CTA */}
 
       {/* Full Turn Manager modal to preserve all features (next reset time, purchases, etc.) */}
       {showTurnsModal && (

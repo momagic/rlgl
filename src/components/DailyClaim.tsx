@@ -8,9 +8,10 @@ import './DailyClaim.css'
 interface DailyClaimProps {
   className?: string
   onClaimSuccess?: () => void
+  variant?: 'default' | 'compact'
 }
 
-export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimSuccess }) => {
+export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimSuccess, variant = 'default' }) => {
   const { t } = useTranslation()
   const { user } = useAuth()
   const address = user?.walletAddress
@@ -92,6 +93,83 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
 
   const timeUntilNext = getTimeUntilNextClaim()
 
+  if (variant === 'compact') {
+    return (
+      <div className={`rounded-lg border-3 border-squid-border bg-squid-gray p-2 ${className}`} style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-squid-heading font-bold uppercase text-squid-white">{t('dailyClaim.title')}</h3>
+          {claimStatus && (
+            <div className="px-2 py-1 rounded border-2 border-squid-border bg-squid-black/40 text-xs text-squid-white" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
+              🔥 {claimStatus.currentStreak} {t('dailyClaim.dayStreak')}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          {claimStatus && (
+            <div className="flex items-center gap-2">
+              <div className="px-2 py-1 rounded border-2 border-squid-border bg-squid-black/30 text-squid-white text-xs font-squid-mono" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
+                <span className="font-bold">{claimStatus.nextReward} RLGL</span>
+                <span className="ml-2 opacity-80">{t('dailyClaim.nextReward')}</span>
+              </div>
+              {!claimStatus.canClaim && timeUntilNext && (
+                <div className="px-2 py-1 rounded border-2 border-squid-border bg-squid-black/30 text-squid-white text-xs font-squid-mono" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
+                  ⏱️ {timeUntilNext}
+                </div>
+              )}
+            </div>
+          )}
+          {claimStatus && (
+            claimStatus.canClaim ? (
+              <button
+                className="px-3 py-1.5 rounded border-2 border-squid-black text-xs font-squid-heading font-bold uppercase tracking-wider text-squid-white"
+                style={{ background: '#00A878', boxShadow: '2px 2px 0px 0px #0A0A0F' }}
+                onClick={handleClaimReward}
+                disabled={isClaiming || isLoading}
+                onPointerDown={(e) => {
+                  e.currentTarget.style.transform = 'translate(1px, 1px)'
+                  e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
+                }}
+                onPointerUp={(e) => {
+                  e.currentTarget.style.transform = 'translate(0, 0)'
+                  e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
+                }}
+              >
+                {isClaiming ? t('dailyClaim.claiming') : t('dailyClaim.claim')}
+              </button>
+            ) : (
+              <button
+                className="px-3 py-1.5 rounded border-2 border-squid-border text-xs font-squid-heading font-bold uppercase tracking-wider text-squid-white bg-squid-gray"
+                style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
+                disabled
+              >
+                {t('dailyClaim.nextAvailable')}
+              </button>
+            )
+          )}
+        </div>
+        {error && <div className="mt-2 text-xs text-squid-red font-squid">{error}</div>}
+        {success && (
+          <div className="mt-2 text-xs text-squid-white font-squid">
+            {t('dailyClaim.success')} 🎉
+          </div>
+        )}
+        <div className="mt-2">
+          <p className="text-[11px] text-squid-white/80 font-squid">
+            {t('dailyClaim.description')}
+          </p>
+          {claimStatus && claimStatus.currentStreak > 0 && (
+            <p className="text-[11px] text-squid-white/80 font-squid">
+              {t('dailyClaim.streakInfo', {
+                days: claimStatus.currentStreak,
+                bonus: claimStatus.currentStreak * 10
+              })}
+            </p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`daily-claim ${className}`}>
       <div className="daily-claim-card">
@@ -103,7 +181,6 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
             </div>
           )}
         </div>
-        
         <div className="daily-claim-content">
           {claimStatus && (
             <>
@@ -111,7 +188,6 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
                 <span className="reward-amount">{claimStatus.nextReward} RLGL</span>
                 <span className="reward-label">{t('dailyClaim.nextReward')}</span>
               </div>
-              
               {claimStatus.canClaim ? (
                 <button
                   className="claim-button"
@@ -132,7 +208,6 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
               )}
             </>
           )}
-          
           {error && <div className="error-message">{error}</div>}
           {success && (
             <div className="success-message">
@@ -140,14 +215,13 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
             </div>
           )}
         </div>
-        
         <div className="daily-claim-footer">
           <p>{t('dailyClaim.description')}</p>
           {claimStatus && claimStatus.currentStreak > 0 && (
             <p className="streak-info">
-              {t('dailyClaim.streakInfo', { 
+              {t('dailyClaim.streakInfo', {
                 days: claimStatus.currentStreak,
-                bonus: claimStatus.currentStreak * 10 
+                bonus: claimStatus.currentStreak * 10
               })}
             </p>
           )}

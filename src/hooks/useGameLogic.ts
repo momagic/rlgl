@@ -494,11 +494,12 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                 haptics.lightChange()
                 triggerLightChangeFlash(false) // Normal change from red to green
                 
-                // Update power-ups and check for spawning
-                console.log('Game loop: updating power-ups and attempting spawn')
-                powerUps.updatePowerUps() // Update power-ups
-                const spawnedPowerUp = powerUps.spawnPowerUp()
-                console.log('Spawn result:', spawnedPowerUp)
+                if (prevData.gameMode === 'arcade') {
+                  console.log('Game loop: updating power-ups and attempting spawn')
+                  powerUps.updatePowerUps()
+                  const spawnedPowerUp = powerUps.spawnPowerUp()
+                  console.log('Spawn result:', spawnedPowerUp)
+                }
                 
                 return {
                   ...prevData,
@@ -537,11 +538,12 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                 // Switch from green to red - check if player missed the green light
                 const redDuration = Math.max(interval * 0.7, 800)
                 
-                // Update power-ups and try to spawn
-                console.log('Game loop: updating power-ups and attempting spawn')
-                powerUps.updatePowerUps()
-                const spawnedPowerUp = powerUps.spawnPowerUp()
-                console.log('Spawn result:', spawnedPowerUp)
+                if (prevData.gameMode === 'arcade') {
+                  console.log('Game loop: updating power-ups and attempting spawn')
+                  powerUps.updatePowerUps()
+                  const spawnedPowerUp = powerUps.spawnPowerUp()
+                  console.log('Spawn result:', spawnedPowerUp)
+                }
                 
                 // If player didn't tap during green, they lose a life (unless protected by shield)
                 if (!prevData.tappedDuringGreen) {
@@ -650,9 +652,10 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                 triggerLightChangeFlash(true) // Consecutive green light!
                 const greenDuration = Math.max(interval * 0.35, 450)
                 
-                // Update power-ups and try to spawn
-                powerUps.updatePowerUps()
-                powerUps.spawnPowerUp()
+                if (prevData.gameMode === 'arcade') {
+                  powerUps.updatePowerUps()
+                  powerUps.spawnPowerUp()
+                }
                 
                 if (!prevData.tappedDuringGreen) {
                   // Player missed the previous green - lose a life (unless protected by shield)

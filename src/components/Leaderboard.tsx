@@ -589,50 +589,30 @@ function Leaderboard() {
               </div>
             </div>
             
-            {/* Empty state content */}
             <div className="flex-1 flex flex-col items-center justify-center text-center">
-              {/* Coming Soon Icon */}
-              <div className="text-4xl mb-4">🚧</div>
-              
-              {/* Main Message */}
+              <div className="text-4xl mb-4">🏆</div>
               <div className="space-y-3 mb-4">
                 <div className="text-white text-lg font-bold">
-                  Leaderboard Will Be Back Soon!
+                  No scores yet for this mode
                 </div>
                 <div className="text-gray-300 text-sm">
-                  We're temporarily updating our systems to bring you an even better experience.
+                  Be the first to set a high score or switch modes to view other leaderboards.
                 </div>
               </div>
-              
-              {/* Current High Score Display */}
-              <div 
-                className="rounded-xl p-4 border border-white/20 mb-4"
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)'
-                }}
-              >
-                <div className="text-white text-sm font-semibold mb-2 flex items-center justify-center">
-                  <span className="mr-2">🏆</span>
-                  Current High Score
-                </div>
-                <div className="flex items-center justify-center space-x-3">
-                  <div className="text-center">
-                    <div className="text-yellow-400 text-xl font-bold">766</div>
-                    <div className="text-gray-300 text-xs">Points</div>
-                  </div>
-                  <div className="text-white text-sm">by</div>
-                  <div className="text-center">
-                    <div className="text-white text-xs font-mono">0x0271..3036</div>
-                    <div className="text-gray-300 text-xs">Champion</div>
-                  </div>
-                </div>
-              </div>
-            
-              {/* Encouragement */}
-              <div className="text-gray-300 text-sm">
-                Keep playing to beat this score! 🎮
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    setIsLoading(false)
+                    setTimeout(() => fetchLeaderboard(), 100)
+                  }}
+                  className="px-4 py-2 rounded-xl text-white font-semibold transition-all duration-200 active:scale-95 text-sm"
+                  style={{
+                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                    boxShadow: '0 4px 20px rgba(16, 185, 129, 0.3)'
+                  }}
+                >
+                  Refresh
+                </button>
               </div>
             </div>
             
@@ -675,8 +655,32 @@ function Leaderboard() {
                   <span>{t('leaderboard.cached', 'Cached')}</span>
                 </div>
               )}
+          </div>
+          
+            {/* Mode Selector */}
+            <div className="flex items-center justify-center mt-2 mb-2">
+              <div className="flex rounded border-2 border-squid-border overflow-hidden bg-squid-black" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
+                {(['Classic', 'Arcade', 'WhackLight'] as GameMode[]).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setSelectedMode(mode)}
+                    className={`px-3 py-1.5 text-xs font-squid-heading font-bold uppercase transition-all duration-150 ${
+                      selectedMode === mode
+                        ? 'text-squid-black'
+                        : 'text-squid-white/70 hover:text-squid-white'
+                    }`}
+                    style={{
+                      background: selectedMode === mode ? '#00D9C0' : 'transparent'
+                    }}
+                  >
+                    {mode === 'Classic' && '🎯 Classic'}
+                    {mode === 'Arcade' && '⚡ Arcade'}
+                    {mode === 'WhackLight' && '🔦 Whack'}
+                  </button>
+                ))}
+              </div>
             </div>
-            
+
             {/* Time Filter Buttons */}
             <div className="flex items-center justify-center mt-3 mb-2">
               <div className="flex rounded border-2 border-squid-border overflow-hidden bg-squid-black" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
