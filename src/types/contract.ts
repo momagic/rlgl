@@ -108,9 +108,9 @@ export interface LeaderboardEntry {
 
 export interface DailyClaimStatus {
   canClaim: boolean
+  timeUntilNextClaim: number
   currentStreak: number
   nextReward: number
-  lastClaimTime: number
 }
 
 export interface ContractStats {

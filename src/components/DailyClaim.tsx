@@ -19,9 +19,9 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
   
   const [claimStatus, setClaimStatus] = useState<{
     canClaim: boolean
+    timeUntilNextClaim: number
     currentStreak: number
     nextReward: number
-    lastClaimTime: number
   } | null>(null)
   const [isClaiming, setIsClaiming] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -76,15 +76,11 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
   }
 
   const getTimeUntilNextClaim = () => {
-    if (!claimStatus?.lastClaimTime) return null
-    
-    const lastClaim = claimStatus.lastClaimTime * 1000 // Convert to milliseconds
-    const nextClaimTime = lastClaim + (24 * 60 * 60 * 1000) // 24 hours later
-    const now = Date.now()
-    
-    if (now >= nextClaimTime) return null
-    
-    return formatTimeUntil(nextClaimTime - now)
+    if (!claimStatus) return null
+    if (claimStatus.canClaim) return null
+    const ms = (claimStatus.timeUntilNextClaim ?? 0) * 1000
+    if (ms <= 0) return null
+    return formatTimeUntil(ms)
   }
 
   if (!address) {
@@ -217,14 +213,14 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
         </div>
         <div className="daily-claim-footer">
           <p>{t('dailyClaim.description')}</p>
-          {claimStatus && claimStatus.currentStreak > 0 && (
-            <p className="streak-info">
-              {t('dailyClaim.streakInfo', {
-                days: claimStatus.currentStreak,
-                bonus: claimStatus.currentStreak * 10
-              })}
-            </p>
-          )}
+              {claimStatus && claimStatus.currentStreak > 0 && (
+                <p className="streak-info">
+                  {t('dailyClaim.streakInfo', { 
+                    days: claimStatus.currentStreak,
+                    bonus: claimStatus.currentStreak * 10 
+                  })}
+                </p>
+              )}
         </div>
       </div>
     </div>

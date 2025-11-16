@@ -743,12 +743,26 @@ export function useContract(): UseContractReturn {
         functionName: 'getDailyClaimStatus',
         args: [playerAddress as Address]
       }) as any
-      
+
+      if (Array.isArray(result)) {
+        const canClaim = Boolean(result[0])
+        const timeUntilNextClaim = Number(result[1] ?? 0)
+        const currentStreak = Number(result[2] ?? 0)
+        const nextRewardWei = BigInt(result[3] ?? 0)
+        return {
+          canClaim,
+          timeUntilNextClaim,
+          currentStreak,
+          nextReward: Number(formatEther(nextRewardWei))
+        }
+      }
+
+      const nextRewardWei = BigInt(result.nextReward ?? 0)
       return {
-        canClaim: result.canClaim,
-        currentStreak: Number(result.currentStreak),
-        nextReward: Number(result.nextReward),
-        lastClaimTime: Number(result.lastClaimTime)
+        canClaim: Boolean(result.canClaim),
+        timeUntilNextClaim: Number(result.timeUntilNextClaim ?? 0),
+        currentStreak: Number(result.currentStreak ?? 0),
+        nextReward: Number(formatEther(nextRewardWei))
       }
     } catch (err) {
       throw new Error(`Failed to get daily claim status: ${err instanceof Error ? err.message : 'Unknown error'}`)
