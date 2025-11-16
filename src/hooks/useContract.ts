@@ -487,12 +487,14 @@ export function useContract(): UseContractReturn {
       // Convert GameMode to uint8 (0: Classic, 1: Arcade, 2: WhackLight)
       const gameModeValue = gameMode === 'Classic' ? 0 : gameMode === 'Arcade' ? 1 : 2
       
-      const result = await rpcManager.readContract({
+      const readConfig = {
         address: GAME_CONTRACT_ADDRESS,
         abi: GAME_CONTRACT_ABI,
         functionName: 'getTopScores',
         args: [BigInt(gameModeValue), BigInt(topN)]
-      }) as readonly { player: Address; score: bigint; timestamp: bigint; round: bigint; gameMode: number; gameId: bigint }[]
+      }
+
+      const result = await rpcManager.readContractLeaderboard(readConfig) as readonly { player: Address; score: bigint; timestamp: bigint; round: bigint; gameMode: number; gameId: bigint }[]
 
       const leaderboard: LeaderboardEntry[] = result.map((entry, index) => ({
         player: entry.player,

@@ -410,6 +410,46 @@ class RPCManager {
     }
   }
 
+  getLeaderboardClient(): any | null {
+    try {
+      const url = (import.meta as any)?.env?.VITE_LEADERBOARD_RPC_URL as string | undefined
+      if (url && typeof url === 'string' && url.length > 0) {
+        return (createPublicClient({
+          chain: worldchain,
+          transport: http(url, { timeout: 10000, retryCount: 0 })
+        }) as any)
+      }
+    } catch {}
+    return this.getCurrentClient()
+  }
+
+  async readContractLeaderboard(config: any): Promise<any> {
+    const cacheKey = this.getCacheKey('leaderboard', [config.address, config.functionName, config.args])
+    const cached = this.getFromCache<any>(cacheKey)
+    if (cached !== null) {
+      return cached
+    }
+
+    const client = this.getLeaderboardClient()
+    if (!client) {
+      const result = await this.readContract(config)
+      this.setCache(cacheKey, result, CACHE_CONFIG.leaderboardTTL)
+      return result
+    }
+
+    try {
+      const result = await this.executeWithRetry(async () => {
+        return client.readContract(config)
+      })
+      this.setCache(cacheKey, result, CACHE_CONFIG.leaderboardTTL)
+      return result
+    } catch (error) {
+      const fallback = await this.readContract(config)
+      this.setCache(cacheKey, fallback, CACHE_CONFIG.leaderboardTTL)
+      return fallback
+    }
+  }
+
   // Clear cache
   clearCache(): void {
     this.cache.clear()
