@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
+import { formatEther } from 'viem'
 import { useAuth } from '../contexts/AuthContext'
 import { useContract } from '../hooks/useContract'
 import { getDisplayName } from '../utils'
 import { useEffect, useState } from 'react'
-import { formatEther } from 'viem'
 
 export function UserInfo() {
   const { t } = useTranslation()
@@ -44,10 +44,10 @@ export function UserInfo() {
       ? (user?.onChainVerificationLevel as string)
       : (user?.verificationLevel as unknown as string) || ''
     const level = raw.toLowerCase()
-    if (level === 'orb_plus' || level === 'orbplus' || level === 'orb+'){ return 'Orb+' }
-    if (level === 'orb'){ return 'Orb' }
-    if (level === 'secure_document' || level === 'securedocument'){ return 'Secure Document' }
-    if (level === 'document'){ return 'Document' }
+    if (level === 'orb_plus' || level === 'orbplus' || level === 'orb+') { return 'Orb+' }
+    if (level === 'orb') { return 'Orb' }
+    if (level === 'secure_document' || level === 'securedocument') { return 'Secure Document' }
+    if (level === 'document') { return 'Document' }
     return raw || ''
   }
   const formattedBalance = (() => {
@@ -134,7 +134,7 @@ export function UserInfo() {
               {isLoadingBalance ? (
                 <span className="animate-pulse">...</span>
               ) : (
-                `${parseFloat(formattedBalance).toFixed(2)}`
+                `${formattedBalance}`
               )}
             </div>
             <div className="text-gray-300 text-xs hidden sm:block">

@@ -325,6 +325,13 @@ export function useContract(): UseContractReturn {
       
       console.log('✅ Player stats result:', result)
 
+      const balance = await rpcManager.readContract({
+        address: GAME_CONTRACT_ADDRESS,
+        abi: GAME_CONTRACT_ABI,
+        functionName: 'balanceOf',
+        args: [playerAddress as Address]
+      }) as bigint
+
       if (Array.isArray(result)) {
         return {
           freeTurnsUsed: Number(result[0] ?? 0),
@@ -332,7 +339,7 @@ export function useContract(): UseContractReturn {
           totalGamesPlayed: Number(result[2] ?? 0),
           highScore: Number(result[3] ?? 0),
           totalPointsEarned: Number(result[4] ?? 0),
-          tokenBalance: (result[5] ?? 0n).toString(),
+          tokenBalance: (balance ?? 0n).toString(),
           availableTurns: Number(result[6] ?? 0),
           timeUntilReset: Number(result[7] ?? 0),
           lastDailyClaim: Number(result[8] ?? 0),
@@ -351,7 +358,7 @@ export function useContract(): UseContractReturn {
         totalGamesPlayed: Number(result.totalGamesPlayed ?? 0),
         highScore: Number(result.highScore ?? 0),
         totalPointsEarned: Number(result.totalPointsEarned ?? 0),
-        tokenBalance: (result.tokenBalance ?? 0n).toString(),
+        tokenBalance: (balance ?? 0n).toString(),
         availableTurns: Number(result.availableTurns ?? 0),
         timeUntilReset: Number(result.timeUntilReset ?? 0),
         lastDailyClaim: Number(result.lastDailyClaim ?? 0),
