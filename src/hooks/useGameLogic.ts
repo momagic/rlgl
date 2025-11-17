@@ -153,9 +153,9 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
       slots[j] = tmp
     }
     return Array.from({ length: activeCount }).map((_, idx) => {
-      const isGreenFirst = Math.random() < 0.4 // occasional starting green
+      const isGreenFirst = Math.random() < 0.4
       const slotIndex = slots[idx % TOTAL_SLOTS]
-      return {
+      const lightObj: WhackLight = {
         id: `whack-${round}-${idx}-${now}`,
         state: isGreenFirst ? ('green' as LightState) : ('red' as LightState),
         nextChange: now + (isGreenFirst ? greenWindow : redWindow),
@@ -163,8 +163,12 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         cleared: false,
         slotIndex
       }
+      if (isGreenFirst) {
+        try { sounds.playWhackGreenAppear?.() } catch {}
+      }
+      return lightObj
     })
-  }, [getWhackIntervals])
+  }, [getWhackIntervals, sounds])
 
   // Start a new game
   const startGame = useCallback(async (gameMode: GameGameMode = 'arcade') => {
@@ -863,6 +867,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             occupied.delete(light.slotIndex)
             const newSlot = getRandomAvailableSlot()
             occupied.add(newSlot)
+            try { sounds.playWhackGreenAppear?.() } catch {}
             return {
               ...light,
               slotIndex: newSlot,

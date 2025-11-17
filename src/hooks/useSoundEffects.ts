@@ -12,12 +12,15 @@ interface SoundEffects {
   playPowerUpActivation?: () => void
   playPowerUpSpawn?: () => void
   playKerching?: () => void
+  playWhackGreenAppear?: () => void
 }
 
 export function useSoundEffects(): SoundEffects {
   const audioContextRef = useRef<AudioContext | null>(null)
   const isEnabledRef = useRef(true)
   // const menuAudioRef = useRef<HTMLAudioElement | null>(null)  // COMMENTED OUT: Remove comment to re-enable menu music
+  const masterGainRef = useRef<GainNode | null>(null)
+  const compressorRef = useRef<DynamicsCompressorNode | null>(null)
 
   // Check if sound is enabled in settings
   const isEnabled = useCallback(() => {
@@ -39,6 +42,21 @@ export function useSoundEffects(): SoundEffects {
     const initAudio = () => {
       try {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+        const ctx = audioContextRef.current
+        masterGainRef.current = ctx.createGain()
+        compressorRef.current = ctx.createDynamicsCompressor()
+        // Gentle master headroom to avoid clipping
+        masterGainRef.current.gain.setValueAtTime(0.7, ctx.currentTime)
+        // Light limiting to tame overlapping beeps
+        if (compressorRef.current) {
+          compressorRef.current.threshold.setValueAtTime(-24, ctx.currentTime)
+          compressorRef.current.knee.setValueAtTime(30, ctx.currentTime)
+          compressorRef.current.ratio.setValueAtTime(12, ctx.currentTime)
+          compressorRef.current.attack.setValueAtTime(0.003, ctx.currentTime)
+          compressorRef.current.release.setValueAtTime(0.25, ctx.currentTime)
+        }
+        masterGainRef.current.connect(compressorRef.current!)
+        compressorRef.current!.connect(ctx.destination)
       } catch (error) {
         isEnabledRef.current = false
       }
@@ -79,17 +97,24 @@ export function useSoundEffects(): SoundEffects {
       const gainNode = audioContextRef.current.createGain()
 
       oscillator.connect(gainNode)
-      gainNode.connect(audioContextRef.current.destination)
+      const master = masterGainRef.current
+      if (master) {
+        gainNode.connect(master)
+      } else {
+        gainNode.connect(audioContextRef.current.destination)
+      }
 
       oscillator.frequency.value = frequency
       oscillator.type = 'sine'
 
-      gainNode.gain.setValueAtTime(0, audioContextRef.current.currentTime)
-      gainNode.gain.linearRampToValueAtTime(volume, audioContextRef.current.currentTime + 0.01)
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContextRef.current.currentTime + duration)
+      const ctxTime = audioContextRef.current.currentTime
+      const v = Math.max(0, Math.min(volume, 0.2))
+      gainNode.gain.setValueAtTime(0, ctxTime)
+      gainNode.gain.linearRampToValueAtTime(v, ctxTime + 0.02)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctxTime + Math.max(duration - 0.02, 0.02))
 
-      oscillator.start(audioContextRef.current.currentTime)
-      oscillator.stop(audioContextRef.current.currentTime + duration)
+      oscillator.start(ctxTime)
+      oscillator.stop(ctxTime + duration)
     } catch (error) {
       // Handle error silently
     }
@@ -174,6 +199,11 @@ export function useSoundEffects(): SoundEffects {
     setTimeout(() => playBeep(1500, 0.10, 0.08), 140) // bell overtone
   }, [playBeep])
 
+  const playWhackGreenAppear = useCallback(() => {
+    // Subtle pop for green spawn
+    playBeep(900, 0.06, 0.04)
+  }, [playBeep])
+
   return {
     playLightSwitch,
     playCorrectTap,
@@ -184,6 +214,7 @@ export function useSoundEffects(): SoundEffects {
     playPowerUpCollect,
     playPowerUpActivation,
     playPowerUpSpawn,
-    playKerching
+    playKerching,
+    playWhackGreenAppear
   }
 }
