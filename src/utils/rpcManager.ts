@@ -12,7 +12,7 @@ const PUBLIC_RPC_ENDPOINTS = [
 
 // Rate limiting configuration
 const RATE_LIMITS = {
-  requestsPerSecond: 10, // Conservative limit for public RPCs
+  requestsPerSecond: 5, // Conservative limit for public RPCs
   burstLimit: 20, // Allow short bursts
   cooldownMs: 1000, // Cooldown after hitting limits
 }

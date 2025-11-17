@@ -400,10 +400,12 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
         require(totalSupply() + tokensToMint <= MAX_SUPPLY, "Would exceed max supply");
         _mint(playerAddress, tokensToMint);
 
-        // Update leaderboard only when a new personal high score is achieved
-        if (isNewHighScore) {
-            _updateLeaderboard(gameMode, playerAddress, score, round, gameId);
+        // Ensure leaderboard reflects personal best even if latest attempt is lower
+        uint256 bestScore = playerHighScores[gameMode][playerAddress];
+        if (bestScore == 0) {
+            bestScore = score;
         }
+        _updateLeaderboard(gameMode, playerAddress, bestScore, round, gameId);
         
         emit GameCompleted(
             playerAddress,
@@ -514,9 +516,11 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
         require(totalSupply() + tokensToMint <= MAX_SUPPLY, "Would exceed max supply");
         _mint(playerAddress, tokensToMint);
 
-        if (isNewHighScore) {
-            _updateLeaderboard(gameMode, playerAddress, score, round, gameId);
+        uint256 bestScore2 = playerHighScores[gameMode][playerAddress];
+        if (bestScore2 == 0) {
+            bestScore2 = score;
         }
+        _updateLeaderboard(gameMode, playerAddress, bestScore2, round, gameId);
 
         emit GameCompleted(
             playerAddress,
@@ -1013,6 +1017,17 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
         validGameMode(gameMode) 
     {
         delete leaderboards[gameMode];
+    }
+
+    function resyncLeaderboardEntry(GameMode gameMode, address player)
+        external
+        onlyOwner
+        validGameMode(gameMode)
+    {
+        uint256 best = playerHighScores[gameMode][player];
+        require(best > 0, "No high score for player");
+        // Use 0 for round and gameId as placeholders; ordering is by score
+        _updateLeaderboard(gameMode, player, best, 0, 0);
     }
     
     // ============ VIEW FUNCTIONS ============
