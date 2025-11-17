@@ -11,6 +11,7 @@ interface SoundEffects {
   playPowerUpCollect?: () => void
   playPowerUpActivation?: () => void
   playPowerUpSpawn?: () => void
+  playKerching?: () => void
 }
 
 export function useSoundEffects(): SoundEffects {
@@ -166,6 +167,13 @@ export function useSoundEffects(): SoundEffects {
     setTimeout(() => playBeep(1319, 0.08, 0.04), 40) // E6
   }, [playBeep])
 
+  const playKerching = useCallback(() => {
+    // Cash register style: quick low click + bright bell
+    playBeep(200, 0.05, 0.08) // low click
+    setTimeout(() => playBeep(1200, 0.10, 0.10), 60) // bell
+    setTimeout(() => playBeep(1500, 0.10, 0.08), 140) // bell overtone
+  }, [playBeep])
+
   return {
     playLightSwitch,
     playCorrectTap,
@@ -175,6 +183,7 @@ export function useSoundEffects(): SoundEffects {
     // playMenuSound,  // COMMENTED OUT: Remove comment to re-enable menu music
     playPowerUpCollect,
     playPowerUpActivation,
-    playPowerUpSpawn
+    playPowerUpSpawn,
+    playKerching
   }
 }

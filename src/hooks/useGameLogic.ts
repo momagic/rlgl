@@ -179,11 +179,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         alert('Failed to start game. Please try again.')
         return false
       }
-      const success = await turnManager.consumeTurn()
-      if (!success) {
-        alert('Failed to start game. Please try again.')
-        return false
-      }
+      await turnManager.refreshTurnStatus(true)
 
       // Game started successfully - haptic feedback
       haptics.importantButton()

@@ -5,6 +5,7 @@ import { useContract } from './useContract'
 import { useAuth } from '../contexts/AuthContext'
 import type { UseTurnManagerReturn, TurnStatus } from '../types/contract'
 import { sanitizeJSONData } from '../utils/inputSanitizer'
+import { useSoundEffects } from './useSoundEffects'
 
 // Local storage keys for persisting purchases
 const TURN_PURCHASES_KEY = 'rlgl-turn-purchases'
@@ -27,6 +28,7 @@ interface WeeklyPassPurchase {
 export function useTurnManager(): UseTurnManagerReturn {
   const { user } = useAuth()
   const contract = useContract()
+  const sounds = useSoundEffects()
   
   
   const [turnStatus, setTurnStatus] = useState<TurnStatus | null>(null)
@@ -447,11 +449,12 @@ export function useTurnManager(): UseTurnManagerReturn {
 
   useEffect(() => {
     if (pendingTransactionId && isConfirmed) {
+      sounds.playKerching?.()
       refreshTurnStatus(true)
       setPendingTransactionId('')
       setIsLoading(false)
     }
-  }, [pendingTransactionId, isConfirmed, refreshTurnStatus])
+  }, [pendingTransactionId, isConfirmed, refreshTurnStatus, sounds])
 
   // Format time until reset for display
   const formatTimeUntilReset = useCallback((milliseconds: number): string => {
