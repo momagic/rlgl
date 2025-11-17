@@ -294,12 +294,19 @@ export function useContract(): UseContractReturn {
         tokensEarned = formatEther(fallbackMint)
       }
 
-      return {
+      const submission: GameSubmission = {
         score,
         round,
         tokensEarned,
         transactionHash: result.finalPayload.transaction_id
       }
+
+      try {
+        const evt = new CustomEvent('score-submitted', { detail: { gameMode } })
+        window.dispatchEvent(evt)
+      } catch {}
+
+      return submission
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to submit score'
       setError(errorMessage)

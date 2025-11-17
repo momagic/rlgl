@@ -319,14 +319,14 @@ function Leaderboard() {
     }
   }, [getCacheKeys])
 
-  const fetchLeaderboard = useCallback(async () => {
+  const fetchLeaderboard = useCallback(async (force = false) => {
     if (isLoading) {
       console.log('⏸️ fetchLeaderboard called but already loading, skipping')
       return
     }
     
     // Check cache first before setting loading state
-    const cached = getCachedLeaderboard(selectedMode)
+    const cached = getCachedLeaderboard(selectedMode, force)
     if (cached) {
       console.log('📦 Using cached leaderboard data:', cached.length, 'entries')
       setAllLeaderboardData(cached)
@@ -438,6 +438,16 @@ function Leaderboard() {
       clearInterval(refreshInterval)
     }
   }, [fetchLeaderboard, isLoading, allLeaderboardData.length])
+
+  useEffect(() => {
+    const onScoreSubmitted = (e: any) => {
+      const mode = e?.detail?.gameMode as GameMode | undefined
+      if (!mode || mode !== selectedMode) return
+      fetchLeaderboard(true)
+    }
+    window.addEventListener('score-submitted', onScoreSubmitted)
+    return () => window.removeEventListener('score-submitted', onScoreSubmitted)
+  }, [selectedMode, fetchLeaderboard])
 
   useEffect(() => {
     setIsLoading(false)
