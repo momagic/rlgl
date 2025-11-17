@@ -180,6 +180,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         alert('Failed to start game. Please try again.')
         return false
       }
+      try { turnManager.decrementTurnOptimistic?.() } catch {}
+      await turnManager.refreshTurnStatus(true)
       await turnManager.refreshTurnStatus(true)
 
       // Game started successfully - haptic feedback

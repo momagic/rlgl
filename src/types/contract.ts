@@ -226,6 +226,7 @@ export interface UseTurnManagerReturn {
   purchaseTurns: (dynamicCost?: string) => Promise<boolean>
   purchaseWeeklyPass: (dynamicCost?: string) => Promise<boolean>
   consumeTurn: () => Promise<boolean>
+  decrementTurnOptimistic: () => void
   retryCount: number
   maxRetries: number
 }

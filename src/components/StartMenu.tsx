@@ -60,24 +60,17 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
     }
   }, [payment.lastPaymentResult?.success, user?.walletAuthenticated, refreshTurnStatus])
 
-  // Refresh turn status when returning to menu (but avoid overwriting recent purchases)
+  // Refresh turn status when returning to menu to reflect consumed turns
   useEffect(() => {
     if (user?.walletAuthenticated && !refreshAttemptedRef.current) {
-      // Only auto-refresh if we don't have turns available
-      // This prevents overwriting optimistic updates from recent purchases
-      if (!turnStatus || (!turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns === 0)) {
-        refreshAttemptedRef.current = true
-        // Add delay to avoid race condition with purchase completion
-        const timer = setTimeout(() => refreshTurnStatus(true), 500)
-        return () => clearTimeout(timer)
-      }
+      refreshAttemptedRef.current = true
+      const timer = setTimeout(() => refreshTurnStatus(true), 300)
+      return () => clearTimeout(timer)
     }
-    
-    // Cleanup function to reset refresh flag when component unmounts
     return () => {
       refreshAttemptedRef.current = false
     }
-  }, [user?.walletAuthenticated]) // Only depend on wallet authentication
+  }, [user?.walletAuthenticated])
 
   const handleStartGame = async () => {
     if (!user?.verified) {

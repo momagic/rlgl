@@ -485,7 +485,18 @@ export function useTurnManager(): UseTurnManagerReturn {
     refreshTurnStatus,
     purchaseTurns,
     purchaseWeeklyPass,
-    consumeTurn
+    consumeTurn,
+    decrementTurnOptimistic: () => {
+      setTurnStatus(prevStatus => {
+        if (!prevStatus || prevStatus.hasActiveWeeklyPass) return prevStatus
+        const next = {
+          ...prevStatus,
+          availableTurns: Math.max(0, prevStatus.availableTurns - 1),
+          canPurchaseMoreTurns: prevStatus.availableTurns - 1 === 0
+        }
+        return next
+      })
+    }
     ,retryCount, maxRetries
   }
 }

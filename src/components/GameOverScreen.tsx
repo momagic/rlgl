@@ -17,6 +17,7 @@ interface GameOverScreenProps {
 
 function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain, onMainMenu, turnManager }: GameOverScreenProps) {
   const { turnStatus, isLoading: turnLoading } = turnManager
+  const { refreshTurnStatus } = turnManager
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const [hasShownSuccessMessage, setHasShownSuccessMessage] = useState(false)
   const processedTokenRewardRef = useRef<string | null>(null)
@@ -48,6 +49,10 @@ function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain,
       return () => clearTimeout(timer)
     }
   }, [tokenReward, hasShownSuccessMessage])
+
+  useEffect(() => {
+    refreshTurnStatus(true)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
