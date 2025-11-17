@@ -21,6 +21,8 @@ export function useSoundEffects(): SoundEffects {
   // const menuAudioRef = useRef<HTMLAudioElement | null>(null)  // COMMENTED OUT: Remove comment to re-enable menu music
   const masterGainRef = useRef<GainNode | null>(null)
   const compressorRef = useRef<DynamicsCompressorNode | null>(null)
+  const clipperRef = useRef<WaveShaperNode | null>(null)
+  const lowpassRef = useRef<BiquadFilterNode | null>(null)
 
   // Check if sound is enabled in settings
   const isEnabled = useCallback(() => {
@@ -45,18 +47,27 @@ export function useSoundEffects(): SoundEffects {
         const ctx = audioContextRef.current
         masterGainRef.current = ctx.createGain()
         compressorRef.current = ctx.createDynamicsCompressor()
-        // Gentle master headroom to avoid clipping
-        masterGainRef.current.gain.setValueAtTime(0.7, ctx.currentTime)
-        // Light limiting to tame overlapping beeps
-        if (compressorRef.current) {
-          compressorRef.current.threshold.setValueAtTime(-24, ctx.currentTime)
-          compressorRef.current.knee.setValueAtTime(30, ctx.currentTime)
-          compressorRef.current.ratio.setValueAtTime(12, ctx.currentTime)
-          compressorRef.current.attack.setValueAtTime(0.003, ctx.currentTime)
-          compressorRef.current.release.setValueAtTime(0.25, ctx.currentTime)
+        clipperRef.current = ctx.createWaveShaper()
+        lowpassRef.current = ctx.createBiquadFilter()
+        masterGainRef.current.gain.setValueAtTime(0.6, ctx.currentTime)
+        compressorRef.current.threshold.setValueAtTime(-20, ctx.currentTime)
+        compressorRef.current.knee.setValueAtTime(24, ctx.currentTime)
+        compressorRef.current.ratio.setValueAtTime(8, ctx.currentTime)
+        compressorRef.current.attack.setValueAtTime(0.005, ctx.currentTime)
+        compressorRef.current.release.setValueAtTime(0.2, ctx.currentTime)
+        const curveSize = 1024
+        const curve = new Float32Array(curveSize)
+        for (let i = 0; i < curveSize; i++) {
+          const x = (i / (curveSize - 1)) * 2 - 1
+          curve[i] = Math.tanh(2.5 * x)
         }
-        masterGainRef.current.connect(compressorRef.current!)
-        compressorRef.current!.connect(ctx.destination)
+        clipperRef.current.curve = curve
+        lowpassRef.current.type = 'lowpass'
+        lowpassRef.current.frequency.setValueAtTime(3800, ctx.currentTime)
+        masterGainRef.current.connect(clipperRef.current)
+        clipperRef.current.connect(compressorRef.current)
+        compressorRef.current.connect(lowpassRef.current)
+        lowpassRef.current.connect(ctx.destination)
       } catch (error) {
         isEnabledRef.current = false
       }
@@ -108,13 +119,19 @@ export function useSoundEffects(): SoundEffects {
       oscillator.type = 'sine'
 
       const ctxTime = audioContextRef.current.currentTime
-      const v = Math.max(0, Math.min(volume, 0.2))
+      const v = Math.max(0, Math.min(volume, 0.15))
       gainNode.gain.setValueAtTime(0, ctxTime)
       gainNode.gain.linearRampToValueAtTime(v, ctxTime + 0.02)
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctxTime + Math.max(duration - 0.02, 0.02))
-
+      const sustainEnd = ctxTime + Math.max(duration - 0.03, 0.02)
+      gainNode.gain.setValueAtTime(v, sustainEnd)
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, sustainEnd + 0.02)
       oscillator.start(ctxTime)
-      oscillator.stop(ctxTime + duration)
+      const stopTime = sustainEnd + 0.04
+      oscillator.stop(stopTime)
+      oscillator.onended = () => {
+        try { oscillator.disconnect() } catch {}
+        try { gainNode.disconnect() } catch {}
+      }
     } catch (error) {
       // Handle error silently
     }
@@ -142,7 +159,7 @@ export function useSoundEffects(): SoundEffects {
 
   // Sound effect functions
   const playLightSwitch = useCallback(() => {
-    playBeep(800, 0.1, 0.05)
+    playBeep(800, 0.1, 0.04)
   }, [playBeep])
 
   const playCorrectTap = useCallback(() => {
@@ -152,56 +169,48 @@ export function useSoundEffects(): SoundEffects {
   }, [playBeep])
 
   const playWrongTap = useCallback(() => {
-    // Error buzz
-    playBeep(200, 0.3, 0.1)
+    playBeep(200, 0.3, 0.08)
   }, [playBeep])
 
   const playGameOver = useCallback(() => {
-    // Sad descending sequence
-    playBeep(440, 0.2, 0.1) // A4
-    setTimeout(() => playBeep(349, 0.2, 0.1), 150) // F4
-    setTimeout(() => playBeep(261, 0.4, 0.1), 300) // C4
+    playBeep(440, 0.2, 0.08)
+    setTimeout(() => playBeep(349, 0.2, 0.08), 150)
+    setTimeout(() => playBeep(261, 0.4, 0.08), 300)
   }, [playBeep])
 
   const playNewHighScore = useCallback(() => {
-    // Victory fanfare
-    playBeep(523, 0.15, 0.08) // C5
-    setTimeout(() => playBeep(659, 0.15, 0.08), 100) // E5
-    setTimeout(() => playBeep(784, 0.15, 0.08), 200) // G5
-    setTimeout(() => playBeep(1047, 0.3, 0.1), 300) // C6
+    playBeep(523, 0.15, 0.07)
+    setTimeout(() => playBeep(659, 0.15, 0.07), 100)
+    setTimeout(() => playBeep(784, 0.15, 0.07), 200)
+    setTimeout(() => playBeep(1047, 0.3, 0.09), 300)
   }, [playBeep])
 
   const playPowerUpCollect = useCallback(() => {
-    // Magical pickup sound
-    playBeep(880, 0.1, 0.06) // A5
-    setTimeout(() => playBeep(1108, 0.1, 0.06), 50) // C#6
-    setTimeout(() => playBeep(1318, 0.15, 0.08), 100) // E6
+    playBeep(880, 0.1, 0.05)
+    setTimeout(() => playBeep(1108, 0.1, 0.05), 50)
+    setTimeout(() => playBeep(1318, 0.15, 0.07), 100)
   }, [playBeep])
 
   const playPowerUpActivation = useCallback(() => {
-    // Power activation sound
-    playBeep(440, 0.05, 0.08) // A4
-    setTimeout(() => playBeep(554, 0.05, 0.08), 30) // C#5
-    setTimeout(() => playBeep(659, 0.05, 0.08), 60) // E5
-    setTimeout(() => playBeep(880, 0.2, 0.1), 90) // A5
+    playBeep(440, 0.05, 0.07)
+    setTimeout(() => playBeep(554, 0.05, 0.07), 30)
+    setTimeout(() => playBeep(659, 0.05, 0.07), 60)
+    setTimeout(() => playBeep(880, 0.2, 0.09), 90)
   }, [playBeep])
 
   const playPowerUpSpawn = useCallback(() => {
-    // Gentle spawn notification
-    playBeep(1047, 0.08, 0.04) // C6
-    setTimeout(() => playBeep(1319, 0.08, 0.04), 40) // E6
+    playBeep(1047, 0.08, 0.035)
+    setTimeout(() => playBeep(1319, 0.08, 0.035), 40)
   }, [playBeep])
 
   const playKerching = useCallback(() => {
-    // Cash register style: quick low click + bright bell
-    playBeep(200, 0.05, 0.08) // low click
-    setTimeout(() => playBeep(1200, 0.10, 0.10), 60) // bell
-    setTimeout(() => playBeep(1500, 0.10, 0.08), 140) // bell overtone
+    playBeep(200, 0.05, 0.07)
+    setTimeout(() => playBeep(1200, 0.10, 0.09), 60)
+    setTimeout(() => playBeep(1500, 0.10, 0.07), 140)
   }, [playBeep])
 
   const playWhackGreenAppear = useCallback(() => {
-    // Subtle pop for green spawn
-    playBeep(900, 0.06, 0.04)
+    playBeep(900, 0.06, 0.03)
   }, [playBeep])
 
   return {
