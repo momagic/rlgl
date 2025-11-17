@@ -183,6 +183,11 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
         uint256 deviceMultiplier,
         uint256 unverifiedMultiplier
     );
+
+    event AdminTurnsGranted(
+        address indexed player,
+        uint256 amount
+    );
     
     // ============ MODIFIERS ============
     modifier onlyAuthorizedSubmitter() {
@@ -324,6 +329,31 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
      */
     
     
+    /**
+     * @dev Owner-only: grant extra goes (turns) to a player
+     */
+    function grantExtraGoes(address player, uint256 amount) external onlyOwner {
+        require(player != address(0), "Invalid player address");
+        require(amount > 0, "Amount must be > 0");
+        players[player].extraGoes += amount;
+        emit AdminTurnsGranted(player, amount);
+    }
+
+    /**
+     * @dev Owner-only: grant extra goes (turns) to a list of players
+     */
+    function grantExtraGoesBatch(address[] calldata recipients, uint256 amountEach) external onlyOwner {
+        require(amountEach > 0, "Amount must be > 0");
+        for (uint256 i = 0; i < recipients.length; i++) {
+            address player = recipients[i];
+            if (player == address(0)) {
+                continue;
+            }
+            players[player].extraGoes += amountEach;
+            emit AdminTurnsGranted(player, amountEach);
+        }
+    }
+
     /**
      * @dev Start a game (consume a turn)
      */

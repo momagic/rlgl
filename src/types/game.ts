@@ -50,6 +50,7 @@ export interface PlayerStats {
   livesRemaining: number
   round: number
   streak: number
+  maxStreak: number
   totalTaps: number
   correctTaps: number
 }

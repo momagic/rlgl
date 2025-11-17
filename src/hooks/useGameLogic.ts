@@ -25,6 +25,7 @@ const DEFAULT_STATS: PlayerStats = {
   livesRemaining: 3,
   round: 1,
   streak: 0,
+  maxStreak: 0,
   totalTaps: 0,
   correctTaps: 0
 }
@@ -436,6 +437,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             currentScore: newStats.currentScore + totalPoints,
             correctTaps: newStats.correctTaps + 1,
             streak,
+            maxStreak: Math.max(prev.playerStats.maxStreak || 0, streak),
             round: newStats.round + 1
           },
           roundStartTime: now,
@@ -638,7 +640,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                       playerStats: {
                         ...prevData.playerStats,
                         livesRemaining: 0,
-                        streak: 0
+                        streak: 0,
+                        maxStreak: prevData.playerStats.maxStreak
                       }
                     }
                   } else {
@@ -652,7 +655,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                       playerStats: {
                         ...prevData.playerStats,
                         livesRemaining,
-                        streak: 0
+                        streak: 0,
+                        maxStreak: prevData.playerStats.maxStreak
                       },
                       tappedDuringGreen: false
                     }
@@ -736,7 +740,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                       playerStats: {
                         ...prevData.playerStats,
                         livesRemaining: 0,
-                        streak: 0
+                        streak: 0,
+                        maxStreak: prevData.playerStats.maxStreak
                       }
                     }
                   } else {
@@ -750,7 +755,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                       playerStats: {
                         ...prevData.playerStats,
                         livesRemaining,
-                        streak: 0
+                        streak: 0,
+                        maxStreak: prevData.playerStats.maxStreak
                       },
                       tappedDuringGreen: false,
                       gameSpeedMultiplier: powerUps.getGameSpeedMultiplier(),
@@ -912,7 +918,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             playerStats: {
               ...prev.playerStats,
               livesRemaining: 0,
-              streak: 0
+              streak: 0,
+              maxStreak: prev.playerStats.maxStreak
             },
             whackLights: updated
           }))
@@ -922,7 +929,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             playerStats: {
               ...prev.playerStats,
               livesRemaining,
-              streak: 0
+              streak: 0,
+              maxStreak: prev.playerStats.maxStreak
             },
             whackLights: updated
           }))
@@ -1018,7 +1026,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             currentScore: newScore, 
             round: nextRound,
             correctTaps: newStats.correctTaps + 1,
-            streak: newStats.streak + 1
+            streak: newStats.streak + 1,
+            maxStreak: Math.max(prev.playerStats.maxStreak || 0, newStats.streak + 1)
           },
           whackActiveCount: nextActive,
           whackLights: newLights,
@@ -1033,7 +1042,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
           ...newStats, 
           currentScore: partialScore,
           correctTaps: newStats.correctTaps + 1,
-          streak: newStats.streak + 1
+          streak: newStats.streak + 1,
+          maxStreak: Math.max(prev.playerStats.maxStreak || 0, newStats.streak + 1)
         },
         whackLights: updatedLights
       }

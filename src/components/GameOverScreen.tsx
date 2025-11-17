@@ -199,8 +199,8 @@ function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain,
               className="rounded p-2 border-2 border-squid-pink bg-squid-pink/10"
               style={{ boxShadow: '2px 2px 0px 0px #FF1F8C' }}
             >
-              <div className="text-squid-pink text-xs font-squid-heading font-bold uppercase mb-1">STREAK</div>
-              <div className="text-squid-white text-lg font-squid-mono font-bold">{playerStats.streak}</div>
+              <div className="text-squid-pink text-xs font-squid-heading font-bold uppercase mb-1">BEST STREAK</div>
+              <div className="text-squid-white text-lg font-squid-mono font-bold">{(playerStats as any).maxStreak ?? 0}</div>
             </div>
             
             <div 
