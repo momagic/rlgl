@@ -261,7 +261,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
 
   const submitFinalScore = useCallback(async (finalScore: number, finalRound: number) => {
     try {
-      const apiBase = (import.meta as any)?.env?.VITE_VERIFICATION_API_BASE || ''
+      const apiBase = (import.meta as any)?.env?.VITE_VERIFICATION_API_BASE || (import.meta as any)?.env?.VITE_VERIFICATION_API_BASE || (import.meta as any)?.env?.VITE_VERIFICATION_API_BASE || (import.meta as any)?.env?.VITE_VERIFICATION_API_BASE
       const sessionId = generateSessionId()
       const nonce = Date.now()
       const deadline = Math.floor(Date.now() / 1000) + 900
@@ -293,8 +293,11 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             }
           }))
           return
+        } else {
+          console.warn('Permit API responded with non-OK status', resp.status)
         }
       } catch {}
+      console.warn('Permit API unavailable, falling back to direct on-chain submission')
       const submission = await contract.submitScore(finalScore, finalRound, gameMode as any)
       setGameData(currentData => ({
         ...currentData,
