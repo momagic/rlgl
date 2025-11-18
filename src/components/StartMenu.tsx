@@ -8,7 +8,7 @@ import type { UseTurnManagerReturn } from '../types/contract'
 import type { GameMode } from '../types/game'
 import TurnDisplay from './TurnDisplay'
 import GameModeSelector from './GameModeSelector'
-import NotificationBanner from './NotificationBanner'
+ 
 import { Button, Typography, Container, Stack } from './ui'
 import { UserInfo } from './UserInfo'
 import { DailyClaim } from './DailyClaim'
@@ -35,6 +35,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
 
   // State for the contract deployment notification banner
   const [showContractBanner, setShowContractBanner] = useState(true)
+  const [contractExpanded, setContractExpanded] = useState(false)
 
   // REMOVED: Auto-switch to classic mode restriction - arcade mode is now available to all users
 
@@ -106,16 +107,67 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
     <div className="h-full flex flex-col overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #0A0A0F 0%, #1A1A20 50%, #0A0A0F 100%)' }}>
       <UserInfo />
       
-      {/* Contract Deployment Notification Banner */}
       {showContractBanner && (
         <div className="px-2 pt-2">
-          <NotificationBanner
-            title="New Contract Coming Soon!"
-            message="We're improving the contract, leaderboard system, and adding exciting new features. Stay tuned for the upgrade!"
-            type="info"
-            onClose={() => setShowContractBanner(false)}
-            closable={true}
-          />
+          <div className="rounded-lg border-3 border-squid-border bg-squid-gray" style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}>
+            <div className="flex items-center justify-between px-2 py-1">
+              <div className="flex items-center gap-2 text-squid-white">
+                <span className="text-sm">🚀</span>
+                <div className="flex flex-col">
+                  <span className="text-xs font-squid-heading font-bold uppercase">New Contract Active</span>
+                  <span className="text-[10px] text-squid-white/70">Tap to see what's new</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setContractExpanded(v => !v)}
+                  className="px-2 py-1 rounded border-2 border-squid-border text-xs font-squid-heading font-bold uppercase text-squid-white bg-squid-black/20 transition-all duration-150"
+                  style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
+                  onPointerDown={(e) => {
+                    e.currentTarget.style.transform = 'translate(1px, 1px)'
+                    e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
+                  }}
+                  onPointerUp={(e) => {
+                    e.currentTarget.style.transform = 'translate(0, 0)'
+                    e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
+                  }}
+                >
+                  {contractExpanded ? '▾' : '▸'}
+                </button>
+                <button
+                  onClick={() => setShowContractBanner(false)}
+                  className="px-2 py-1 rounded border-2 border-squid-border text-xs font-squid-heading font-bold uppercase text-squid-white bg-squid-gray transition-all duration-150"
+                  style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
+                  onPointerDown={(e) => {
+                    e.currentTarget.style.transform = 'translate(1px, 1px)'
+                    e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
+                  }}
+                  onPointerUp={(e) => {
+                    e.currentTarget.style.transform = 'translate(0, 0)'
+                    e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
+                  }}
+                >
+                  {t('startMenu.buttons.close')}
+                </button>
+              </div>
+            </div>
+            {contractExpanded && (
+              <div className="px-2 pb-2 text-squid-white text-xs">
+                <div className="mb-1">
+                  <span className="font-squid-heading uppercase text-[11px]">Highlights</span>
+                </div>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>New daily claim feature</li>                  
+                  <li>Active on-chain contract with improved reliability</li>
+                  <li>Updated leaderboard with fair, real-time sync</li>
+                  <li>New features and performance improvements</li>
+                </ul>
+                <div className="mt-2">
+                  <span className="text-[10px] text-squid-white/70">Weekly pass and turns migrate automatically to the new system.</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
       

@@ -14,7 +14,7 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
   const { verificationLevel } = useAuth()
   const { turnStatus, isLoading, isConfirming, error, purchaseTurns, refreshTurnStatus } = turnManager
   const payment = usePayment()
-  const { getVerificationMultipliers, purchaseHundredTurns } = useContract()
+  const { getVerificationMultipliers } = useContract()
   
   const [verificationBenefits, setVerificationBenefits] = useState<{
     orbPlusMultiplier: number
@@ -309,23 +309,25 @@ function TurnDisplay({ turnManager }: TurnDisplayProps) {
                   <button
                     onClick={async () => {
                       try {
-                        const ok = await purchaseHundredTurns()
-                        if (ok.success) await refreshTurnStatus(true)
+                        const ok = await turnManager.purchaseHundredTurns()
+                        if (!ok) {
+                          // leave button enabled after failure
+                        }
                       } catch {}
                     }}
-                    disabled={isLoading}
+                    disabled={isLoading || isConfirming || payment.isProcessing}
                     className={`w-full py-3 px-4 rounded border-3 border-squid-black font-squid-heading font-bold uppercase tracking-wider transition-all duration-150 ${
-                      isLoading ? 'cursor-not-allowed text-squid-white/50' : 'text-squid-white'
+                      isLoading || isConfirming || payment.isProcessing ? 'cursor-not-allowed text-squid-white/50' : 'text-squid-white'
                     }`}
                     style={{
-                      background: isLoading ? '#2D2D35' : '#00D9C0',
+                      background: isLoading || isConfirming || payment.isProcessing ? '#2D2D35' : '#00D9C0',
                       boxShadow: '4px 4px 0px 0px #0A0A0F'
                     }}
                   >
-                    {isLoading ? (
+                    {isLoading || isConfirming || payment.isProcessing ? (
                       <div className="flex items-center justify-center space-x-2">
                         <div className="w-4 h-4 border-2 border-squid-white/50 border-t-transparent rounded-full animate-spin"></div>
-                        <span>Processing...</span>
+                        <span>{isConfirming ? 'Confirming…' : 'Processing…'}</span>
                       </div>
                     ) : (
                       <span>Buy 100 Turns</span>

@@ -224,6 +224,7 @@ export interface UseTurnManagerReturn {
   error: string | null
   refreshTurnStatus: (manual?: boolean) => Promise<void>
   purchaseTurns: (dynamicCost?: string) => Promise<boolean>
+  purchaseHundredTurns: () => Promise<boolean>
   purchaseWeeklyPass: (dynamicCost?: string) => Promise<boolean>
   consumeTurn: () => Promise<boolean>
   decrementTurnOptimistic: () => void

@@ -43,7 +43,7 @@ app.use(cors());
 app.use(express.json());
 
 // Environment variables
-const APP_ID = process.env.WORLD_ID_APP_ID || 'app_29198ecfe21e2928536961a63cc85606';
+const APP_ID = process.env.WORLD_ID_APP_ID || 'app_f11a49a98aab37a10e7dcfd20139f605';
 const ACTION_ID = process.env.WORLD_ID_ACTION_ID || 'play-game';
 const PRIVATE_KEY = process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const SIGNER_PRIVATE_KEY = process.env.SIGNER_PRIVATE_KEY || process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;

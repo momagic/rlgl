@@ -117,7 +117,7 @@ export function useTurnManager(): UseTurnManagerReturn {
   const viteAppId = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WORLD_ID_APP_ID) as string | undefined
   const nextAppId = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_WORLD_ID_APP_ID
   const craAppId = typeof process !== 'undefined' && process.env.REACT_APP_WORLD_ID_APP_ID
-  const appId = viteAppId || nextAppId || craAppId || 'app_29198ecfe21e2928536961a63cc85606'
+  const appId = viteAppId || nextAppId || craAppId || 'app_f11a49a98aab37a10e7dcfd20139f605'
 
   const client = createPublicClient({
     chain: {
@@ -339,6 +339,36 @@ export function useTurnManager(): UseTurnManagerReturn {
     }
   }, [contract, getPlayerAddress, refreshTurnStatus])
 
+  const purchaseHundredTurns = useCallback(async (): Promise<boolean> => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const walletAddress = getPlayerAddress()
+      console.log('👤 Player address for 100-turn purchase:', walletAddress)
+
+      const result = await contract.purchaseHundredTurns()
+
+      if (!result.success) {
+        console.error('❌ 100-turn purchase failed:', result.error)
+        setError(result.error || 'Payment failed')
+        setIsLoading(false)
+        return false
+      }
+
+      if (result.transactionId) {
+        setPendingTransactionId(result.transactionId)
+      }
+      return true
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to purchase 100 turns'
+      setError(errorMessage)
+      setIsLoading(false)
+      return false
+    } finally {
+    }
+  }, [contract, getPlayerAddress])
+
   const purchaseWeeklyPass = useCallback(async (_dynamicCost?: string): Promise<boolean> => {
     setError('Weekly pass is no longer available')
     return false
@@ -484,6 +514,7 @@ export function useTurnManager(): UseTurnManagerReturn {
     error,
     refreshTurnStatus,
     purchaseTurns,
+    purchaseHundredTurns,
     purchaseWeeklyPass,
     consumeTurn,
     decrementTurnOptimistic: () => {
