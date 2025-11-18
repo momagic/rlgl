@@ -6,8 +6,9 @@ import './i18n'
 import App from './App.tsx'
 import { initEruda } from './utils/eruda'
 
-// Initialize Eruda for production debugging if enabled
-initEruda()
+if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_ERUDA === 'true') {
+  initEruda()
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
