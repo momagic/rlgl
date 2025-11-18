@@ -29,6 +29,19 @@
       "line2": "¿Cuánto tiempo puedes sobrevivir?",
       "tagline": "Pon a prueba tus reflejos y nervios – ¿cuánto tiempo puedes sobrevivir?"
     },
+    "contractBanner": {
+      "title": "Nuevo Contrato Activo",
+      "subtitle": "Toca para ver qué hay de nuevo",
+      "highlights": {
+        "title": "Destacados",
+        "item1": "Nueva función de reclamo diario",
+        "item2": "Contrato on-chain activo con mayor fiabilidad",
+        "item3": "Tabla de líderes actualizada con sincronización justa en tiempo real",
+        "item4": "Nuevas funciones y mejoras de rendimiento"
+      },
+      "migrationNote": "El pase semanal y los turnos se migran automáticamente al nuevo sistema."
+    },
+    "bestLabel": "Mejor:",
     "authentication": {
       "title": "Autenticar Cartera",
       "subtitle": "Conecta tu cartera para jugar y ganar recompensas Web3"

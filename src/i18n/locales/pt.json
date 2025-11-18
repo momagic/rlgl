@@ -29,6 +29,19 @@
       "line2": "Quanto tempo você pode sobreviver?",
       "tagline": "Teste seus reflexos e nervos – quanto tempo você pode sobreviver?"
     },
+    "contractBanner": {
+      "title": "Novo Contrato Ativo",
+      "subtitle": "Toque para ver as novidades",
+      "highlights": {
+        "title": "Destaques",
+        "item1": "Novo recurso de recompensa diária",
+        "item2": "Contrato on-chain ativo com confiabilidade aprimorada",
+        "item3": "Ranking atualizado com sincronização justa em tempo real",
+        "item4": "Novos recursos e melhorias de desempenho"
+      },
+      "migrationNote": "O passe semanal e os turnos migram automaticamente para o novo sistema."
+    },
+    "bestLabel": "Melhor:",
     "authentication": {
       "title": "Autenticar Carteira",
       "subtitle": "Conecte sua carteira para jogar e ganhar recompensas Web3"

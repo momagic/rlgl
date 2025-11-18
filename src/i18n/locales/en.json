@@ -29,6 +29,19 @@
       "line2": "How long can you survive?",
       "tagline": "Test your reflexes and nerve – how long can you survive?"
     },
+    "contractBanner": {
+      "title": "New Contract Active",
+      "subtitle": "Tap to see what's new",
+      "highlights": {
+        "title": "Highlights",
+        "item1": "New daily claim feature",
+        "item2": "Active on-chain contract with improved reliability",
+        "item3": "Updated leaderboard with fair, real-time sync",
+        "item4": "New features and performance improvements"
+      },
+      "migrationNote": "Weekly pass and turns migrate automatically to the new system."
+    },
+    "bestLabel": "Best:",
     "authentication": {
       "title": "Authenticate Wallet",
       "subtitle": "Connect your wallet to play and earn Web3 rewards"

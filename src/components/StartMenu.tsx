@@ -114,8 +114,8 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
               <div className="flex items-center gap-2 text-squid-white">
                 <span className="text-sm">🚀</span>
                 <div className="flex flex-col">
-                  <span className="text-xs font-squid-heading font-bold uppercase">New Contract Active</span>
-                  <span className="text-[10px] text-squid-white/70">Tap to see what's new</span>
+                  <span className="text-xs font-squid-heading font-bold uppercase">{t('startMenu.contractBanner.title')}</span>
+                  <span className="text-[10px] text-squid-white/70">{t('startMenu.contractBanner.subtitle')}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -154,16 +154,16 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
             {contractExpanded && (
               <div className="px-2 pb-2 text-squid-white text-xs">
                 <div className="mb-1">
-                  <span className="font-squid-heading uppercase text-[11px]">Highlights</span>
+                  <span className="font-squid-heading uppercase text-[11px]">{t('startMenu.contractBanner.highlights.title')}</span>
                 </div>
                 <ul className="list-disc pl-4 space-y-1">
-                  <li>New daily claim feature</li>                  
-                  <li>Active on-chain contract with improved reliability</li>
-                  <li>Updated leaderboard with fair, real-time sync</li>
-                  <li>New features and performance improvements</li>
+                  <li>{t('startMenu.contractBanner.highlights.item1')}</li>
+                  <li>{t('startMenu.contractBanner.highlights.item2')}</li>
+                  <li>{t('startMenu.contractBanner.highlights.item3')}</li>
+                  <li>{t('startMenu.contractBanner.highlights.item4')}</li>
                 </ul>
                 <div className="mt-2">
-                  <span className="text-[10px] text-squid-white/70">Weekly pass and turns migrate automatically to the new system.</span>
+                  <span className="text-[10px] text-squid-white/70">{t('startMenu.contractBanner.migrationNote')}</span>
                 </div>
               </div>
             )}
@@ -239,7 +239,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
         {highScore > 0 && (
           <div className="mb-1 px-2 py-1 rounded border-2 border-squid-border bg-squid-gray/50 flex items-center gap-2 text-xs" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
             <span>🏆</span>
-            <span className="font-squid text-squid-white/80">Best: <span className="neon-text-pink font-squid-mono font-bold">{highScore.toLocaleString()}</span></span>
+            <span className="font-squid text-squid-white/80">{t('startMenu.bestLabel')} <span className="neon-text-pink font-squid-mono font-bold">{highScore.toLocaleString()}</span></span>
           </div>
         )}
 
