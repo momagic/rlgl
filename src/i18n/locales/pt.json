@@ -36,6 +36,9 @@
     "verification": {
       "title": "Verificar Identidade"
     },
+    "gameStart": {
+      "title": "Iniciar Jogo"
+    },
     "buttons": {
       "verifyWorldId": "Verificar com World ID para Jogar",
       "authenticateWallet": "Autenticar Carteira",
@@ -242,12 +245,21 @@
       "description": "Toque apenas luzes verdes. Mais luzes por rodada — rápido e letal."
     },
     "changeAnytime": "Você pode mudar de modo a qualquer momento no menu principal"
+    ,
+    "verificationBenefits": {
+      "title": "Benefícios de Verificação",
+      "description": "Níveis de verificação mais altos fornecem melhores recompensas",
+      "document": "Documento Verificado: 100% de recompensas base",
+      "secureDocument": "Documento Seguro: 115% de recompensas bônus",
+      "orb": "Orb Verificado: 125% de recompensas bônus",
+      "orbPlus": "Orb+ Verificado: 140% de recompensas bônus"
+    }
   },
   "whackMode": {
     "title": "Bate na Luz",
     "description": "Toque apenas nas luzes verdes. Mais luzes a cada rodada — rápido e mortal."
   },
-   "instructions": {
+  "instructions": {
      "whackMode": {
        "redLight": "Luzes vermelhas são perigosas - evite tocá-las ou você perderá uma vida!",
        "greenLight": "Luzes verdes são seus alvos - toque nelas rapidamente para marcar pontos!",
@@ -256,8 +268,8 @@
        "scoring": "Marque pontos para cada luz verde tocada corretamente.",
        "timing": "Você tem tempo limitado - seja rápido mas preciso!"
      }
-   },
-   "proTips": {
+  },
+  "proTips": {
       "timing": "O tempo é tudo: Espere pela luz verde antes de tocar!",
       "speed": "A velocidade aumenta: O jogo fica mais rápido conforme sua pontuação cresce.",
       "arcade": "Modo Arcade: Colete power-ups para ganhar habilidades especiais!",
@@ -274,8 +286,54 @@
     "claimed": "Pego",
     "nextClaim": "Próximo resgate em",
     "streak": "Sequência",
+    "claiming": "Reivindicando...",
+    "nextReward": "Próxima Recompensa",
+    "nextAvailable": "Disponível novamente em",
+    "days": "Dias",
+    "streakInfo": "{{days}} dias de sequência: {{bonus}}% de bônus",
+    "success": "Recompensa diária reivindicada com sucesso!",
+    "claimError": "Falha ao reivindicar recompensa diária",
+    "loadError": "Falha ao carregar status de recompensa diária",
     "available": "Recompensa Diária Disponível",
     "dayStreak": "sequência de dias"
+  },
+  "walletLogin": {
+    "connectTitle": "Conectar Carteira",
+    "connectSubtitle": "Jogos Web3 Seguros",
+    "walletRequired": "Carteira Necessária",
+    "connectToPlay": "Conecte sua carteira para jogar e ganhar recompensas neste jogo Web3.",
+    "callToAction": "🎮 Pronto para jogar? Toque em qualquer lugar para conectar sua carteira!",
+    "worldAppNote": "✨ Funciona perfeitamente com a carteira World App",
+    "tapInstructions": "Toque em qualquer lugar para conectar sua carteira",
+    "connecting": "Conectando...",
+    "error": "⚠️ Falha na conexão. Tente novamente ou verifique sua carteira."
+  },
+  "walletInfoModal": {
+    "title": "Conexão de Carteira",
+    "description": "Conecte sua carteira para acessar este jogo Web3 e ganhar recompensas pelo seu gameplay.",
+    "secureTitle": "Seguro e Privado",
+    "secureDescription": "Sua carteira permanece segura — solicitamos apenas permissão de conexão.",
+    "instantTitle": "Acesso Instantâneo",
+    "instantDescription": "Conecte uma vez e jogue imediatamente sem configuração adicional.",
+    "gameTitle": "Jogar e Ganhar",
+    "gameDescription": "Ganhe tokens e compita no ranking com outros jogadores.",
+    "worldAppNote": "💡 Este jogo funciona melhor com a carteira World App para a experiência mais fluida."
+  },
+  "humanVerification": {
+    "title": "Verificar Humanidade",
+    "description": "Opcional: Verifique que você é humano para desbloquear recompensas bônus e recursos de jogo aprimorados.",
+    "benefitsTitle": "Benefícios da Verificação Humana:",
+    "benefit1": "Multiplicadores de recompensa mais altos",
+    "benefit2": "Acesso a torneios exclusivos",
+    "benefit3": "Proteção anti-trapaça aprimorada",
+    "verifyButton": "Verificar com World ID",
+    "skipButton": "Pular por Enquanto",
+    "verifying": "Verificando...",
+    "verified": "Humanidade Verificada!",
+    "verifiedDescription": "Agora você está verificado como humano e pode aproveitar recompensas e recursos aprimorados.",
+    "continue": "Continuar",
+    "note": "Você pode verificar sua humanidade mais tarde no menu de configurações.",
+    "error": "⚠️ Verificação falhou. Certifique-se de estar verificado com Documento e tente novamente!"
   },
   "common": {
     "loading": "Carregando...",

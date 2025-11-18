@@ -57,6 +57,9 @@
       "retry": "Reintentar"
     }
   },
+  "gameStart": {
+    "title": "🎮 Iniciar Juego"
+  },
   "gameScreen": {
     "pause": "⏸️ Pausar",
     "round": "Ronda {{round}}",

@@ -53,6 +53,10 @@
       "error": "エラー: {{error}}",
       "retry": "再試行"
     }
+  ,
+    "gameStart": {
+      "title": "ゲーム開始"
+    }
   },
   "gameScreen": {
     "pause": "⏸️ 一時停止",
@@ -239,6 +243,10 @@
       "title": "アーケードモード",
       "description": "浮遊パワーアップと特殊能力で強化されたゲームプレイ"
     },
+    "whackMode": {
+      "title": "🔨 ライト叩き",
+      "description": "緑のライトのみをタップ。ラウンドごとにライトが増える — 素早く致命的。"
+    },
     "changeAnytime": "メインメニューからいつでもモードを変更できます",
     "verificationBenefits": {
       "title": "認証の特典",
@@ -270,6 +278,7 @@
     "claimed": "クレーム済み",
     "nextClaim": "次のクレームまで",
     "streak": "連続",
+    "streakInfo": "{{days}}日連続: {{bonus}}% ボーナス",
     "available": "デイリーリワード利用可能",
     "dayStreak": "日間連続",
     "claiming": "受け取り中...",

@@ -53,6 +53,10 @@
       "error": "오류: {{error}}",
       "retry": "다시 시도"
     }
+  ,
+    "gameStart": {
+      "title": "게임 시작"
+    }
   },
   "gameScreen": {
     "pause": "⏸️ 일시정지",
@@ -271,6 +275,8 @@
     "title": "일일 보상",
     "claim": "보상 받기",
     "claimed": "받음",
+    "nextClaim": "다음 청구까지",
+    "streak": "연속",
     "claiming": "받는 중...",
     "nextReward": "다음 보상",
     "nextAvailable": "다음 이용 가능까지",

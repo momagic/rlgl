@@ -260,12 +260,15 @@
   "dailyClaim": {
     "title": "Daily Reward",
     "claim": "Claim Reward",
+    "claimed": "Claimed",
     "claiming": "Claiming...",
     "nextReward": "Next Reward",
     "nextAvailable": "Next Available In",
+    "nextClaim": "Next claim in",
     "days": "Days",
     "description": "Claim your daily RLGL tokens! Come back every day to build your streak.",
     "streakInfo": "{{days}} day streak: {{bonus}}% bonus",
+    "streak": "Streak",
     "success": "Daily reward claimed successfully!",
     "claimError": "Failed to claim daily reward",
     "loadError": "Failed to load daily claim status",
@@ -282,12 +285,53 @@
        "timing": "You have limited time - be quick but accurate!"
      }
    },
-   "proTips": {
+  "proTips": {
       "timing": "Timing is everything: Wait for the green light before tapping!",
       "speed": "Speed increases: The game gets faster as your score grows.",
       "arcade": "Arcade mode: Collect power-ups to gain special abilities!",
     "whack": "Whack-a-Light mode: Tap green lights in a 3x3 grid - more lights each round!",
     "leaderboard": "High scores: Compete on the leaderboard with other players!"
+  },
+  "walletLogin": {
+    "connectTitle": "Connect Wallet",
+    "connectSubtitle": "Secure Web3 Gaming",
+    "walletRequired": "Wallet Required",
+    "connectToPlay": "Connect your wallet to play and earn rewards in this Web3 game.",
+    "callToAction": "🎮 Ready to play? Tap anywhere to connect your wallet!",
+    "worldAppNote": "✨ Works seamlessly with World App wallet",
+    "tapInstructions": "Tap anywhere to connect your wallet",
+    "connecting": "Connecting...",
+    "error": "⚠️ Connection failed. Try again or check your wallet."
+  },
+  "walletInfoModal": {
+    "title": "Wallet Connection",
+    "description": "Connect your wallet to access this Web3 game and earn rewards for your gameplay.",
+    "secureTitle": "Secure & Private",
+    "secureDescription": "Your wallet remains secure — we only request connection permission.",
+    "instantTitle": "Instant Access",
+    "instantDescription": "Connect once and play immediately with no extra setup.",
+    "gameTitle": "Play & Earn",
+    "gameDescription": "Earn tokens and compete on the leaderboard with other players.",
+    "worldAppNote": "💡 This game works best with the World App wallet for the smoothest experience"
+  },
+  "humanVerification": {
+    "title": "Verify Humanity",
+    "description": "Optional: Verify you’re human to unlock bonus rewards and enhanced gameplay features.",
+    "benefitsTitle": "Human Verification Benefits:",
+    "benefit1": "Higher reward multipliers",
+    "benefit2": "Access to exclusive tournaments",
+    "benefit3": "Enhanced anti-cheat protection",
+    "verifyButton": "Verify with World ID",
+    "skipButton": "Skip for Now",
+    "verifying": "Verifying...",
+    "verified": "Human Verified!",
+    "verifiedDescription": "You’re now verified as human and can enjoy enhanced rewards and features.",
+    "continue": "Continue",
+    "note": "You can verify your humanity later from the settings menu.",
+    "error": "⚠️ Verification failed. Make sure you’re Document verified and try again!"
+  },
+  "gameStart": {
+    "title": "🎮 Start Game"
   },
   "common": {
     "loading": "Loading...",
