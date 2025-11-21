@@ -172,6 +172,18 @@ export class WorldIDVerificationService {
     }
   }
 
+  async getBans(): Promise<string[]> {
+    try {
+      const res = await fetch(`${this.apiUrl}/bans`, { method: 'GET' })
+      if (!res.ok) return []
+      const data = await res.json().catch(() => null)
+      const arr = Array.isArray(data) ? data : Array.isArray(data?.addresses) ? data.addresses : []
+      return arr.map((a: string) => String(a).toLowerCase())
+    } catch {
+      return []
+    }
+  }
+
   /**
    * Verify proof locally (fallback if API is unavailable)
    */

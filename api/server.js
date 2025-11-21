@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const { ethers } = require('ethers');
+const fs = require('fs');
+const path = require('path');
 let verifyCloudProof
 try {
   const idkitCore = require('@worldcoin/idkit-core')
@@ -56,6 +58,31 @@ const RPC_URLS = [
   'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro'
 ];
 const CONTRACT_ADDRESS = process.env.GAME_CONTRACT_ADDRESS;
+const BAN_ADMIN_TOKEN = process.env.BAN_ADMIN_TOKEN || process.env.ADMIN_TOKEN;
+const BANS_FILE = path.join(__dirname, 'bans.json');
+let bannedAddresses = new Set();
+function loadBans() {
+  try {
+    const raw = fs.readFileSync(BANS_FILE, 'utf8');
+    const json = JSON.parse(raw);
+    const arr = Array.isArray(json) ? json : Array.isArray(json.addresses) ? json.addresses : [];
+    bannedAddresses = new Set(arr.map(a => String(a).toLowerCase()));
+  } catch {
+    bannedAddresses = new Set();
+  }
+}
+function saveBans() {
+  try {
+    const arr = Array.from(bannedAddresses);
+    const data = JSON.stringify({ addresses: arr }, null, 2);
+    fs.writeFileSync(BANS_FILE, data, 'utf8');
+  } catch {}
+}
+function isBanned(addr) {
+  if (!addr) return false;
+  return bannedAddresses.has(String(addr).toLowerCase());
+}
+loadBans();
 
 // Contract ABI for setUserVerification function
 const CONTRACT_ABI = [
@@ -225,6 +252,9 @@ app.post('/world-id', async (req, res) => {
   }
 
   try {
+    if (isBanned(userAddress)) {
+      return res.status(403).json({ error: 'User is banned' });
+    }
     console.log('🔄 Verifying World ID proof...');
     const verificationResult = await verifyWorldIDProof(proof, userAddress);
     
@@ -271,6 +301,9 @@ app.get('/world-id', async (req, res) => {
   }
 
   try {
+    if (isBanned(userAddress)) {
+      return res.status(403).json({ error: 'User is banned' });
+    }
     const cacheKey = `${userAddress}-${nullifierHash}`;
     const cachedVerification = verificationCache.get(cacheKey);
 
@@ -327,6 +360,32 @@ app.get('/world-id', async (req, res) => {
       message: error.message 
     });
   }
+});
+
+app.get('/bans', (req, res) => {
+  res.json({ addresses: Array.from(bannedAddresses) });
+});
+
+app.post('/admin/ban', (req, res) => {
+  const token = (req.headers['authorization'] || '').replace(/^Bearer\s+/i, '') || req.headers['x-admin-token'];
+  const address = (req.body && req.body.address) || (req.query && req.query.address);
+  if (!BAN_ADMIN_TOKEN) return res.status(500).json({ error: 'BAN_ADMIN_TOKEN not configured' });
+  if (!token || token !== BAN_ADMIN_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
+  if (!address) return res.status(400).json({ error: 'Missing address' });
+  bannedAddresses.add(String(address).toLowerCase());
+  saveBans();
+  res.json({ success: true, addresses: Array.from(bannedAddresses) });
+});
+
+app.post('/admin/unban', (req, res) => {
+  const token = (req.headers['authorization'] || '').replace(/^Bearer\s+/i, '') || req.headers['x-admin-token'];
+  const address = (req.body && req.body.address) || (req.query && req.query.address);
+  if (!BAN_ADMIN_TOKEN) return res.status(500).json({ error: 'BAN_ADMIN_TOKEN not configured' });
+  if (!token || token !== BAN_ADMIN_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
+  if (!address) return res.status(400).json({ error: 'Missing address' });
+  bannedAddresses.delete(String(address).toLowerCase());
+  saveBans();
+  res.json({ success: true, addresses: Array.from(bannedAddresses) });
 });
 
 // Error handling middleware
@@ -474,6 +533,9 @@ app.post('/session/start', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   try {
+    if (isBanned(userAddress)) {
+      return res.status(403).json({ error: 'User is banned' });
+    }
     const verificationResult = await verifyWorldIDProof(proof, userAddress);
     const provider = await getHealthyProvider();
     const chainId = await provider.getNetwork().then(n => Number(n.chainId));
@@ -499,6 +561,9 @@ app.post('/score/permit', async (req, res) => {
     return res.status(500).json({ error: 'GAME_CONTRACT_ADDRESS not configured' });
   }
   try {
+    if (isBanned(userAddress)) {
+      return res.status(403).json({ error: 'User is banned' });
+    }
     console.log('Permit request', { userAddress, score, round, gameMode, nonce, deadline });
     const now = Date.now();
     const arr = permitRateMap.get(userAddress) || [];

@@ -14,6 +14,7 @@ import Settings from './components/Settings'
 import HowTo from './components/HowTo'
 import BottomNavigation from './components/BottomNavigation'
 import MaintenanceScreen from './components/MaintenanceScreen'
+import BannedScreen from './components/BannedScreen'
 import { worldIDVerificationService } from './services/worldIDVerification'
 import type { TabType } from './components/BottomNavigation'
 
@@ -27,6 +28,7 @@ function GameApp() {
   
   // Maintenance mode: toggled by API health
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false)
+  const [isBanned, setIsBanned] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -41,6 +43,24 @@ function GameApp() {
       clearInterval(interval)
     }
   }, [])
+
+  useEffect(() => {
+    let mounted = true
+    const checkBans = async () => {
+      try {
+        const bans = await worldIDVerificationService.getBans()
+        const addr = user?.walletAddress?.toLowerCase()
+        if (!mounted) return
+        setIsBanned(!!addr && bans.includes(addr))
+      } catch {}
+    }
+    checkBans()
+    const interval = setInterval(checkBans, 60_000)
+    return () => {
+      mounted = false
+      clearInterval(interval)
+    }
+  }, [user?.walletAddress])
 
 
 
@@ -73,6 +93,10 @@ function GameApp() {
   // Show maintenance screen if maintenance mode is active
   if (isMaintenanceMode) {
     return <MaintenanceScreen />
+  }
+
+  if (user?.verified && isBanned) {
+    return <BannedScreen />
   }
 
   // Show login screen if user is not verified

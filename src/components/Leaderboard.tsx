@@ -80,6 +80,7 @@ function Leaderboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [bannedAddresses, setBannedAddresses] = useState<string[]>([])
   
   console.log('📊 Current leaderboard state:', {
     leaderboardLength: leaderboard.length,
@@ -236,6 +237,14 @@ function Leaderboard() {
   const { getTopScores } = useContract()
   const [selectedMode, setSelectedMode] = useState<GameMode>('Classic')
 
+  useEffect(() => {
+    const base = (import.meta as any)?.env?.VITE_API_BASE_URL || 'http://localhost:3000'
+    fetch(`${base}/bans`).then(r => r.json()).then(j => {
+      const arr = Array.isArray(j) ? j : Array.isArray(j.addresses) ? j.addresses : []
+      setBannedAddresses(arr.map((a: string) => a.toLowerCase()))
+    }).catch(() => {})
+  }, [])
+
   const getCacheKeys = useCallback((mode: GameMode) => {
     return {
       dataKey: `leaderboard-cache-${mode.toLowerCase()}`,
@@ -348,12 +357,14 @@ function Leaderboard() {
       console.log('🌐 Fetching fresh data from contract...')
        const contractData = await getTopScores(10, selectedMode)
 
+       const filteredContractData = contractData.filter((e: any) => !bannedAddresses.includes(String(e.player).toLowerCase()))
+
         console.log('📊 Contract data received:', {
           leaderboard: contractData.length
         })
        
        // Process data with optimized username resolution (no async blocking)
-       const processedData = contractData.slice(0, 10).map((entry: any, index: number) => ({
+       const processedData = filteredContractData.slice(0, 10).map((entry: any, index: number) => ({
          ...entry,
          rank: index + 1,
          displayName: getPlayerDisplayName(entry.player),
