@@ -3,7 +3,11 @@ const { ethers } = require('hardhat')
 
 async function main() {
   const proxy = process.env.PROXY_ADDRESS || '0xc4201D1C64625C45944Ef865f504F995977733F7'
-  const addresses = [
+  const envRecipients = (process.env.RECIPIENTS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+  const addresses = envRecipients.length ? envRecipients : [
     '0x969FbC4bC3C1B94415951F41d7f4ad2A83d7ca62',
     '0x4ad5FCcE1cC9148B091B43f5B22006eDF6CAB207',
     '0x9C7623A063a333D6D44b659Dd7d7A4A57AA23b9f'
