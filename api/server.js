@@ -43,8 +43,8 @@ app.use(cors());
 app.use(express.json());
 
 // Environment variables
-const APP_ID = process.env.WORLD_ID_APP_ID || 'app_f11a49a98aab37a10e7dcfd20139f605';
-const ACTION_ID = process.env.WORLD_ID_ACTION_ID || 'play-game';
+const APP_ID = process.env.WORLD_ID_APP_ID || process.env.VITE_WORLD_ID_APP_ID || 'app_f11a49a98aab37a10e7dcfd20139f605';
+const ACTION_ID = process.env.WORLD_ID_ACTION_ID || process.env.VITE_WORLD_ID_ACTION_ID || 'play-game';
 const PRIVATE_KEY = process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const SIGNER_PRIVATE_KEY = process.env.SIGNER_PRIVATE_KEY || process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const RPC_URLS = [
@@ -148,10 +148,20 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
     console.log(`Submitting verification for ${userAddress}: level=${level}, verified=${isVerified}`);
 
     // Idempotency: skip on-chain submission if already verified at same level
-    const currentStatus = await withProviderRetry(async (p) => {
-      const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, p);
-      return c.getUserVerificationStatus(userAddress);
-    });
+    let currentStatus;
+    try {
+      currentStatus = await withProviderRetry(async (p) => {
+        const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, p);
+        return c.getUserVerificationStatus(userAddress);
+      });
+    } catch (err) {
+      const msg = (err && (err.reason || err.shortMessage || err.message)) || '';
+      if (msg.includes('Document verification or higher required')) {
+        currentStatus = { isVerified: false, verificationLevel: 0 };
+      } else {
+        throw err;
+      }
+    }
     if (currentStatus && currentStatus.isVerified && Number(currentStatus.verificationLevel) === Number(level)) {
       console.log('Skipping on-chain submission: user already verified at same level');
       return {
