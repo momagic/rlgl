@@ -8,6 +8,7 @@ import { getDisplayName } from '../utils'
 import type { LeaderboardEntry } from '../types/contract'
 import { sanitizeLocalStorageData, sanitizeJSONData } from '../utils/inputSanitizer'
 import { UserInfo } from './UserInfo'
+import { worldIDVerificationService } from '../services/worldIDVerification'
 
 // Time filter types
 type TimeFilter = 'weekly' | 'monthly' | 'alltime'
@@ -238,12 +239,22 @@ function Leaderboard() {
   const [selectedMode, setSelectedMode] = useState<GameMode>('Classic')
 
   useEffect(() => {
-    const base = (import.meta as any)?.env?.VITE_API_BASE_URL || 'http://localhost:3000'
-    fetch(`${base}/bans`).then(r => r.json()).then(j => {
-      const arr = Array.isArray(j) ? j : Array.isArray(j.addresses) ? j.addresses : []
-      setBannedAddresses(arr.map((a: string) => a.toLowerCase()))
-    }).catch(() => {})
+    const loadBans = async () => {
+      try {
+        const arr = await worldIDVerificationService.getBans()
+        setBannedAddresses(arr.map(a => a.toLowerCase()))
+      } catch {}
+    }
+    loadBans()
+    const interval = setInterval(loadBans, 60000)
+    return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    if (bannedAddresses.length > 0 && allLeaderboardData.length > 0) {
+      setAllLeaderboardData(prev => prev.filter(e => !bannedAddresses.includes(String(e.player).toLowerCase())))
+    }
+  }, [bannedAddresses])
 
   const getCacheKeys = useCallback((mode: GameMode) => {
     return {
@@ -338,7 +349,8 @@ function Leaderboard() {
     const cached = getCachedLeaderboard(selectedMode, force)
     if (cached) {
       console.log('📦 Using cached leaderboard data:', cached.length, 'entries')
-      setAllLeaderboardData(cached)
+      const filteredCached = cached.filter((e: any) => !bannedAddresses.includes(String(e.player).toLowerCase()))
+      setAllLeaderboardData(filteredCached)
       const { tsKey } = getCacheKeys(selectedMode)
       const cacheTimestamp = localStorage.getItem(tsKey)
       if (cacheTimestamp) {
@@ -356,7 +368,6 @@ function Leaderboard() {
       
       console.log('🌐 Fetching fresh data from contract...')
        const contractData = await getTopScores(10, selectedMode)
-
        const filteredContractData = contractData.filter((e: any) => !bannedAddresses.includes(String(e.player).toLowerCase()))
 
         console.log('📊 Contract data received:', {
