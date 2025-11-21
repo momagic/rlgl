@@ -180,11 +180,11 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
     console.log('Transaction submitted:', tx.hash);
 
     const receipt = await tx.wait();
-    console.log('Transaction confirmed:', receipt.transactionHash);
+    console.log('Transaction confirmed:', receipt.hash);
 
     return {
       success: true,
-      transactionHash: receipt.transactionHash,
+      transactionHash: receipt.hash,
       blockNumber: receipt.blockNumber,
       gasUsed: receipt.gasUsed.toString()
     };
