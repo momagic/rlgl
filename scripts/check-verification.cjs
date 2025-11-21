@@ -5,12 +5,33 @@ async function main() {
   const target = (process.env.ADDRESS || '0x1fCE79ea8510eE137F2AA2Cc870Ae701e240d5da').trim()
 
   const v3 = await ethers.getContractAt('RedLightGreenLightGameV3', proxy)
+
+  let verificationLevel = null
+  let isVerified = null
+  try {
+    const checkAbi = [
+      'function getUserVerificationStatus(address user) view returns (uint8 verificationLevel, bool isVerified)'
+    ]
+    const c = new ethers.Contract(proxy, checkAbi, (await ethers.getSigners())[0])
+    const res = await c.getUserVerificationStatus(target)
+    verificationLevel = Number(res.verificationLevel ?? res[0])
+    isVerified = Boolean(res.isVerified ?? res[1])
+  } catch {}
+
   const stats = await v3.getPlayerStats(target)
   const balance = await v3.balanceOf(target)
 
-  const isTuple = Array.isArray(stats)
-  const verificationLevel = isTuple ? Number(stats[10]) : Number(stats.verificationLevel)
-  const isVerified = isTuple ? Boolean(stats[11]) : Boolean(stats.isVerified)
+  if (verificationLevel === null || isVerified === null) {
+    const isTuple = Array.isArray(stats)
+    if (isTuple) {
+      // Align with frontend indices (verificationLevel: 12, isVerified: 13)
+      verificationLevel = Number(stats[12])
+      isVerified = Boolean(stats[13])
+    } else {
+      verificationLevel = Number(stats.verificationLevel)
+      isVerified = Boolean(stats.isVerified)
+    }
+  }
 
   console.log('address:', target)
   console.log('isVerified:', isVerified)

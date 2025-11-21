@@ -390,12 +390,17 @@ export function useContract(): UseContractReturn {
       
       console.log('✅ Player stats result:', result)
 
-      const balance = await rpcManager.readContract({
-        address: GAME_CONTRACT_ADDRESS,
-        abi: GAME_CONTRACT_ABI,
-        functionName: 'balanceOf',
-        args: [playerAddress as Address]
-      }) as bigint
+      let balance: bigint = 0n
+      try {
+        balance = await rpcManager.readContract({
+          address: GAME_CONTRACT_ADDRESS,
+          abi: GAME_CONTRACT_ABI,
+          functionName: 'balanceOf',
+          args: [playerAddress as Address]
+        }) as bigint
+      } catch (balErr) {
+        console.warn('⚠️ balanceOf read failed, defaulting to 0:', balErr instanceof Error ? balErr.message : String(balErr))
+      }
 
       if (Array.isArray(result)) {
         return {
