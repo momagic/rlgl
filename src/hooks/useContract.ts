@@ -448,6 +448,17 @@ export function useContract(): UseContractReturn {
       })
       
       // Check if this is a verification requirement error
+      let fallbackBalance: string = '0'
+      try {
+        const bal = await rpcManager.readContract({
+          address: GAME_CONTRACT_ADDRESS,
+          abi: GAME_CONTRACT_ABI,
+          functionName: 'balanceOf',
+          args: [playerAddress as Address]
+        }) as bigint
+        fallbackBalance = (bal ?? 0n).toString()
+      } catch {}
+
       if (err instanceof Error && err.message.includes('Document verification or higher required')) {
         console.warn('⚠️ User not verified on-chain, returning fallback stats for Orb-verified user')
         // Return fallback stats for Orb-verified user who hasn't been verified on-chain yet
@@ -457,7 +468,7 @@ export function useContract(): UseContractReturn {
           totalGamesPlayed: 0,
           highScore: 0,
           totalPointsEarned: 0,
-          tokenBalance: '0',
+          tokenBalance: fallbackBalance,
           availableTurns: 3, // 3 daily turns remaining
           timeUntilReset: 82800, // ~23 hours until next reset
           weeklyPassExpiry: 0,
@@ -479,7 +490,7 @@ export function useContract(): UseContractReturn {
         totalGamesPlayed: 0,
         highScore: 0,
         totalPointsEarned: 0,
-        tokenBalance: '0',
+        tokenBalance: fallbackBalance,
         availableTurns: 3, // 3 daily turns remaining
         timeUntilReset: 82800, // ~23 hours until next reset
         weeklyPassExpiry: 0,
