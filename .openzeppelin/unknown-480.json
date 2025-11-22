@@ -18,7 +18,6 @@
     },
     {
       "address": "0xc4201D1C64625C45944Ef865f504F995977733F7",
-      "txHash": "0xd605d0553531fb70d50db03e04a1d409c1475837617d2967ef06da61bd62fae6",
       "kind": "uups"
     }
   ],
@@ -4212,7 +4211,11 @@
             }
           ]
         }
-      }
+      },
+      "allAddresses": [
+        "0xd5c50af8732e0044eD286433cAF1f34f2d4E2927",
+        "0x9b65bd43F3e6EbC799c3e8515BDA1f4857325FcA"
+      ]
     }
   }
 }
