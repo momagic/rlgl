@@ -587,7 +587,18 @@ app.post('/score/permit', async (req, res) => {
       userAgent: req.headers['user-agent'],
       permitSignature: signature.substring(0, 10) + '...' + signature.substring(signature.length - 8),
       permitDeadline: deadline,
-      network: await getNetworkName()
+      network: await getNetworkName(),
+      // Add guidance for frontend developers
+      nextSteps: 'To track token claim failures, call /token/claim/status when user attempts to claim',
+      permitData: {
+        player: userAddress,
+        score: score.toString(),
+        round: round.toString(),
+        gameMode: gameMode,
+        sessionId: sessionId,
+        nonce: nonce.toString(),
+        deadline: deadline.toString()
+      }
     });
     console.log('💰 TOKEN_ESTIMATION', {
       userAddress,
@@ -596,8 +607,64 @@ app.post('/score/permit', async (req, res) => {
       tokenCalculation: `${score} * 0.1 = ${Math.floor(score * 0.1)}`,
       timestamp: new Date().toISOString()
     });
-    console.log('Permit issued', { userAddress, score, round, gameMode, nonce, deadline });
-    res.json({ success: true, signature, domain, types: ScorePermitTypes, value: valueOut });
+    console.log('📋 PERMIT_ISSUED', {
+      userAddress,
+      score,
+      round,
+      gameMode,
+      sessionId,
+      permitSignature: signature.substring(0, 10) + '...' + signature.substring(signature.length - 8),
+      permitDeadline: deadline,
+      network: await getNetworkName(),
+      // Frontend guidance
+      frontendNote: 'When user attempts to claim tokens with this permit, log the attempt to help debug failures',
+      claimTrackingUrl: '/token/claim/status',
+      permitUsageUrl: '/permit/usage',
+      exampleClaimLog: {
+        userAddress: userAddress,
+        status: 'failed|success',
+        error: 'Transaction error message',
+        txHash: '0x...',
+        claimedAmount: Math.floor(score * 0.1).toString()
+      }
+    });
+    // Add tracking information to help frontend developers understand the claim process
+    const trackingInfo = {
+      trackingGuidance: {
+        message: "To debug token claim failures, have your frontend call these endpoints when user attempts to claim:",
+        steps: [
+          "1. When user clicks 'Claim Tokens' button, call /token/claim/status with status='attempt'",
+          "2. If transaction fails, call /token/claim/status with status='failed' and include the error",
+          "3. If transaction succeeds, call /token/claim/status with status='success' and include txHash"
+        ],
+        endpoints: {
+          claimStatus: "/token/claim/status",
+          permitUsage: "/permit/usage"
+        },
+        examplePayload: {
+          userAddress: userAddress,
+          status: "failed",
+          error: "Transaction reverted: insufficient gas",
+          txHash: "0x...",
+          claimedAmount: Math.floor(score * 0.1).toString(),
+          permitData: {
+            score: score.toString(),
+            round: round.toString(),
+            gameMode: gameMode,
+            signature: signature.substring(0, 10) + "..."
+          }
+        }
+      }
+    };
+    
+    res.json({ 
+      success: true, 
+      signature, 
+      domain, 
+      types: ScorePermitTypes, 
+      value: valueOut,
+      tracking: trackingInfo
+    });
   } catch (error) {
     console.log('🔴 GAME_COMPLETION_FAILED', {
       userAddress,
@@ -726,14 +793,16 @@ app.use((error, req, res, next) => {
       stackTrace: error.stack?.substring(0, 500) || 'No stack trace',
       timestamp: new Date().toISOString(),
       ip: req.ip || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
+      userAgent: req.headers['user-agent'],
+      frontendNote: 'If this is a token claim failure, ensure your frontend is calling /token/claim/status to track the failure'
     });
   }
   
   console.error('❌ Unhandled error:', error);
   res.status(500).json({
     error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
+    frontendGuidance: req.path.includes('permit') ? 'To debug token claim failures, have your frontend call /token/claim/status when user attempts to claim tokens' : undefined
   });
 });
 
