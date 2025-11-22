@@ -270,6 +270,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
       const deadline = Math.floor(Date.now() / 1000) + 900
       const gameMode = gameData.gameMode === 'classic' ? 'Classic' : gameData.gameMode === 'arcade' ? 'Arcade' : 'WhackLight'
       try {
+        console.log('Calling score permit API:', `${apiBase}/score/permit`);
+        console.log('Request body:', { userAddress: (window as any)?.MiniKit?.user?.address || '', score: finalScore, round: finalRound, gameMode, sessionId, nonce, deadline });
         const resp = await fetch(`${apiBase}/score/permit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -283,6 +285,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             deadline
           })
         })
+        console.log('Score permit API response status:', resp.status);
         if (resp.ok) {
           const data = await resp.json()
           const sig = data.signature as string
@@ -299,8 +302,10 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         } else {
           console.warn('Permit API responded with non-OK status', resp.status)
         }
-      } catch {}
-      console.warn('Permit API unavailable, falling back to direct on-chain submission')
+      } catch (error) {
+        console.error('Permit API error:', error);
+        console.warn('Permit API unavailable, falling back to direct on-chain submission');
+      }
       const submission = await contract.submitScore(finalScore, finalRound, gameMode as any)
       setGameData(currentData => ({
         ...currentData,

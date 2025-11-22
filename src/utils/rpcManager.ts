@@ -4,9 +4,12 @@ import { worldchain } from 'viem/chains'
 // Public RPC endpoints for World Chain
 const PUBLIC_RPC_ENDPOINTS = [
   'https://worldchain-mainnet.g.alchemy.com/public',
+  'https://worldchain-mainnet.g.alchemy.com/v2/mLzne7L6CEdRUufdPJ2ql',
   'https://480.rpc.thirdweb.com',
   'https://worldchain-mainnet.gateway.tenderly.co',
+  'https://worldchain-mainnet.gateway.tenderly.co/3G1TRsj1himyamFio0krcS',
   'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro',
+  'https://morning-still-pallet.worldchain-mainnet.quiknode.pro/ffbce91f9e32cff0c9ceb19fb91e5e56f51a6980/',
   'https://worldchain.drpc.org',
 ] as const
 
