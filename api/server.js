@@ -447,6 +447,127 @@ app.post('/admin/unban', (req, res) => {
   res.json({ success: true, addresses: Array.from(bannedAddresses) });
 });
 
+app.post('/session/start', async (req, res) => {
+  const { proof, userAddress } = req.body || {};
+  if (!userAddress || !proof) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  try {
+    if (isBanned(userAddress)) {
+      return res.status(403).json({ error: 'User is banned' });
+    }
+    const verificationResult = await verifyWorldIDProof(proof, userAddress);
+    const provider = await getHealthyProvider();
+    const chainId = await provider.getNetwork().then(n => Number(n.chainId));
+    const nonce = Math.floor(Date.now());
+    const deadline = Math.floor(Date.now() / 1000) + 900;
+    const sessionId = ethers.id(`sess:${userAddress}:${nonce}`);
+    console.log('Session started', { userAddress, sessionId, nonce, deadline, chainId });
+    res.json({ success: true, sessionId, nonce, deadline, chainId, verificationLevel: verificationResult.verificationLevel });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.post('/score/permit', async (req, res) => {
+  const { userAddress, score, round, gameMode, sessionId, nonce, deadline } = req.body || {};
+  if (!userAddress || typeof score !== 'number' || typeof round !== 'number' || !sessionId || typeof nonce !== 'number' || typeof deadline !== 'number') {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (!SIGNER_PRIVATE_KEY) {
+    return res.status(500).json({ error: 'SIGNER_PRIVATE_KEY not configured' });
+  }
+  if (!CONTRACT_ADDRESS) {
+    return res.status(500).json({ error: 'GAME_CONTRACT_ADDRESS not configured' });
+  }
+  try {
+    if (isBanned(userAddress)) {
+      return res.status(403).json({ error: 'User is banned' });
+    }
+    console.log('🎮 GAME_COMPLETION_ATTEMPT', {
+      userAddress,
+      score,
+      round,
+      gameMode,
+      sessionId,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
+    console.log('Permit request', { userAddress, score, round, gameMode, nonce, deadline });
+    const now = Date.now();
+    const arr = permitRateMap.get(userAddress) || [];
+    const recent = arr.filter(ts => now - ts <= PERMIT_WINDOW_MS);
+    if (recent.length >= PERMIT_MAX) {
+      console.warn('Permit rate limit', { userAddress, count: recent.length });
+      return res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+    recent.push(now);
+    permitRateMap.set(userAddress, recent);
+    if (round <= 0 || round > 1000) {
+      console.warn('Permit validation failed', { userAddress, reason: 'Invalid round', round });
+      return res.status(400).json({ error: 'Invalid round' });
+    }
+    if (score <= 0) {
+      console.warn('Permit validation failed', { userAddress, reason: 'Invalid score', score });
+      return res.status(400).json({ error: 'Invalid score' });
+    }
+    const maxScore = calculateMaxTheoreticalScore(gameMode, round);
+    if (score > maxScore) {
+      console.warn('Permit validation failed', { userAddress, reason: 'Score exceeds theoretical maximum', score, maxScore });
+      return res.status(400).json({ error: 'Score exceeds theoretical maximum' });
+    }
+    const provider = await getHealthyProvider();
+    const wallet = new ethers.Wallet(SIGNER_PRIVATE_KEY, provider);
+    const chainId = await provider.getNetwork().then(n => Number(n.chainId));
+    const domain = buildDomain(chainId, CONTRACT_ADDRESS);
+    const value = {
+      player: userAddress,
+      score: ethers.toBigInt(score),
+      round: ethers.toBigInt(round),
+      gameMode: gameModeToUint8(gameMode),
+      sessionId,
+      nonce: ethers.toBigInt(nonce),
+      deadline: ethers.toBigInt(deadline)
+    };
+    const signature = await wallet.signTypedData(domain, ScorePermitTypes, value);
+    const valueOut = {
+      player: value.player,
+      score: value.score.toString(),
+      round: value.round.toString(),
+      gameMode: value.gameMode,
+      sessionId: value.sessionId,
+      nonce: value.nonce.toString(),
+      deadline: value.deadline.toString()
+    };
+    console.log('🏆 GAME_COMPLETION_SUCCESS', {
+      userAddress,
+      score,
+      round,
+      gameMode,
+      sessionId,
+      estimatedTokens: Math.floor(score * 0.1),
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress
+    });
+    console.log('Permit issued', { userAddress, score, round, gameMode, nonce, deadline });
+    res.json({ success: true, signature, domain, types: ScorePermitTypes, value: valueOut });
+  } catch (error) {
+    console.log('🔴 GAME_COMPLETION_FAILED', {
+      userAddress,
+      score,
+      round,
+      gameMode,
+      sessionId,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress
+    });
+    console.error('Permit issuance failed', { userAddress, score, round, gameMode, error: error && error.message ? error.message : String(error) });
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.error('❌ Unhandled error:', error);
@@ -469,8 +590,6 @@ app.listen(PORT, () => {
   console.log(`🚀 World ID Verification API running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔒 Environment: ${process.env.NODE_ENV || 'development'}`);
-  
-  // Validate required environment variables
   if (!PRIVATE_KEY) {
     console.warn('⚠️  WARNING: AUTHORIZED_SUBMITTER_PRIVATE_KEY not set');
   }
@@ -585,123 +704,3 @@ const ScorePermitTypes = {
     { name: 'deadline', type: 'uint256' }
   ]
 };
-
-app.post('/session/start', async (req, res) => {
-  const { proof, userAddress } = req.body || {};
-  if (!userAddress || !proof) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-  try {
-    if (isBanned(userAddress)) {
-      return res.status(403).json({ error: 'User is banned' });
-    }
-    const verificationResult = await verifyWorldIDProof(proof, userAddress);
-    const provider = await getHealthyProvider();
-    const chainId = await provider.getNetwork().then(n => Number(n.chainId));
-    const nonce = Math.floor(Date.now());
-    const deadline = Math.floor(Date.now() / 1000) + 900;
-    const sessionId = ethers.id(`sess:${userAddress}:${nonce}`);
-    console.log('Session started', { userAddress, sessionId, nonce, deadline, chainId });
-    res.json({ success: true, sessionId, nonce, deadline, chainId, verificationLevel: verificationResult.verificationLevel });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-app.post('/score/permit', async (req, res) => {
-  const { userAddress, score, round, gameMode, sessionId, nonce, deadline } = req.body || {};
-  if (!userAddress || typeof score !== 'number' || typeof round !== 'number' || !sessionId || typeof nonce !== 'number' || typeof deadline !== 'number') {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-  if (!SIGNER_PRIVATE_KEY) {
-    return res.status(500).json({ error: 'SIGNER_PRIVATE_KEY not configured' });
-  }
-  if (!CONTRACT_ADDRESS) {
-    return res.status(500).json({ error: 'GAME_CONTRACT_ADDRESS not configured' });
-  }
-  try {
-    if (isBanned(userAddress)) {
-      return res.status(403).json({ error: 'User is banned' });
-    }
-    
-    // Log game completion attempt
-    console.log('🎮 GAME_COMPLETION_ATTEMPT', {
-      userAddress,
-      score,
-      round,
-      gameMode,
-      sessionId,
-      timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
-    
-    console.log('Permit request', { userAddress, score, round, gameMode, nonce, deadline });
-    const now = Date.now();
-    const arr = permitRateMap.get(userAddress) || [];
-    const recent = arr.filter(ts => now - ts <= PERMIT_WINDOW_MS);
-    if (recent.length >= PERMIT_MAX) {
-      console.warn('Permit rate limit', { userAddress, count: recent.length });
-      return res.status(429).json({ error: 'Rate limit exceeded' });
-    }
-    recent.push(now);
-    permitRateMap.set(userAddress, recent);
-    if (round <= 0 || round > 1000) {
-      console.warn('Permit validation failed', { userAddress, reason: 'Invalid round', round });
-      return res.status(400).json({ error: 'Invalid round' });
-    }
-    if (score <= 0) {
-      console.warn('Permit validation failed', { userAddress, reason: 'Invalid score', score });
-      return res.status(400).json({ error: 'Invalid score' });
-    }
-    const maxScore = calculateMaxTheoreticalScore(gameMode, round);
-    if (score > maxScore) {
-      console.warn('Permit validation failed', { userAddress, reason: 'Score exceeds theoretical maximum', score, maxScore });
-      return res.status(400).json({ error: 'Score exceeds theoretical maximum' });
-    }
-    const provider = await getHealthyProvider();
-    const wallet = new ethers.Wallet(SIGNER_PRIVATE_KEY, provider);
-    const chainId = await provider.getNetwork().then(n => Number(n.chainId));
-    const domain = buildDomain(chainId, CONTRACT_ADDRESS);
-    const value = {
-      player: userAddress,
-      score: ethers.toBigInt(score),
-      round: ethers.toBigInt(round),
-      gameMode: gameModeToUint8(gameMode),
-      sessionId,
-      nonce: ethers.toBigInt(nonce),
-      deadline: ethers.toBigInt(deadline)
-    };
-    const signature = await wallet.signTypedData(domain, ScorePermitTypes, value);
-    
-    // Log successful game completion and token award
-    console.log('🏆 GAME_COMPLETION_SUCCESS', {
-      userAddress,
-      score,
-      round,
-      gameMode,
-      sessionId,
-      estimatedTokens: Math.floor(score * 0.1), // Assuming 0.1 tokens per point
-      timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress
-    });
-    
-    console.log('Permit issued', { userAddress, score, round, gameMode, nonce, deadline });
-    res.json({ success: true, signature, domain, types: ScorePermitTypes, value });
-  } catch (error) {
-    // Log failed game completion
-    console.log('🔴 GAME_COMPLETION_FAILED', {
-      userAddress,
-      score,
-      round,
-      gameMode,
-      sessionId,
-      error: error.message,
-      timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress
-    });
-    
-    console.error('Permit issuance failed', { userAddress, score, round, gameMode, error: error && error.message ? error.message : String(error) });
-    res.status(500).json({ error: error.message });
-  }
-});
