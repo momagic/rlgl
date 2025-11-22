@@ -255,6 +255,17 @@ app.post('/world-id', async (req, res) => {
     if (isBanned(userAddress)) {
       return res.status(403).json({ error: 'User is banned' });
     }
+    
+    // Log user login attempt
+    console.log('🟢 USER_LOGIN_ATTEMPT', {
+      userAddress,
+      verificationLevel: proof.verification_level,
+      nullifierHash: proof.nullifier_hash,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
+    
     console.log('🔄 Verifying World ID proof...');
     const verificationResult = await verifyWorldIDProof(proof, userAddress);
     
@@ -277,10 +288,29 @@ app.post('/world-id', async (req, res) => {
       onChainSubmission: onChainResult
     };
 
+    // Log successful user login
+    console.log('✅ USER_LOGIN_SUCCESS', {
+      userAddress,
+      verificationLevel: verificationResult.verificationLevel,
+      nullifierHash: verificationResult.nullifierHash,
+      onChainSubmitted: !!onChainResult,
+      transactionHash: onChainResult?.transactionHash,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress
+    });
+    
     console.log('✅ Verification completed successfully');
     res.json(response);
 
   } catch (error) {
+    // Log failed user login
+    console.log('🔴 USER_LOGIN_FAILED', {
+      userAddress,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress
+    });
+    
     console.error('❌ Verification failed:', error.message);
     res.status(400).json({ 
       error: 'Verification failed',
@@ -304,6 +334,16 @@ app.get('/world-id', async (req, res) => {
     if (isBanned(userAddress)) {
       return res.status(403).json({ error: 'User is banned' });
     }
+    
+    // Log user verification check (login status check)
+    console.log('🔍 USER_VERIFICATION_CHECK', {
+      userAddress,
+      nullifierHash,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
+    
     const cacheKey = `${userAddress}-${nullifierHash}`;
     const cachedVerification = verificationCache.get(cacheKey);
 
@@ -351,9 +391,28 @@ app.get('/world-id', async (req, res) => {
       } : null
     };
 
+    // Log successful verification check
+    console.log('✅ USER_VERIFICATION_SUCCESS', {
+      userAddress,
+      nullifierHash,
+      verificationLevel: cachedVerification.verificationLevel,
+      onChainVerified: onChainStatus?.isVerified,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress
+    });
+
     res.json(response);
 
   } catch (error) {
+    // Log failed verification check
+    console.log('🔴 USER_VERIFICATION_FAILED', {
+      userAddress,
+      nullifierHash,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress
+    });
+    
     console.error('❌ Verification status check failed:', error.message);
     res.status(500).json({ 
       error: 'Verification check failed',
@@ -564,6 +623,19 @@ app.post('/score/permit', async (req, res) => {
     if (isBanned(userAddress)) {
       return res.status(403).json({ error: 'User is banned' });
     }
+    
+    // Log game completion attempt
+    console.log('🎮 GAME_COMPLETION_ATTEMPT', {
+      userAddress,
+      score,
+      round,
+      gameMode,
+      sessionId,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
+    
     console.log('Permit request', { userAddress, score, round, gameMode, nonce, deadline });
     const now = Date.now();
     const arr = permitRateMap.get(userAddress) || [];
@@ -601,9 +673,34 @@ app.post('/score/permit', async (req, res) => {
       deadline: ethers.toBigInt(deadline)
     };
     const signature = await wallet.signTypedData(domain, ScorePermitTypes, value);
+    
+    // Log successful game completion and token award
+    console.log('🏆 GAME_COMPLETION_SUCCESS', {
+      userAddress,
+      score,
+      round,
+      gameMode,
+      sessionId,
+      estimatedTokens: Math.floor(score * 0.1), // Assuming 0.1 tokens per point
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress
+    });
+    
     console.log('Permit issued', { userAddress, score, round, gameMode, nonce, deadline });
     res.json({ success: true, signature, domain, types: ScorePermitTypes, value });
   } catch (error) {
+    // Log failed game completion
+    console.log('🔴 GAME_COMPLETION_FAILED', {
+      userAddress,
+      score,
+      round,
+      gameMode,
+      sessionId,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress
+    });
+    
     console.error('Permit issuance failed', { userAddress, score, round, gameMode, error: error && error.message ? error.message : String(error) });
     res.status(500).json({ error: error.message });
   }
