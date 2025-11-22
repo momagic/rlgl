@@ -454,17 +454,52 @@ app.post('/session/start', async (req, res) => {
   }
   try {
     if (isBanned(userAddress)) {
+      console.log('🚫 SESSION_START_BLOCKED', {
+        userAddress,
+        reason: 'User is banned',
+        timestamp: new Date().toISOString(),
+        ip: req.ip || req.connection.remoteAddress
+      });
       return res.status(403).json({ error: 'User is banned' });
     }
+    
+    console.log('🎮 SESSION_START_ATTEMPT', {
+      userAddress,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
+
     const verificationResult = await verifyWorldIDProof(proof, userAddress);
     const provider = await getHealthyProvider();
     const chainId = await provider.getNetwork().then(n => Number(n.chainId));
     const nonce = Math.floor(Date.now());
     const deadline = Math.floor(Date.now() / 1000) + 900;
     const sessionId = ethers.id(`sess:${userAddress}:${nonce}`);
-    console.log('Session started', { userAddress, sessionId, nonce, deadline, chainId });
+    const network = await getNetworkName();
+    
+    console.log('✅ SESSION_START_SUCCESS', {
+      userAddress,
+      sessionId,
+      nonce,
+      deadline,
+      chainId,
+      network,
+      verificationLevel: verificationResult.verificationLevel,
+      estimatedSessionExpiry: new Date(deadline * 1000).toISOString(),
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress
+    });
+    
     res.json({ success: true, sessionId, nonce, deadline, chainId, verificationLevel: verificationResult.verificationLevel });
   } catch (error) {
+    console.log('❌ SESSION_START_FAILED', {
+      userAddress,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress,
+      stackTrace: error.stack?.substring(0, 300) || 'No stack trace'
+    });
     res.status(400).json({ error: error.message });
   }
 });
@@ -548,7 +583,18 @@ app.post('/score/permit', async (req, res) => {
       sessionId,
       estimatedTokens: Math.floor(score * 0.1),
       timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent'],
+      permitSignature: signature.substring(0, 10) + '...' + signature.substring(signature.length - 8),
+      permitDeadline: deadline,
+      network: await getNetworkName()
+    });
+    console.log('💰 TOKEN_ESTIMATION', {
+      userAddress,
+      score,
+      estimatedTokens: Math.floor(score * 0.1),
+      tokenCalculation: `${score} * 0.1 = ${Math.floor(score * 0.1)}`,
+      timestamp: new Date().toISOString()
     });
     console.log('Permit issued', { userAddress, score, round, gameMode, nonce, deadline });
     res.json({ success: true, signature, domain, types: ScorePermitTypes, value: valueOut });
@@ -561,15 +607,129 @@ app.post('/score/permit', async (req, res) => {
       sessionId,
       error: error.message,
       timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent'],
+      network: await getNetworkName(),
+      stackTrace: error.stack?.substring(0, 500) || 'No stack trace'
     });
     console.error('Permit issuance failed', { userAddress, score, round, gameMode, error: error && error.message ? error.message : String(error) });
     res.status(500).json({ error: error.message });
   }
 });
 
+// Permit usage tracking endpoint (when frontend tries to use the permit)
+app.post('/permit/usage', async (req, res) => {
+  const { userAddress, permitSignature, txHash, status, error, gasUsed, gasPrice } = req.body || {};
+  if (!userAddress || !permitSignature || !status) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  
+  try {
+    const network = await getNetworkName();
+    const logData = {
+      userAddress,
+      permitSignature: permitSignature.substring(0, 10) + '...' + permitSignature.substring(permitSignature.length - 8),
+      txHash,
+      status,
+      gasUsed,
+      gasPrice,
+      network,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent']
+    };
+
+    if (status === 'success') {
+      console.log('✅ PERMIT_USAGE_SUCCESS', logData);
+    } else if (status === 'failed') {
+      console.log('❌ PERMIT_USAGE_FAILED', {
+        ...logData,
+        error: error || 'Unknown error'
+      });
+    } else if (status === 'simulated') {
+      console.log('🔮 PERMIT_SIMULATION', logData);
+    } else {
+      console.log('📊 PERMIT_USAGE_STATUS', logData);
+    }
+
+    res.json({ success: true, logged: true });
+  } catch (logError) {
+    console.error('Failed to log permit usage:', logError);
+    res.status(500).json({ error: 'Failed to log permit usage' });
+  }
+});
+
+// Token claim tracking endpoint
+app.post('/token/claim/status', async (req, res) => {
+  const { userAddress, txHash, status, error, claimedAmount, permitData } = req.body || {};
+  if (!userAddress || !status) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  
+  try {
+    const network = await getNetworkName();
+    const logData = {
+      userAddress,
+      txHash,
+      status,
+      claimedAmount,
+      network,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent']
+    };
+
+    if (status === 'success') {
+      console.log('✅ TOKEN_CLAIM_SUCCESS', logData);
+      if (permitData) {
+        console.log('📝 CLAIM_PERMIT_DETAILS', {
+          userAddress,
+          originalScore: permitData.score,
+          originalRound: permitData.round,
+          gameMode: permitData.gameMode,
+          permitSignature: permitData.signature?.substring(0, 10) + '...' + permitData.signature?.substring(permitData.signature.length - 8),
+          network
+        });
+      }
+    } else if (status === 'failed') {
+      console.log('❌ TOKEN_CLAIM_FAILED', {
+        ...logData,
+        error: error || 'Unknown error',
+        permitData: permitData ? {
+          score: permitData.score,
+          round: permitData.round,
+          gameMode: permitData.gameMode
+        } : null
+      });
+    } else if (status === 'attempt') {
+      console.log('🔄 TOKEN_CLAIM_ATTEMPT', logData);
+    } else {
+      console.log('📊 TOKEN_CLAIM_STATUS', logData);
+    }
+
+    res.json({ success: true, logged: true });
+  } catch (logError) {
+    console.error('Failed to log claim status:', logError);
+    res.status(500).json({ error: 'Failed to log claim status' });
+  }
+});
+
 // Error handling middleware
 app.use((error, req, res, next) => {
+  // Enhanced error logging for token claim related issues
+  if (req.path.includes('claim') || req.path.includes('permit') || req.path.includes('token')) {
+    console.error('🔥 CRITICAL_ERROR_TOKEN_FLOW', {
+      path: req.path,
+      method: req.method,
+      userAddress: req.body?.userAddress || 'unknown',
+      error: error.message,
+      stackTrace: error.stack?.substring(0, 500) || 'No stack trace',
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
+  }
+  
   console.error('❌ Unhandled error:', error);
   res.status(500).json({
     error: 'Internal server error',
@@ -682,6 +842,23 @@ function calculateMaxTheoreticalScore(mode, round) {
   if (m === 0) return r * 30;
   if (m === 1) return r * 40;
   return r * 10;
+}
+
+async function getNetworkName() {
+  try {
+    const provider = await getHealthyProvider();
+    const network = await provider.getNetwork();
+    switch (network.chainId.toString()) {
+      case '480': return 'worldchain-mainnet';
+      case '4801': return 'worldchain-testnet';
+      case '1': return 'ethereum-mainnet';
+      case '5': return 'ethereum-goerli';
+      case '11155111': return 'ethereum-sepolia';
+      default: return `chain-${network.chainId}`;
+    }
+  } catch (error) {
+    return 'unknown-network';
+  }
 }
 
 function buildDomain(chainId, verifyingContract) {
