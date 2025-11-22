@@ -289,7 +289,34 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         if (resp.ok) {
           const data = await resp.json()
           const sig = data.signature as string
+          
+          // Log permit API success before on-chain submission
+          console.log('🎮 GAME_COMPLETION_ATTEMPT (Permit)', {
+            userAddress: (window as any)?.MiniKit?.user?.address || '',
+            score: finalScore,
+            round: finalRound,
+            gameMode,
+            sessionId,
+            timestamp: new Date().toISOString(),
+            submissionMethod: 'permit_api'
+          })
+
           const submission = await contract.submitScoreWithPermit(finalScore, finalRound, gameMode as any, sessionId, nonce, deadline, sig)
+          
+          // Log successful permit completion
+          console.log('🏆 GAME_COMPLETION_SUCCESS (Permit)', {
+            userAddress: (window as any)?.MiniKit?.user?.address || '',
+            score: finalScore,
+            round: finalRound,
+            gameMode,
+            sessionId,
+            tokensEarned: submission.tokensEarned,
+            transactionHash: submission.transactionHash,
+            estimatedTokens: Math.floor(finalScore * 0.1), // 0.1 tokens per point
+            timestamp: new Date().toISOString(),
+            submissionMethod: 'permit_api'
+          })
+
           setGameData(currentData => ({
             ...currentData,
             tokenReward: {
@@ -301,20 +328,71 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
           return
         } else {
           console.warn('Permit API responded with non-OK status', resp.status)
+          console.log('🔴 GAME_COMPLETION_FAILED (Permit API)', {
+            userAddress: (window as any)?.MiniKit?.user?.address || '',
+            score: finalScore,
+            round: finalRound,
+            gameMode,
+            sessionId,
+            apiStatus: resp.status,
+            timestamp: new Date().toISOString(),
+            submissionMethod: 'permit_api',
+            failureReason: 'API returned non-OK status'
+          })
         }
       } catch (error) {
         console.error('Permit API error:', error);
         console.warn('Permit API unavailable, falling back to direct on-chain submission');
       }
-      const submission = await contract.submitScore(finalScore, finalRound, gameMode as any)
-      setGameData(currentData => ({
-        ...currentData,
-        tokenReward: {
+      // Log fallback attempt
+      console.log('🎮 GAME_COMPLETION_ATTEMPT (Fallback)', {
+        userAddress: (window as any)?.MiniKit?.user?.address || '',
+        score: finalScore,
+        round: finalRound,
+        gameMode,
+        sessionId,
+        timestamp: new Date().toISOString(),
+        fallbackReason: 'API unavailable'
+      })
+
+      try {
+        const submission = await contract.submitScore(finalScore, finalRound, gameMode as any)
+        
+        // Log successful fallback completion
+        console.log('🏆 GAME_COMPLETION_SUCCESS (Fallback)', {
+          userAddress: (window as any)?.MiniKit?.user?.address || '',
+          score: finalScore,
+          round: finalRound,
+          gameMode,
+          sessionId,
           tokensEarned: submission.tokensEarned,
           transactionHash: submission.transactionHash,
-          timestamp: Date.now()
-        }
-      }))
+          estimatedTokens: Math.floor(finalScore * 0.1), // 0.1 tokens per point
+          timestamp: new Date().toISOString(),
+          submissionMethod: 'direct_onchain'
+        })
+
+        setGameData(currentData => ({
+          ...currentData,
+          tokenReward: {
+            tokensEarned: submission.tokensEarned,
+            transactionHash: submission.transactionHash,
+            timestamp: Date.now()
+          }
+        }))
+      } catch (contractError) {
+        console.error('🔴 GAME_COMPLETION_FAILED (Fallback)', {
+          userAddress: (window as any)?.MiniKit?.user?.address || '',
+          score: finalScore,
+          round: finalRound,
+          gameMode,
+          sessionId,
+          error: contractError,
+          timestamp: new Date().toISOString(),
+          submissionMethod: 'direct_onchain'
+        })
+        throw contractError
+      }
     } catch {}
   }, [contract, gameData.gameMode])
 
