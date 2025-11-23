@@ -6,7 +6,6 @@ import { useTurnManager } from './hooks/useTurnManager'
 import { MiniKitProvider } from './components/MiniKitProvider'
 import { AuthProvider } from './contexts/AuthContext'
 import { WorldIDLogin } from './components/WorldIDLogin'
-import { ApologyModal } from './components/ApologyModal'
 import StartMenu from './components/StartMenu'
 import GameScreen from './components/GameScreen'
 import GameOverScreen from './components/GameOverScreen'
@@ -26,7 +25,6 @@ function GameApp() {
   const haptics = useHapticFeedback()
   const lastTapTime = useRef(0)
   const [activeTab, setActiveTab] = useState<TabType>('game')
-  const [showApologyModal, setShowApologyModal] = useState(false)
   
   // Maintenance mode: toggled by API health
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false)
@@ -63,18 +61,6 @@ function GameApp() {
       clearInterval(interval)
     }
   }, [user?.walletAddress])
-
-  // Show apology modal for leaderboard issues
-  useEffect(() => {
-    // Check if user is on leaderboard tab and show apology modal
-    if (activeTab === 'leaderboard' && !showApologyModal) {
-      // Show apology modal with a delay to avoid jarring experience
-      const timer = setTimeout(() => {
-        setShowApologyModal(true)
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [activeTab, showApologyModal])
 
 
 
@@ -213,10 +199,6 @@ function GameApp() {
       <BottomNavigation 
         activeTab={currentTab} 
         onTabChange={handleTabChange}
-      />
-      <ApologyModal 
-        isOpen={showApologyModal} 
-        onClose={() => setShowApologyModal(false)}
       />
     </>
   )

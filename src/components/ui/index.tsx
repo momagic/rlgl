@@ -7,7 +7,7 @@ import { cn } from '../../utils/cn'
 
 // Squid Game Neobrutalist Button Component
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'teal' | 'green' | 'pink'
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'teal' | 'green'
   size?: 'sm' | 'md' | 'lg'
 }
 
@@ -21,8 +21,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       danger: 'text-squid-white border-4 border-squid-black',
       ghost: 'text-squid-white border-3 border-squid-border',
       teal: 'text-squid-black border-4 border-squid-black',
-      green: 'text-squid-black border-4 border-squid-black',
-      pink: 'text-squid-black border-4 border-squid-black'
+      green: 'text-squid-black border-4 border-squid-black'
     }
     
     const sizeClasses: Record<string, string> = {
@@ -48,11 +47,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       
       switch (variant) {
         case 'primary':
-          return {
-            background: '#FF1F8C',
-            boxShadow: shadows.normal,
-          }
-        case 'pink':
           return {
             background: '#FF1F8C',
             boxShadow: shadows.normal,
