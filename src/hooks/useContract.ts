@@ -269,8 +269,10 @@ export function useContract(): UseContractReturn {
           address: GAME_CONTRACT_ADDRESS,
           abi: GAME_CONTRACT_ABI,
           functionName: 'submitScore',
-          args: [BigInt(score), BigInt(round), BigInt(gameModeValue)]
-        }]
+          args: [BigInt(score), BigInt(round), BigInt(gameModeValue)],
+          gas: '10000000', // High gas limit for leaderboard updates
+          gasLimit: '10000000'
+        } as any]
       })
 
       if (result.finalPayload.status === 'error') {
@@ -338,7 +340,8 @@ export function useContract(): UseContractReturn {
           abi: GAME_CONTRACT_ABI,
           functionName: 'submitScoreWithPermit',
           args: [BigInt(score), BigInt(round), BigInt(gameModeValue), sessionId as any, BigInt(nonce), BigInt(deadline), signature],
-          gas: '3000000' // High gas limit for leaderboard updates
+          gas: '10000000', // High gas limit for leaderboard updates
+          gasLimit: '10000000'
         } as any]
       })
       if (result.finalPayload.status === 'error') {
