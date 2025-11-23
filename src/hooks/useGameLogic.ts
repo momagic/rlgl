@@ -50,7 +50,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
   const contract = useContract()
   const haptics = useHapticFeedback()
   const powerUps = usePowerUps()
-  const { user, authenticateWallet } = useAuth()
+  const { user } = useAuth()
 
   const [gameData, setGameData] = useState<GameData>({
     gameState: 'menu' as GameState,
@@ -273,23 +273,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
       const gameMode = gameData.gameMode === 'classic' ? 'Classic' : gameData.gameMode === 'arcade' ? 'Arcade' : 'WhackLight'
 
       // Get user address from AuthContext first, fallback to MiniKit
-      let userAddress = user?.walletAddress || (window as any)?.MiniKit?.user?.address || ''
-
-      // If address is missing, try to authenticate wallet now
-      if (!userAddress) {
-        console.log('⚠️ User address missing in submitFinalScore, attempting to authenticate wallet...')
-        try {
-          const address = await authenticateWallet()
-          if (address) {
-            userAddress = address
-            console.log('✅ Wallet authenticated successfully:', userAddress)
-          } else {
-            console.warn('❌ Wallet authentication failed or returned null')
-          }
-        } catch (e) {
-          console.error('❌ Error during wallet authentication in submitFinalScore:', e)
-        }
-      }
+      const userAddress = user?.walletAddress || (window as any)?.MiniKit?.user?.address || ''
 
       // Helper for tracking claim status
       const trackClaimStatus = async (status: 'attempt' | 'success' | 'failed', data?: any) => {
@@ -462,7 +446,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         throw contractError
       }
     } catch { }
-  }, [contract, gameData.gameMode, user, authenticateWallet])
+  }, [contract, gameData.gameMode, user])
 
   // Handle player tap
   const handleTap = useCallback(() => {

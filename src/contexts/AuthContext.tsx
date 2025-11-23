@@ -244,7 +244,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [haptics, saveSession])
 
-  const authenticateWallet = useCallback(async (): Promise<string | null> => {
+  const authenticateWallet = useCallback(async () => {
     console.log('🔐 Wallet authentication started:', {
       userVerified: user?.verified,
       userAddress: user?.walletAddress,
@@ -254,12 +254,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     if (!user?.verified) {
       console.log('❌ User not verified, skipping wallet auth')
-      return null
+      return
     }
 
     if (!MiniKit.isInstalled()) {
       console.log('❌ MiniKit not installed, skipping wallet auth')
-      return null
+      return
     }
 
     console.log('✅ Starting wallet authentication...')
@@ -273,13 +273,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({ nonce })
 
       if (finalPayload.status === 'error') {
-        return null
+        return
       }
 
       // Get wallet address from the response (field name is 'address' not 'wallet_address')
       const walletAddress = (finalPayload as any).address
       if (!walletAddress) {
-        return null
+        return
       }
 
       // Try to get username and profile picture from MiniKit
@@ -314,11 +314,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       setUser(updatedUser)
       saveSession(updatedUser) // Persist the updated session
-      return walletAddress
 
     } catch (error) {
       // Handle error silently in production
-      return null
     } finally {
       setIsLoading(false)
     }

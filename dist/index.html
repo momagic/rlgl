@@ -34,7 +34,7 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <title>Red Light Green Light: Tap to Survive!</title>
-    <script type="module" crossorigin src="/assets/index-CG7ToVGw.js"></script>
+    <script type="module" crossorigin src="/assets/index-B-QhjKFW.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-BjYe8XRg.css">
   </head>
   <body>
@@ -45,7 +45,9 @@
       // Check for Eruda enablement via meta tag or global variable
       (function() {
         // Check if Eruda should be enabled
-        const enableEruda = true; // Force enabled
+        const enableEruda = document.querySelector('meta[name="enable-eruda"]')?.content === 'true' ||
+                           window.VITE_ENABLE_ERUDA === true ||
+                           window.VITE_ENABLE_ERUDA === 'true';
         
         if (enableEruda) {
           console.log('🚀 Loading Eruda from CDN...');
