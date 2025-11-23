@@ -329,7 +329,7 @@
   },
   "humanVerification": {
     "title": "Verify Humanity",
-    "description": "Optional: Verify you’re human to unlock bonus rewards and enhanced gameplay features.",
+    "description": "Optional: Verify you're human to unlock bonus rewards and enhanced gameplay features.",
     "benefitsTitle": "Human Verification Benefits:",
     "benefit1": "Higher reward multipliers",
     "benefit2": "Access to exclusive tournaments",
@@ -338,10 +338,17 @@
     "skipButton": "Skip for Now",
     "verifying": "Verifying...",
     "verified": "Human Verified!",
-    "verifiedDescription": "You’re now verified as human and can enjoy enhanced rewards and features.",
+    "verifiedDescription": "You're now verified as human and can enjoy enhanced rewards and features.",
     "continue": "Continue",
     "note": "You can verify your humanity later from the settings menu.",
-    "error": "⚠️ Verification failed. Make sure you’re Document verified and try again!"
+    "error": "⚠️ Verification failed. Make sure you're Document verified and try again!"
+  },
+  "apologyModal": {
+    "title": "We Apologize",
+    "message1": "Due to the incredible popularity of our game, we're experiencing some technical issues with the leaderboard system. The high volume of players is causing unexpected errors.",
+    "message2": "Our team is actively working to optimize the system to handle the increased load. Thank you for your patience and continued support!",
+    "button": "I Understand",
+    "note": "This message will not appear again during this session"
   },
   "gameStart": {
     "title": "🎮 Start Game"

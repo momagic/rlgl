@@ -430,12 +430,10 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
         require(totalSupply() + tokensToMint <= MAX_SUPPLY, "Would exceed max supply");
         _mint(playerAddress, tokensToMint);
 
-        // Ensure leaderboard reflects personal best even if latest attempt is lower
-        uint256 bestScore = playerHighScores[gameMode][playerAddress];
-        if (bestScore == 0) {
-            bestScore = score;
+        // Only update leaderboard if it's a new high score
+        if (isNewHighScore) {
+            _updateLeaderboard(gameMode, playerAddress, score, round, gameId);
         }
-        _updateLeaderboard(gameMode, playerAddress, bestScore, round, gameId);
         
         emit GameCompleted(
             playerAddress,
@@ -546,11 +544,9 @@ contract RedLightGreenLightGameV3 is Initializable, ERC20Upgradeable, OwnableUpg
         require(totalSupply() + tokensToMint <= MAX_SUPPLY, "Would exceed max supply");
         _mint(playerAddress, tokensToMint);
 
-        uint256 bestScore2 = playerHighScores[gameMode][playerAddress];
-        if (bestScore2 == 0) {
-            bestScore2 = score;
+        if (isNewHighScore) {
+            _updateLeaderboard(gameMode, playerAddress, score, round, gameId);
         }
-        _updateLeaderboard(gameMode, playerAddress, bestScore2, round, gameId);
 
         emit GameCompleted(
             playerAddress,

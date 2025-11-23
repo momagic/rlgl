@@ -346,6 +346,13 @@
     "note": "Puedes verificar tu humanidad más tarde desde el menú de configuración.",
     "error": "⚠️ Verificación fallida. ¡Asegúrate de estar verificado con Documento e inténtalo de nuevo!"
   },
+  "apologyModal": {
+    "title": "Nos Disculpamos",
+    "message1": "Debido a la increíble popularidad de nuestro juego, estamos experimentando algunos problemas técnicos con el sistema de clasificación. El alto volumen de jugadores está causando errores inesperados.",
+    "message2": "¡Nuestro equipo está trabajando activamente para optimizar el sistema y manejar la mayor carga. Gracias por tu paciencia y continuo apoyo!",
+    "button": "Entiendo",
+    "note": "Este mensaje no aparecerá nuevamente durante esta sesión"
+  },
   "common": {
     "loading": "Cargando...",
     "error": "Error",
