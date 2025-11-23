@@ -7,6 +7,7 @@ import { useHapticFeedback } from './useHapticFeedback'
 import { usePowerUps } from './usePowerUps'
 import { GameRandomness } from '../utils/secureRandomness'
 import { InputSanitizer } from '../utils/inputSanitizer'
+import { useAuth } from '../contexts/AuthContext'
 
  
 
@@ -49,6 +50,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
   const contract = useContract()
   const haptics = useHapticFeedback()
   const powerUps = usePowerUps()
+  const { user } = useAuth()
   
   const [gameData, setGameData] = useState<GameData>({
     gameState: 'menu' as GameState,
@@ -269,14 +271,41 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
       const nonce = Date.now()
       const deadline = Math.floor(Date.now() / 1000) + 900
       const gameMode = gameData.gameMode === 'classic' ? 'Classic' : gameData.gameMode === 'arcade' ? 'Arcade' : 'WhackLight'
+      
+      // Get user address from AuthContext first, fallback to MiniKit
+      const userAddress = user?.walletAddress || (window as any)?.MiniKit?.user?.address || ''
+      
+      // Helper for tracking claim status
+      const trackClaimStatus = async (status: 'attempt' | 'success' | 'failed', data?: any) => {
+        try {
+          await fetch(`${apiBase}/token/claim/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userAddress,
+              status,
+              ...data
+            })
+          })
+        } catch (e) {
+          console.warn('Failed to track claim status:', e)
+        }
+      }
+
       try {
         console.log('Calling score permit API:', `${apiBase}/score/permit`);
-        console.log('Request body:', { userAddress: (window as any)?.MiniKit?.user?.address || '', score: finalScore, round: finalRound, gameMode, sessionId, nonce, deadline });
+        console.log('Request body:', { userAddress, score: finalScore, round: finalRound, gameMode, sessionId, nonce, deadline });
+        
+        // Track attempt
+        trackClaimStatus('attempt', { 
+          permitData: { score: finalScore, round: finalRound, gameMode } 
+        })
+
         const resp = await fetch(`${apiBase}/score/permit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userAddress: (window as any)?.MiniKit?.user?.address || '',
+            userAddress,
             score: finalScore,
             round: finalRound,
             gameMode,
@@ -292,7 +321,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
           
           // Log permit API success before on-chain submission
           console.log('🎮 GAME_COMPLETION_ATTEMPT (Permit)', {
-            userAddress: (window as any)?.MiniKit?.user?.address || '',
+            userAddress,
             score: finalScore,
             round: finalRound,
             gameMode,
@@ -301,35 +330,58 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             submissionMethod: 'permit_api'
           })
 
-          const submission = await contract.submitScoreWithPermit(finalScore, finalRound, gameMode as any, sessionId, nonce, deadline, sig)
-          
-          // Log successful permit completion
-          console.log('🏆 GAME_COMPLETION_SUCCESS (Permit)', {
-            userAddress: (window as any)?.MiniKit?.user?.address || '',
-            score: finalScore,
-            round: finalRound,
-            gameMode,
-            sessionId,
-            tokensEarned: submission.tokensEarned,
-            transactionHash: submission.transactionHash,
-            estimatedTokens: Math.floor(finalScore * 0.1), // 0.1 tokens per point
-            timestamp: new Date().toISOString(),
-            submissionMethod: 'permit_api'
-          })
-
-          setGameData(currentData => ({
-            ...currentData,
-            tokenReward: {
+          try {
+            const submission = await contract.submitScoreWithPermit(finalScore, finalRound, gameMode as any, sessionId, nonce, deadline, sig)
+            
+            // Log successful permit completion
+            console.log('🏆 GAME_COMPLETION_SUCCESS (Permit)', {
+              userAddress,
+              score: finalScore,
+              round: finalRound,
+              gameMode,
+              sessionId,
               tokensEarned: submission.tokensEarned,
               transactionHash: submission.transactionHash,
-              timestamp: Date.now()
-            }
-          }))
-          return
+              estimatedTokens: Math.floor(finalScore * 0.1), // 0.1 tokens per point
+              timestamp: new Date().toISOString(),
+              submissionMethod: 'permit_api'
+            })
+
+            // Track success
+            trackClaimStatus('success', { 
+              txHash: submission.transactionHash,
+              claimedAmount: submission.tokensEarned,
+              permitData: { score: finalScore, round: finalRound, gameMode, signature: sig }
+            })
+
+            setGameData(currentData => ({
+              ...currentData,
+              tokenReward: {
+                tokensEarned: submission.tokensEarned,
+                transactionHash: submission.transactionHash,
+                timestamp: Date.now()
+              }
+            }))
+            return
+          } catch (txError) {
+            // Track transaction failure
+            trackClaimStatus('failed', { 
+              error: txError instanceof Error ? txError.message : String(txError),
+              permitData: { score: finalScore, round: finalRound, gameMode, signature: sig }
+            })
+            throw txError
+          }
         } else {
           console.warn('Permit API responded with non-OK status', resp.status)
+          const errorText = await resp.text().catch(() => 'Unknown API error')
+          
+          trackClaimStatus('failed', { 
+            error: `API error ${resp.status}: ${errorText}`,
+            permitData: { score: finalScore, round: finalRound, gameMode }
+          })
+
           console.log('🔴 GAME_COMPLETION_FAILED (Permit API)', {
-            userAddress: (window as any)?.MiniKit?.user?.address || '',
+            userAddress,
             score: finalScore,
             round: finalRound,
             gameMode,
@@ -346,7 +398,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
       }
       // Log fallback attempt
       console.log('🎮 GAME_COMPLETION_ATTEMPT (Fallback)', {
-        userAddress: (window as any)?.MiniKit?.user?.address || '',
+        userAddress,
         score: finalScore,
         round: finalRound,
         gameMode,
@@ -360,7 +412,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         
         // Log successful fallback completion
         console.log('🏆 GAME_COMPLETION_SUCCESS (Fallback)', {
-          userAddress: (window as any)?.MiniKit?.user?.address || '',
+          userAddress,
           score: finalScore,
           round: finalRound,
           gameMode,
@@ -382,7 +434,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         }))
       } catch (contractError) {
         console.error('🔴 GAME_COMPLETION_FAILED (Fallback)', {
-          userAddress: (window as any)?.MiniKit?.user?.address || '',
+          userAddress,
           score: finalScore,
           round: finalRound,
           gameMode,
@@ -394,7 +446,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         throw contractError
       }
     } catch {}
-  }, [contract, gameData.gameMode])
+  }, [contract, gameData.gameMode, user])
 
   // Handle player tap
   const handleTap = useCallback(() => {

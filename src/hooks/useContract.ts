@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react'
 import { formatEther, parseEther, type Address } from 'viem'
 import { MiniKit } from '@worldcoin/minikit-js'
-import type { 
-  UseContractReturn, 
-  PlayerStats, 
-  TurnStatus, 
-  PaymentResult, 
-  GameSubmission, 
-  LeaderboardEntry, 
+import type {
+  UseContractReturn,
+  PlayerStats,
+  TurnStatus,
+  PaymentResult,
+  GameSubmission,
+  LeaderboardEntry,
   GameResult,
   DailyClaimStatus,
   CurrentPricing,
@@ -48,7 +48,7 @@ export function useContract(): UseContractReturn {
     try {
       // First test if we can connect to the network
       await rpcManager.getBlockNumber()
-      
+
       // Use multicall for better performance and reduced RPC calls
       const multicallParams = {
         contracts: [
@@ -72,16 +72,16 @@ export function useContract(): UseContractReturn {
           }
         ]
       }
-      
+
       const results = await rpcManager.multicall(multicallParams)
-      
+
       const availableTurns = results[0].status === 'success' ? results[0].result : BigInt(0)
       const timeUntilReset = results[1].status === 'success' ? results[1].result : BigInt(0)
       const dailyClaimStatus = results[2].status === 'success' ? results[2].result : null
 
       const turns = Number(availableTurns)
       const resetTime = Number(timeUntilReset) * 1000 // Convert to milliseconds
-      
+
       const result: TurnStatus = {
         availableTurns: turns,
         timeUntilReset: resetTime,
@@ -93,7 +93,7 @@ export function useContract(): UseContractReturn {
         dailyClaimStreak: dailyClaimStatus?.currentStreak ? Number(dailyClaimStatus.currentStreak) : undefined,
         nextDailyReward: dailyClaimStatus?.nextReward ? Number(dailyClaimStatus.nextReward) : undefined
       }
-      
+
       return result
     } catch (err) {
       throw new Error(`Failed to get turn status: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -104,7 +104,7 @@ export function useContract(): UseContractReturn {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       if (!MiniKit.isInstalled()) {
         throw new Error('MiniKit not installed')
       }
@@ -162,7 +162,7 @@ export function useContract(): UseContractReturn {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       if (!MiniKit.isInstalled()) {
         throw new Error('MiniKit not installed')
       }
@@ -220,7 +220,7 @@ export function useContract(): UseContractReturn {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       if (!MiniKit.isInstalled()) {
         throw new Error('MiniKit not installed')
       }
@@ -256,7 +256,7 @@ export function useContract(): UseContractReturn {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       if (!MiniKit.isInstalled()) {
         throw new Error('MiniKit not installed')
       }
@@ -304,7 +304,7 @@ export function useContract(): UseContractReturn {
       try {
         const evt = new CustomEvent('score-submitted', { detail: { gameMode } })
         window.dispatchEvent(evt)
-      } catch {}
+      } catch { }
 
       return submission
     } catch (err) {
@@ -368,7 +368,8 @@ export function useContract(): UseContractReturn {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to submit score'
       setError(errorMessage)
-      throw new Error(errorMessage)
+      // Re-throw the original error to preserve details for logging
+      throw err
     } finally {
       setIsLoading(false)
     }
@@ -380,14 +381,14 @@ export function useContract(): UseContractReturn {
     try {
       console.log('📊 Fetching player stats for:', playerAddress)
       console.log('🏗️ Using contract address:', GAME_CONTRACT_ADDRESS)
-      
+
       const result = await rpcManager.readContract({
         address: GAME_CONTRACT_ADDRESS,
         abi: GAME_CONTRACT_ABI,
         functionName: 'getPlayerStats',
         args: [playerAddress as Address]
       }) as any
-      
+
       console.log('✅ Player stats result:', result)
 
       let balance: bigint = 0n
@@ -446,7 +447,7 @@ export function useContract(): UseContractReturn {
         error: err instanceof Error ? err.message : String(err),
         fullError: err
       })
-      
+
       // Check if this is a verification requirement error
       let fallbackBalance: string = '0'
       try {
@@ -457,7 +458,7 @@ export function useContract(): UseContractReturn {
           args: [playerAddress as Address]
         }) as bigint
         fallbackBalance = (bal ?? 0n).toString()
-      } catch {}
+      } catch { }
 
       if (err instanceof Error && err.message.includes('Document verification or higher required')) {
         console.warn('⚠️ User not verified on-chain, returning fallback stats for Orb-verified user')
@@ -481,7 +482,7 @@ export function useContract(): UseContractReturn {
           verificationMultiplier: 2
         }
       }
-      
+
       console.warn('⚠️ Returning default player stats due to RPC error')
       // Default values for orb-verified dev wallet with 3 daily turns remaining
       return {
@@ -509,7 +510,7 @@ export function useContract(): UseContractReturn {
     try {
       // Convert GameMode to uint8 (0: Classic, 1: Arcade, 2: WhackLight)
       const gameModeValue = gameMode === 'Classic' ? 0 : gameMode === 'Arcade' ? 1 : 2
-      
+
       const readConfig = {
         address: GAME_CONTRACT_ADDRESS,
         abi: GAME_CONTRACT_ABI,
@@ -527,21 +528,21 @@ export function useContract(): UseContractReturn {
         rank: index + 1,
         gameMode
       }))
-      
+
       return leaderboard
     } catch (err) {
       // Check for network/HTTP errors and return empty leaderboard instead of throwing
       if (err instanceof Error) {
         const errorMessage = err.message.toLowerCase()
-        if (errorMessage.includes('http request failed') || 
-            errorMessage.includes('load failed') || 
-            errorMessage.includes('failed to fetch') ||
-            errorMessage.includes('network')) {
+        if (errorMessage.includes('http request failed') ||
+          errorMessage.includes('load failed') ||
+          errorMessage.includes('failed to fetch') ||
+          errorMessage.includes('network')) {
           console.warn('⚠️ Network error in getLeaderboard, returning empty leaderboard')
           return []
         }
       }
-      
+
       console.error('❌ Failed to get leaderboard:', err)
       // Return empty leaderboard as fallback
       return []
@@ -552,14 +553,14 @@ export function useContract(): UseContractReturn {
     try {
       // Convert GameMode to uint8 (0: Classic, 1: Arcade, 2: WhackLight)
       const gameModeValue = gameMode === 'Classic' ? 0 : gameMode === 'Arcade' ? 1 : 2
-      
+
       const result = await rpcManager.readContract({
         address: GAME_CONTRACT_ADDRESS,
         abi: GAME_CONTRACT_ABI,
         functionName: 'getPlayerRank',
         args: [playerAddress as Address, BigInt(gameModeValue)]
       }) as bigint
-      
+
       return Number(result)
     } catch (err) {
       throw new Error(`Failed to get player rank: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -615,7 +616,7 @@ export function useContract(): UseContractReturn {
         functionName: 'getLeaderboardStats'
       }) as any
       console.log('📊 Stats result:', result)
-      
+
       // Handle both tuple and object return types
       if (Array.isArray(result)) {
         return {
@@ -645,10 +646,10 @@ export function useContract(): UseContractReturn {
         abi: GAME_CONTRACT_ABI,
         functionName: 'getPlayerGameHistory',
         args: [playerAddress as Address, BigInt(0), BigInt(50)] // Get first 50 games
-      }) as readonly { 
-        player: Address; 
-        score: bigint; 
-        timestamp: bigint; 
+      }) as readonly {
+        player: Address;
+        score: bigint;
+        timestamp: bigint;
         round: bigint;
         tokensEarned: bigint;
         gameId: bigint;
@@ -660,7 +661,7 @@ export function useContract(): UseContractReturn {
         timestamp: Number(entry.timestamp) * 1000, // Convert to milliseconds
         round: Number(entry.round)
       }))
-      
+
       return history
     } catch (err) {
       throw new Error(`Failed to get player game history: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -674,7 +675,7 @@ export function useContract(): UseContractReturn {
         abi: GAME_CONTRACT_ABI,
         functionName: 'getCurrentTurnCost'
       }) as bigint
-      
+
       return formatEther(result)
     } catch (err) {
       if (err instanceof Error && err.message.includes('HTTP request failed')) {
@@ -688,7 +689,7 @@ export function useContract(): UseContractReturn {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       if (!MiniKit.isInstalled()) {
         throw new Error('MiniKit not installed')
       }
@@ -723,7 +724,7 @@ export function useContract(): UseContractReturn {
         abi: GAME_CONTRACT_ABI,
         functionName: 'getTotalGamesPlayed'
       }) as bigint
-      
+
       return Number(result)
     } catch (err) {
       if (err instanceof Error && err.message.includes('HTTP request failed')) {
@@ -747,7 +748,7 @@ export function useContract(): UseContractReturn {
         functionName: 'hasActiveWeeklyPass',
         args: [playerAddress as Address]
       }) as boolean
-      
+
       return result
     } catch (err) {
       throw new Error(`Failed to check weekly pass status: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -762,12 +763,12 @@ export function useContract(): UseContractReturn {
         functionName: 'getWeeklyPassExpiry',
         args: [playerAddress as Address]
       }) as bigint
-      
+
       const expiryTimestamp = Number(result)
       if (expiryTimestamp === 0) {
         return null
       }
-      
+
       return new Date(expiryTimestamp * 1000)
     } catch (err) {
       throw new Error(`Failed to get weekly pass expiry: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -784,7 +785,7 @@ export function useContract(): UseContractReturn {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       if (!MiniKit.isInstalled()) {
         throw new Error('MiniKit not installed')
       }
@@ -856,11 +857,11 @@ export function useContract(): UseContractReturn {
     try {
       console.log('💰 Fetching current pricing from contract...')
       console.log('🏗️ Using contract address:', GAME_CONTRACT_ADDRESS)
-      
+
       // Check RPC health status first
       const rpcHealth = rpcManager.getHealthStatus()
       console.log('🔍 RPC Health Status:', rpcHealth)
-      
+
       if (rpcHealth.healthyEndpoints === 0) {
         console.warn('⚠️ No healthy RPC endpoints available, using fallback pricing')
         return {
@@ -871,7 +872,7 @@ export function useContract(): UseContractReturn {
           weeklyPassCost: '5.0'
         }
       }
-      
+
       // Try to call getCurrentPricing function first
       let result: any
       try {
@@ -897,10 +898,10 @@ export function useContract(): UseContractReturn {
         }
         throw contractError
       }
-      
+
       // Handle both tuple array and object formats
       let pricing: CurrentPricing
-      
+
       if (Array.isArray(result)) {
         // Handle tuple format [tokensPerPoint, turnCost, passCost]
         console.log('📋 Processing tuple format:', result)
@@ -925,29 +926,29 @@ export function useContract(): UseContractReturn {
       } else {
         throw new Error(`Unexpected result format from getCurrentPricing: ${typeof result}, value: ${JSON.stringify(result)}`)
       }
-      
+
       // For additionalTurnsCost and weeklyPassCost, we need to call separate functions
       let additionalTurnsCost = '0.2'
       let weeklyPassCost = '5.0'
-      
+
       try {
         additionalTurnsCost = await getAdditionalTurnsCost()
       } catch (e) {
         console.warn('Failed to fetch additional turns cost, using default')
       }
-      
+
       try {
         weeklyPassCost = await getWeeklyPassCost()
       } catch (e) {
         console.warn('Failed to fetch weekly pass cost, using default')
       }
-      
+
       const finalPricing: CurrentPricing = {
         ...pricing,
         additionalTurnsCost,
         weeklyPassCost
       }
-      
+
       console.log('✅ Parsed pricing:', finalPricing)
       return finalPricing
     } catch (error) {
@@ -956,7 +957,7 @@ export function useContract(): UseContractReturn {
         error: error instanceof Error ? error.message : String(error),
         fullError: error
       })
-      
+
       // Return fallback pricing instead of throwing
       console.warn('⚠️ Returning fallback pricing due to error')
       return {
@@ -976,7 +977,7 @@ export function useContract(): UseContractReturn {
         abi: GAME_CONTRACT_ABI,
         functionName: 'getVerificationMultipliers'
       }) as any
-      
+
       return {
         orbPlusMultiplier: Number(result.orbPlusMultiplier),
         orbMultiplier: Number(result.orbMultiplier),
@@ -1002,7 +1003,7 @@ export function useContract(): UseContractReturn {
         abi: GAME_CONTRACT_ABI,
         functionName: 'getContractStats'
       }) as any
-      
+
       return {
         totalGames: Number(result.totalGames),
         totalPlayers: Number(result.totalPlayers),
@@ -1014,13 +1015,13 @@ export function useContract(): UseContractReturn {
     }
   }, [])
 
-  
+
 
   const updateWeeklyPassCost = useCallback(async (newCost: string): Promise<boolean> => {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       if (!MiniKit.isInstalled()) {
         throw new Error('MiniKit not installed')
       }
@@ -1052,7 +1053,7 @@ export function useContract(): UseContractReturn {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       if (!MiniKit.isInstalled()) {
         throw new Error('MiniKit not installed')
       }
@@ -1103,7 +1104,7 @@ export function useContract(): UseContractReturn {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       if (!MiniKit.isInstalled()) {
         throw new Error('MiniKit not installed')
       }
@@ -1135,7 +1136,7 @@ export function useContract(): UseContractReturn {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       if (!MiniKit.isInstalled()) {
         throw new Error('MiniKit not installed')
       }
@@ -1179,21 +1180,21 @@ export function useContract(): UseContractReturn {
     getTurnStatus,
     purchaseAdditionalTurns,
     purchaseHundredTurns,
-    
+
     // Weekly pass management
     hasActiveWeeklyPass,
     getWeeklyPassExpiry,
     getWeeklyPassCost,
-    
+
     // Daily claim system
     claimDailyReward,
     getDailyClaimStatus,
-    
+
     // Game management
     startGame,
     submitScore,
     submitScoreWithPermit,
-    
+
     // Data retrieval
     getPlayerStats,
     getLeaderboard,
@@ -1209,7 +1210,7 @@ export function useContract(): UseContractReturn {
     getCurrentPricing,
     getVerificationMultipliers,
     getContractStats,
-    
+
     // Admin functions (owner only)
     updateTurnCost,
     updateWeeklyPassCost,
@@ -1217,7 +1218,7 @@ export function useContract(): UseContractReturn {
     getCosts,
     withdrawFees,
     seedLeaderboard,
-    
+
     // State
     isLoading,
     error
