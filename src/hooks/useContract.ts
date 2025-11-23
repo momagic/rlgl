@@ -337,8 +337,9 @@ export function useContract(): UseContractReturn {
           address: GAME_CONTRACT_ADDRESS,
           abi: GAME_CONTRACT_ABI,
           functionName: 'submitScoreWithPermit',
-          args: [BigInt(score), BigInt(round), BigInt(gameModeValue), sessionId as any, BigInt(nonce), BigInt(deadline), signature]
-        }]
+          args: [BigInt(score), BigInt(round), BigInt(gameModeValue), sessionId as any, BigInt(nonce), BigInt(deadline), signature],
+          gas: '3000000' // High gas limit for leaderboard updates
+        } as any]
       })
       if (result.finalPayload.status === 'error') {
         throw new Error(result.finalPayload.error_code || 'Transaction failed')
