@@ -447,9 +447,15 @@ class RPCManager {
       this.setCache(cacheKey, result, CACHE_CONFIG.leaderboardTTL)
       return result
     } catch (error) {
-      const fallback = await this.readContract(config)
-      this.setCache(cacheKey, fallback, CACHE_CONFIG.leaderboardTTL)
-      return fallback
+      console.warn('Leaderboard RPC failed, trying fallback:', error)
+      try {
+        const fallback = await this.readContract(config)
+        this.setCache(cacheKey, fallback, CACHE_CONFIG.leaderboardTTL)
+        return fallback
+      } catch (fallbackError) {
+        console.error('Both primary and fallback RPC failed:', fallbackError)
+        throw new Error(`Failed to load leaderboard data: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`)
+      }
     }
   }
 

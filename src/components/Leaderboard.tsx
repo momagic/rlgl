@@ -79,6 +79,7 @@ function Leaderboard() {
   const [allLeaderboardData, setAllLeaderboardData] = useState<LeaderboardEntry[]>([])
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [bannedAddresses, setBannedAddresses] = useState<string[]>([])
@@ -270,10 +271,13 @@ function Leaderboard() {
       const cachedData = localStorage.getItem(dataKey)
       const cacheTimestamp = localStorage.getItem(tsKey)
       const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
+
       
       if (cachedData && cacheTimestamp) {
         const age = Date.now() - parseInt(cacheTimestamp)
-        if (!forceExpired && age < CACHE_DURATION) {
+        const maxAge = forceExpired ? 0 : CACHE_DURATION
+        
+        if (age < maxAge) {
           console.log('✅ Cache is valid, age:', Math.round(age / 1000), 'seconds')
           const parsedData = JSON.parse(cachedData)
           
@@ -356,7 +360,23 @@ function Leaderboard() {
       if (cacheTimestamp) {
         setLastUpdated(new Date(parseInt(cacheTimestamp)))
       }
-      // Don't set loading state when using cache
+      
+      // Check if cache is getting stale (older than 5 minutes)
+      const cacheAge = Date.now() - parseInt(cacheTimestamp || '0')
+      const STALE_THRESHOLD = 5 * 60 * 1000 // 5 minutes
+      
+      if (cacheAge > STALE_THRESHOLD) {
+        console.log('🔄 Cache is stale, refreshing in background...')
+        // Refresh in background without showing loading state
+        setTimeout(() => {
+          setIsRefreshing(true)
+          fetchLeaderboard(true).finally(() => {
+            setIsRefreshing(false)
+          })
+        }, 1000) // Small delay to prioritize user interaction
+      }
+      
+      // Don't set loading state when using cache, but show a subtle refresh indicator
       return
     }
     
@@ -367,7 +387,19 @@ function Leaderboard() {
     try {
       
       console.log('🌐 Fetching fresh data from contract...')
-       const contractData = await getTopScores(10, selectedMode)
+       let contractData
+       try {
+         contractData = await getTopScores(10, selectedMode)
+       } catch (contractError) {
+         console.error('❌ Contract call failed:', contractError)
+         throw new Error(`Failed to load leaderboard data: ${contractError instanceof Error ? contractError.message : 'Unknown error'}`)
+       }
+       
+       if (!contractData || !Array.isArray(contractData)) {
+         console.error('❌ Invalid contract data format:', contractData)
+         throw new Error('Invalid leaderboard data format from contract')
+       }
+       
        const filteredContractData = contractData.filter((e: any) => !bannedAddresses.includes(String(e.player).toLowerCase()))
 
         console.log('📊 Contract data received:', {
@@ -384,7 +416,9 @@ function Leaderboard() {
        }))
        
        console.log('🎯 Processed leaderboard data:', processedData.length, 'entries')
-       console.log('📊 First entry sample:', processedData[0])
+       if (processedData.length > 0) {
+         console.log('📊 First entry sample:', processedData[0])
+       }
        
        setAllLeaderboardData(processedData)
        setCachedLeaderboard(selectedMode, processedData)
@@ -422,7 +456,15 @@ function Leaderboard() {
         setError('Using cached data - some information may be outdated')
       } else {
         console.log('❌ No cached data available, showing error')
-        setError(err instanceof Error ? err.message : 'Failed to load leaderboard')
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load leaderboard'
+        // Provide more user-friendly error messages
+        if (errorMessage.includes('Failed to load leaderboard data')) {
+          setError('Unable to connect to leaderboard servers. Please try refreshing the page.')
+        } else if (errorMessage.includes('timeout')) {
+          setError('Connection timeout. Please check your internet connection and try again.')
+        } else {
+          setError('Failed to load leaderboard. Please try refreshing the page.')
+        }
       }
     } finally {
       console.log('🏁 Leaderboard fetch completed, isLoading set to false')
@@ -451,9 +493,46 @@ function Leaderboard() {
       if (isLoading) {
         console.log('⏰ Loading timeout reached, forcing loading to false')
         setIsLoading(false)
-        setError('Loading timeout - please try refreshing the page')
+        // Only set error if we don't have data yet
+        if (allLeaderboardData.length === 0) {
+          setError('Loading timeout - please try refreshing the page')
+        }
       }
-    }, 15000) // 15 second timeout
+    }, 25000) // 25 second timeout
+    
+    // Preload cache for other game modes in background
+    const preloadOtherModes = async () => {
+      const otherModes: GameMode[] = (['Classic', 'Arcade', 'WhackLight'] as GameMode[]).filter(m => m !== selectedMode)
+      for (const mode of otherModes) {
+        const cached = getCachedLeaderboard(mode)
+        if (!cached || cached.length === 0) {
+          console.log(`🔄 Preloading cache for ${mode} mode...`)
+          try {
+            const otherContractData = await getTopScores(10, mode)
+            if (otherContractData && otherContractData.length > 0) {
+              const otherProcessed = otherContractData.slice(0, 10).map((entry: any, index: number) => ({
+                ...entry,
+                rank: index + 1,
+                displayName: getPlayerDisplayName(entry.player),
+                avatar: getPlayerAvatar(entry.player),
+                isCurrentUser: isCurrentUser(entry.player)
+              }))
+              setCachedLeaderboard(mode, otherProcessed)
+              console.log(`✅ Preloaded ${otherProcessed.length} entries for ${mode} mode`)
+            }
+          } catch (error) {
+            console.warn(`❌ Failed to preload ${mode} mode:`, error)
+          }
+        } else {
+          console.log(`✅ ${mode} mode already cached with ${cached.length} entries`)
+        }
+      }
+    }
+    
+    // Start preloading after current mode is loaded
+    if (allLeaderboardData.length > 0) {
+      setTimeout(preloadOtherModes, 1000) // Delay to prioritize current mode
+    }
     
     return () => {
       clearTimeout(timeout)
@@ -700,6 +779,12 @@ function Leaderboard() {
                 <div className="flex items-center space-x-1 text-squid-red text-xs px-2 py-1 rounded border-2 border-squid-red bg-squid-red/10 font-squid-heading font-bold uppercase" style={{ boxShadow: '2px 2px 0px 0px #DC143C' }}>
                   <span>⚠️</span>
                   <span>{t('leaderboard.cached', 'Cached')}</span>
+                </div>
+              )}
+              {isRefreshing && (
+                <div className="flex items-center space-x-1 text-squid-green text-xs px-2 py-1 rounded border-2 border-squid-green bg-squid-green/10 font-squid-heading font-bold uppercase" style={{ boxShadow: '2px 2px 0px 0px #10B981' }}>
+                  <span className="animate-spin">🔄</span>
+                  <span>{t('leaderboard.updating', 'Updating')}</span>
                 </div>
               )}
           </div>
