@@ -36,14 +36,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         user: userData,
         timestamp: now
       }
-      
+
       // Sanitize data before storing
       const validation = InputSanitizer.sanitizeLocalStorageData(AUTH_STORAGE_KEY, sessionData)
       if (!validation.isValid) {
         console.warn('Session data validation failed:', validation.errors)
         return
       }
-      
+
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sessionData))
     } catch (error) {
       console.warn('Failed to save session to localStorage:', error)
@@ -91,14 +91,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Check for dev bypass in URL params with sanitization
     const urlParams = new URLSearchParams(window.location.search)
     const sanitizedParams = InputSanitizer.sanitizeURLParams(urlParams)
-    
+
     if (!sanitizedParams.isValid) {
       console.warn('URL parameters validation failed:', sanitizedParams.errors)
     }
-    
+
     const devBypass = sanitizedParams.sanitizedValue.get('dev') === 'true'
     const devUser = sanitizedParams.sanitizedValue.get('devuser') || '1'
-    
+
     if (devBypass) {
       // Support multiple dev users
       if (devUser === '1') {
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return devUser3
       }
     }
-    
+
     return null
   }, [])
 
@@ -146,7 +146,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     setIsLoading(true)
-    
+
     try {
       // Request Document verification (which accepts higher levels like Orb)
       const viteActionId = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WORLD_ID_ACTION_ID) as string | undefined
@@ -160,20 +160,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload)
-      
+
       if (finalPayload.status === 'error') {
         haptics.verificationError()
         setIsLoading(false)
         return
       }
-      
+
       // Validate nullifier hash
       if (!finalPayload.nullifier_hash || finalPayload.nullifier_hash.length < 40) {
         haptics.verificationError()
         setIsLoading(false)
         return
       }
-      
+
       let walletAddress = user?.walletAddress
       let username: string | undefined
       let profilePictureUrl: string | undefined
@@ -193,7 +193,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 profilePictureUrl = worldIdUser.profilePictureUrl
               }
             }
-          } catch {}
+          } catch { }
         }
       }
 
@@ -207,7 +207,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         profilePictureUrl,
         walletAuthenticated: !!walletAddress
       }
-      
+
       // Submit verification to backend API for on-chain submission
       try {
         console.log('🔄 Submitting verification to backend API...')
@@ -216,26 +216,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
           worldIDUser.walletAddress || '',
           true // Submit on-chain
         )
-        
+
         console.log('✅ On-chain verification submitted:', {
           transactionHash: verificationResult.onChainSubmission?.transactionHash,
           verificationLevel: verificationResult.verificationLevel
         })
-        
+
         // Update user with on-chain confirmation
         worldIDUser.onChainVerified = true
         worldIDUser.onChainVerificationLevel = verificationResult.verificationLevel
-        
+
       } catch (apiError) {
         console.warn('⚠️ Backend API submission failed, using local verification only:', apiError)
         // Still allow local verification if API fails
         worldIDUser.onChainVerified = false
       }
-      
+
       setUser(worldIDUser)
       saveSession(worldIDUser) // Persist the session
       haptics.verificationSuccess()
-      
+
     } catch (error) {
       console.error('❌ Verification failed:', error)
       haptics.verificationError()
@@ -244,42 +244,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [haptics, saveSession])
 
-  const authenticateWallet = useCallback(async () => {
+  const authenticateWallet = useCallback(async (): Promise<string | null> => {
     console.log('🔐 Wallet authentication started:', {
       userVerified: user?.verified,
       userAddress: user?.walletAddress,
       miniKitInstalled: MiniKit.isInstalled(),
       timestamp: new Date().toISOString()
     })
-    
+
     if (!user?.verified) {
       console.log('❌ User not verified, skipping wallet auth')
-      return
+      return null
     }
 
     if (!MiniKit.isInstalled()) {
       console.log('❌ MiniKit not installed, skipping wallet auth')
-      return
+      return null
     }
 
     console.log('✅ Starting wallet authentication...')
     setIsLoading(true)
-    
+
     try {
       // Use MiniKit's walletAuth command to authenticate the wallet
       // Generate a random nonce for the wallet authentication request
       const nonce = generateSecureId('auth-', 13)
-      
+
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({ nonce })
-      
+
       if (finalPayload.status === 'error') {
-        return
+        return null
       }
 
       // Get wallet address from the response (field name is 'address' not 'wallet_address')
       const walletAddress = (finalPayload as any).address
       if (!walletAddress) {
-        return
+        return null
       }
 
       // Try to get username and profile picture from MiniKit
@@ -311,12 +311,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         profilePictureUrl,
         walletAuthenticated: true
       }
-      
+
       setUser(updatedUser)
       saveSession(updatedUser) // Persist the updated session
-      
+      return walletAddress
+
     } catch (error) {
       // Handle error silently in production
+      return null
     } finally {
       setIsLoading(false)
     }
@@ -337,13 +339,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false)
         return
       }
-      
+
       // If no dev bypass, try to restore session from localStorage
       const storedUser = loadSession()
       if (storedUser) {
         setUser(storedUser)
       }
-      
+
       setIsLoading(false)
     }
 

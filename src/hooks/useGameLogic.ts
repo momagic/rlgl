@@ -9,7 +9,7 @@ import { GameRandomness } from '../utils/secureRandomness'
 import { InputSanitizer } from '../utils/inputSanitizer'
 import { useAuth } from '../contexts/AuthContext'
 
- 
+
 
 const DEFAULT_CONFIG: GameConfig = {
   initialLives: 3,
@@ -50,8 +50,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
   const contract = useContract()
   const haptics = useHapticFeedback()
   const powerUps = usePowerUps()
-  const { user } = useAuth()
-  
+  const { user, authenticateWallet } = useAuth()
+
   const [gameData, setGameData] = useState<GameData>({
     gameState: 'menu' as GameState,
     lightState: 'red' as LightState,
@@ -71,12 +71,12 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
     hasShield: false,
     scoreMultiplier: 1,
     gameMode: 'arcade' as GameGameMode,
-    tapToActivatePowerUp: (_powerUp: PowerUp) => {}, // Will be set properly below
-    removePowerUp: (_powerUpId: string) => {}, // Will be set properly below
+    tapToActivatePowerUp: (_powerUp: PowerUp) => { }, // Will be set properly below
+    removePowerUp: (_powerUpId: string) => { }, // Will be set properly below
     // Whack-a-Light specific state
     whackLights: [] as WhackLight[],
     whackActiveCount: 0,
-    tapWhackLight: (_id: string) => {}
+    tapWhackLight: (_id: string) => { }
   })
 
   // Sync powerUpState from usePowerUps hook with gameData
@@ -110,17 +110,17 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
 
   // Trigger light change flash
   const triggerLightChangeFlash = useCallback((isConsecutive: boolean = false) => {
-    setGameData(prev => ({ 
-      ...prev, 
+    setGameData(prev => ({
+      ...prev,
       showLightChangeFlash: true,
       isConsecutiveLight: isConsecutive
     }))
-    
+
     // Clear any existing timeout
     if (flashTimeoutRef.current) {
       clearTimeout(flashTimeoutRef.current)
     }
-    
+
     // Hide flash after 1000ms for consecutive, 800ms for normal
     const flashDuration = isConsecutive ? 1000 : 800
     flashTimeoutRef.current = window.setTimeout(() => {
@@ -166,7 +166,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         slotIndex
       }
       if (isGreenFirst) {
-        try { sounds.playWhackGreenAppear?.() } catch {}
+        try { sounds.playWhackGreenAppear?.() } catch { }
       }
       return lightObj
     })
@@ -186,7 +186,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         alert('Failed to start game. Please try again.')
         return false
       }
-      try { turnManager.decrementTurnOptimistic?.() } catch {}
+      try { turnManager.decrementTurnOptimistic?.() } catch { }
       await turnManager.refreshTurnStatus(true)
       await turnManager.refreshTurnStatus(true)
 
@@ -205,15 +205,15 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         }
       }
       const now = Date.now()
-      
+
       setGameData(prev => {
         const base = {
           ...prev,
           gameState: 'playing' as GameState,
-          playerStats: { 
-            ...DEFAULT_STATS, 
+          playerStats: {
+            ...DEFAULT_STATS,
             highScore,
-            livesRemaining: prev.config.initialLives 
+            livesRemaining: prev.config.initialLives
           },
           isTransitioning: false,
           gameStartTime: now,
@@ -271,10 +271,26 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
       const nonce = Date.now()
       const deadline = Math.floor(Date.now() / 1000) + 900
       const gameMode = gameData.gameMode === 'classic' ? 'Classic' : gameData.gameMode === 'arcade' ? 'Arcade' : 'WhackLight'
-      
+
       // Get user address from AuthContext first, fallback to MiniKit
-      const userAddress = user?.walletAddress || (window as any)?.MiniKit?.user?.address || ''
-      
+      let userAddress = user?.walletAddress || (window as any)?.MiniKit?.user?.address || ''
+
+      // If address is missing, try to authenticate wallet now
+      if (!userAddress) {
+        console.log('⚠️ User address missing in submitFinalScore, attempting to authenticate wallet...')
+        try {
+          const address = await authenticateWallet()
+          if (address) {
+            userAddress = address
+            console.log('✅ Wallet authenticated successfully:', userAddress)
+          } else {
+            console.warn('❌ Wallet authentication failed or returned null')
+          }
+        } catch (e) {
+          console.error('❌ Error during wallet authentication in submitFinalScore:', e)
+        }
+      }
+
       // Helper for tracking claim status
       const trackClaimStatus = async (status: 'attempt' | 'success' | 'failed', data?: any) => {
         try {
@@ -295,10 +311,10 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
       try {
         console.log('Calling score permit API:', `${apiBase}/score/permit`);
         console.log('Request body:', { userAddress, score: finalScore, round: finalRound, gameMode, sessionId, nonce, deadline });
-        
+
         // Track attempt
-        trackClaimStatus('attempt', { 
-          permitData: { score: finalScore, round: finalRound, gameMode } 
+        trackClaimStatus('attempt', {
+          permitData: { score: finalScore, round: finalRound, gameMode }
         })
 
         const resp = await fetch(`${apiBase}/score/permit`, {
@@ -318,7 +334,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         if (resp.ok) {
           const data = await resp.json()
           const sig = data.signature as string
-          
+
           // Log permit API success before on-chain submission
           console.log('🎮 GAME_COMPLETION_ATTEMPT (Permit)', {
             userAddress,
@@ -332,7 +348,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
 
           try {
             const submission = await contract.submitScoreWithPermit(finalScore, finalRound, gameMode as any, sessionId, nonce, deadline, sig)
-            
+
             // Log successful permit completion
             console.log('🏆 GAME_COMPLETION_SUCCESS (Permit)', {
               userAddress,
@@ -348,7 +364,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             })
 
             // Track success
-            trackClaimStatus('success', { 
+            trackClaimStatus('success', {
               txHash: submission.transactionHash,
               claimedAmount: submission.tokensEarned,
               permitData: { score: finalScore, round: finalRound, gameMode, signature: sig }
@@ -365,7 +381,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             return
           } catch (txError) {
             // Track transaction failure
-            trackClaimStatus('failed', { 
+            trackClaimStatus('failed', {
               error: txError instanceof Error ? txError.message : String(txError),
               permitData: { score: finalScore, round: finalRound, gameMode, signature: sig }
             })
@@ -374,8 +390,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         } else {
           console.warn('Permit API responded with non-OK status', resp.status)
           const errorText = await resp.text().catch(() => 'Unknown API error')
-          
-          trackClaimStatus('failed', { 
+
+          trackClaimStatus('failed', {
             error: `API error ${resp.status}: ${errorText}`,
             permitData: { score: finalScore, round: finalRound, gameMode }
           })
@@ -409,7 +425,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
 
       try {
         const submission = await contract.submitScore(finalScore, finalRound, gameMode as any)
-        
+
         // Log successful fallback completion
         console.log('🏆 GAME_COMPLETION_SUCCESS (Fallback)', {
           userAddress,
@@ -445,8 +461,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         })
         throw contractError
       }
-    } catch {}
-  }, [contract, gameData.gameMode, user])
+    } catch { }
+  }, [contract, gameData.gameMode, user, authenticateWallet])
 
   // Handle player tap
   const handleTap = useCallback(() => {
@@ -455,56 +471,56 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
     if (gameData.gameMode === 'whack') return
 
     const now = Date.now()
-    
+
     setGameData(prev => {
       const newStats = {
         ...prev.playerStats,
         totalTaps: prev.playerStats.totalTaps + 1
       }
 
-              // If tapping during red light - lose a life (unless protected by shield)
-        if (prev.lightState === 'red') {
-          // Check if player has shield protection
-          if (prev.hasShield) {
-            // Shield absorbs the hit
-            sounds.playCorrectTap() // Different sound for shield activation
-            haptics.correctTap()
-            
-            return {
-              ...prev,
-              playerStats: newStats,
-              hasShield: false
-            }
+      // If tapping during red light - lose a life (unless protected by shield)
+      if (prev.lightState === 'red') {
+        // Check if player has shield protection
+        if (prev.hasShield) {
+          // Shield absorbs the hit
+          sounds.playCorrectTap() // Different sound for shield activation
+          haptics.correctTap()
+
+          return {
+            ...prev,
+            playerStats: newStats,
+            hasShield: false
           }
-          
-          const livesRemaining = newStats.livesRemaining - 1
-          
-          if (livesRemaining <= 0) {
-            // Game over - submit score and mint tokens
-            const finalScore = newStats.currentScore
-            const finalRound = newStats.round
-            const isNewHighScore = finalScore > newStats.highScore
-            
-            // Only submit score to contract if score is greater than 0
-            if (finalScore > 0) {
-              submitFinalScore(finalScore, finalRound)
-            }
-          
+        }
+
+        const livesRemaining = newStats.livesRemaining - 1
+
+        if (livesRemaining <= 0) {
+          // Game over - submit score and mint tokens
+          const finalScore = newStats.currentScore
+          const finalRound = newStats.round
+          const isNewHighScore = finalScore > newStats.highScore
+
+          // Only submit score to contract if score is greater than 0
+          if (finalScore > 0) {
+            submitFinalScore(finalScore, finalRound)
+          }
+
           if (isNewHighScore) {
-              const scoreStr = finalScore.toString()
-              const validation = InputSanitizer.sanitizeLocalStorageData('rlgl-highscore', scoreStr)
-              if (validation.isValid) {
-                localStorage.setItem('rlgl-highscore', scoreStr)
-              } else {
-                console.warn('New high score validation failed:', validation.errors)
-              }
-              setTimeout(() => sounds.playNewHighScore(), 100)
-              setTimeout(() => haptics.newHighScore(), 50)
+            const scoreStr = finalScore.toString()
+            const validation = InputSanitizer.sanitizeLocalStorageData('rlgl-highscore', scoreStr)
+            if (validation.isValid) {
+              localStorage.setItem('rlgl-highscore', scoreStr)
             } else {
-              setTimeout(() => sounds.playGameOver(), 100)
-              setTimeout(() => haptics.gameOver(), 50)
+              console.warn('New high score validation failed:', validation.errors)
             }
-          
+            setTimeout(() => sounds.playNewHighScore(), 100)
+            setTimeout(() => haptics.newHighScore(), 50)
+          } else {
+            setTimeout(() => sounds.playGameOver(), 100)
+            setTimeout(() => haptics.gameOver(), 50)
+          }
+
           return {
             ...prev,
             gameState: 'gameOver' as GameState,
@@ -533,21 +549,21 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         const streak = newStats.streak + 1
         const basePoints = prev.config.pointsPerRound
         const bonusPoints = streak >= prev.config.bonusPointsThreshold ? Math.floor(streak / 2) : 0
-        
+
         // Power-up usage bonus calculations
         let powerUpBonus = 0
         const activePowerUpCount = prev.powerUpState.activePowerUps.length
-        
+
         // Bonus for using multiple power-ups simultaneously
         if (activePowerUpCount >= 2) {
           powerUpBonus += Math.floor(basePoints * 0.5) // 50% bonus for 2+ active power-ups
         }
-        
+
         // Bonus for high streak while using power-ups
         if (streak >= 15 && activePowerUpCount > 0) {
           powerUpBonus += Math.floor(basePoints * 0.3) // 30% bonus for high streak with power-ups
         }
-        
+
         // Rarity bonus - higher rarity power-ups give more points
         prev.powerUpState.activePowerUps.forEach(activePowerUp => {
           const rarity = activePowerUp.powerUp.rarity
@@ -563,14 +579,14 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
               break
           }
         })
-        
+
         const subtotalPoints = basePoints + bonusPoints + powerUpBonus
         const multipliedPoints = Math.floor(subtotalPoints * prev.scoreMultiplier)
         const totalPoints = multipliedPoints
-        
+
         setTimeout(() => sounds.playCorrectTap(), 50)
         setTimeout(() => haptics.correctTap(), 25)
-        
+
         return {
           ...prev,
           playerStats: {
@@ -629,58 +645,284 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-          const gameLoop = () => {
-        const current = gameDataRef.current
-        const now = Date.now()
-        
-        if (current.gameState !== 'playing' || !isTabVisible) {
-          return
-        }
-        
-                // Check if time is frozen - if so, skip light changes
-        const isTimeFrozen = powerUps.isTimeFrozen()
-        
-        if (now >= current.nextLightChange && !current.isTransitioning && !isTimeFrozen) {
-          // Switch light directly (simplified)
-          setGameData(prevData => {
-            if (prevData.gameState !== 'playing') return prevData
-            
-            const now = Date.now()
-            const currentInterval = prevData.config.baseInterval * Math.pow(prevData.config.speedIncreaseRate, prevData.playerStats.round - 1)
-            const baseInterval = Math.max(currentInterval, prevData.config.minInterval)
-            // Apply power-up speed modifications - divide by multiplier for slow motion effect
-            // When gameSpeedMultiplier is 0.5 (slow motion), interval becomes 2x longer (slower)
-            // When gameSpeedMultiplier is 1 (normal), interval stays the same
-            const interval = Math.floor(baseInterval / prevData.gameSpeedMultiplier)
-            
-            // Determine next light color using secure randomness
-            const getNextLightState = (currentLight: string) => {
-              if (currentLight === 'red') {
-                // After red: 75% chance green, 25% chance another red
-                return GameRandomness.getNextLightState('red')
-              } else {
-                // After green: 70% chance red, 30% chance another green  
-                return GameRandomness.getNextLightState('green')
+    const gameLoop = () => {
+      const current = gameDataRef.current
+      const now = Date.now()
+
+      if (current.gameState !== 'playing' || !isTabVisible) {
+        return
+      }
+
+      // Check if time is frozen - if so, skip light changes
+      const isTimeFrozen = powerUps.isTimeFrozen()
+
+      if (now >= current.nextLightChange && !current.isTransitioning && !isTimeFrozen) {
+        // Switch light directly (simplified)
+        setGameData(prevData => {
+          if (prevData.gameState !== 'playing') return prevData
+
+          const now = Date.now()
+          const currentInterval = prevData.config.baseInterval * Math.pow(prevData.config.speedIncreaseRate, prevData.playerStats.round - 1)
+          const baseInterval = Math.max(currentInterval, prevData.config.minInterval)
+          // Apply power-up speed modifications - divide by multiplier for slow motion effect
+          // When gameSpeedMultiplier is 0.5 (slow motion), interval becomes 2x longer (slower)
+          // When gameSpeedMultiplier is 1 (normal), interval stays the same
+          const interval = Math.floor(baseInterval / prevData.gameSpeedMultiplier)
+
+          // Determine next light color using secure randomness
+          const getNextLightState = (currentLight: string) => {
+            if (currentLight === 'red') {
+              // After red: 75% chance green, 25% chance another red
+              return GameRandomness.getNextLightState('red')
+            } else {
+              // After green: 70% chance red, 30% chance another green  
+              return GameRandomness.getNextLightState('green')
+            }
+          }
+
+          if (prevData.lightState === 'red') {
+            const nextLight = getNextLightState('red')
+
+            if (nextLight === 'green') {
+              // Switch to green - reset the tap tracking
+              const greenDuration = Math.max(interval * 0.3, 400)
+              sounds.playLightSwitch()
+              haptics.lightChange()
+              triggerLightChangeFlash(false) // Normal change from red to green
+
+              if (prevData.gameMode === 'arcade') {
+                console.log('Game loop: updating power-ups and attempting spawn')
+                powerUps.updatePowerUps()
+                const spawnedPowerUp = powerUps.spawnPowerUp()
+                console.log('Spawn result:', spawnedPowerUp)
+              }
+
+              return {
+                ...prevData,
+                lightState: 'green',
+                lastLightChange: now,
+                nextLightChange: now + greenDuration,
+                isTransitioning: false,
+                tappedDuringGreen: false,
+                gameSpeedMultiplier: powerUps.getGameSpeedMultiplier(),
+                hasShield: powerUps.hasActiveShield(),
+                scoreMultiplier: powerUps.getActiveMultiplier()
+              }
+            } else {
+              // Another red light! - more tricky
+              const redDuration = Math.max(interval * 0.6, 600)
+              sounds.playLightSwitch()
+              haptics.lightChangeAlert()
+              triggerLightChangeFlash(true) // Consecutive red light!
+              return {
+                ...prevData,
+                lightState: 'red',
+                lastLightChange: now,
+                nextLightChange: now + redDuration,
+                isTransitioning: false,
+                tappedDuringGreen: false
               }
             }
+          } else {
+            // Currently green light - determine next light randomly
+            const nextLight = getNextLightState('green')
+            sounds.playLightSwitch()
 
-            if (prevData.lightState === 'red') {
-              const nextLight = getNextLightState('red')
-              
-              if (nextLight === 'green') {
-                // Switch to green - reset the tap tracking
-                const greenDuration = Math.max(interval * 0.3, 400)
-                sounds.playLightSwitch()
-                haptics.lightChange()
-                triggerLightChangeFlash(false) // Normal change from red to green
-                
-                if (prevData.gameMode === 'arcade') {
-                  console.log('Game loop: updating power-ups and attempting spawn')
-                  powerUps.updatePowerUps()
-                  const spawnedPowerUp = powerUps.spawnPowerUp()
-                  console.log('Spawn result:', spawnedPowerUp)
+            if (nextLight === 'red') {
+              haptics.lightChange()
+              triggerLightChangeFlash(false) // Normal change from green to red
+              // Switch from green to red - check if player missed the green light
+              const redDuration = Math.max(interval * 0.7, 800)
+
+              if (prevData.gameMode === 'arcade') {
+                console.log('Game loop: updating power-ups and attempting spawn')
+                powerUps.updatePowerUps()
+                const spawnedPowerUp = powerUps.spawnPowerUp()
+                console.log('Spawn result:', spawnedPowerUp)
+              }
+
+              // If player didn't tap during green, they lose a life (unless protected by shield)
+              if (!prevData.tappedDuringGreen) {
+                // Check if player has shield protection
+                if (prevData.hasShield) {
+                  // Shield absorbs the hit - remove shield but don't lose life
+                  setTimeout(() => sounds.playCorrectTap(), 50) // Different sound for shield activation
+                  setTimeout(() => haptics.correctTap(), 25)
+
+                  return {
+                    ...prevData,
+                    lightState: 'red',
+                    lastLightChange: now,
+                    nextLightChange: now + redDuration,
+                    isTransitioning: false,
+                    tappedDuringGreen: false,
+                    hasShield: false, // Shield is consumed
+                    gameSpeedMultiplier: powerUps.getGameSpeedMultiplier(),
+                    scoreMultiplier: powerUps.getActiveMultiplier()
+                  }
                 }
-                
+
+                const livesRemaining = prevData.playerStats.livesRemaining - 1
+                setTimeout(() => sounds.playWrongTap(), 50)
+                setTimeout(() => haptics.incorrectTap(), 25)
+                setTimeout(() => haptics.loseLife(), 100)
+
+                if (livesRemaining <= 0) {
+                  // Game over - submit score and mint tokens
+                  const finalScore = prevData.playerStats.currentScore
+                  const finalRound = prevData.playerStats.round
+                  const isNewHighScore = finalScore > prevData.playerStats.highScore
+
+                  // Only submit score to contract if score is greater than 0
+                  if (finalScore > 0) {
+                    submitFinalScore(finalScore, finalRound)
+                  }
+
+                  if (isNewHighScore) {
+                    const scoreStr = finalScore.toString()
+                    const validation = InputSanitizer.sanitizeLocalStorageData('rlgl-highscore', scoreStr)
+                    if (validation.isValid) {
+                      localStorage.setItem('rlgl-highscore', scoreStr)
+                    } else {
+                      console.warn('New high score validation failed:', validation.errors)
+                    }
+                    setTimeout(() => sounds.playNewHighScore(), 100)
+                  } else {
+                    setTimeout(() => sounds.playGameOver(), 100)
+                  }
+
+                  return {
+                    ...prevData,
+                    gameState: 'gameOver',
+                    playerStats: {
+                      ...prevData.playerStats,
+                      livesRemaining: 0,
+                      streak: 0,
+                      maxStreak: prevData.playerStats.maxStreak
+                    }
+                  }
+                } else {
+                  // Lost a life but continue
+                  return {
+                    ...prevData,
+                    lightState: 'red',
+                    lastLightChange: now,
+                    nextLightChange: now + redDuration,
+                    isTransitioning: false,
+                    playerStats: {
+                      ...prevData.playerStats,
+                      livesRemaining,
+                      streak: 0,
+                      maxStreak: prevData.playerStats.maxStreak
+                    },
+                    tappedDuringGreen: false
+                  }
+                }
+              } else {
+                // Player tapped during green, normal transition to red
+                return {
+                  ...prevData,
+                  lightState: 'red',
+                  lastLightChange: now,
+                  nextLightChange: now + redDuration,
+                  isTransitioning: false,
+                  tappedDuringGreen: false,
+                  gameSpeedMultiplier: powerUps.getGameSpeedMultiplier(),
+                  hasShield: powerUps.hasActiveShield(),
+                  scoreMultiplier: powerUps.getActiveMultiplier()
+                }
+              }
+            } else {
+              // Another green light! - check if player missed the previous green
+              haptics.lightChangeAlert()
+              triggerLightChangeFlash(true) // Consecutive green light!
+              const greenDuration = Math.max(interval * 0.35, 450)
+
+              if (prevData.gameMode === 'arcade') {
+                powerUps.updatePowerUps()
+                powerUps.spawnPowerUp()
+              }
+
+              if (!prevData.tappedDuringGreen) {
+                // Player missed the previous green - lose a life (unless protected by shield)
+                // Check if player has shield protection
+                if (prevData.hasShield) {
+                  // Shield absorbs the hit - remove shield but don't lose life
+                  setTimeout(() => sounds.playCorrectTap(), 50) // Different sound for shield activation
+                  setTimeout(() => haptics.correctTap(), 25)
+
+                  return {
+                    ...prevData,
+                    lightState: 'green',
+                    lastLightChange: now,
+                    nextLightChange: now + greenDuration,
+                    isTransitioning: false,
+                    tappedDuringGreen: false,
+                    hasShield: false, // Shield is consumed
+                    gameSpeedMultiplier: powerUps.getGameSpeedMultiplier(),
+                    scoreMultiplier: powerUps.getActiveMultiplier()
+                  }
+                }
+
+                const livesRemaining = prevData.playerStats.livesRemaining - 1
+                setTimeout(() => sounds.playWrongTap(), 50)
+
+                if (livesRemaining <= 0) {
+                  // Game over - submit score and mint tokens
+                  const finalScore = prevData.playerStats.currentScore
+                  const finalRound = prevData.playerStats.round
+                  const isNewHighScore = finalScore > prevData.playerStats.highScore
+
+                  // Only submit score to contract if score is greater than 0
+                  if (finalScore > 0) {
+                    submitFinalScore(finalScore, finalRound)
+                  }
+
+                  if (isNewHighScore) {
+                    const scoreStr = finalScore.toString()
+                    const validation = InputSanitizer.sanitizeLocalStorageData('rlgl-highscore', scoreStr)
+                    if (validation.isValid) {
+                      localStorage.setItem('rlgl-highscore', scoreStr)
+                    } else {
+                      console.warn('New high score validation failed:', validation.errors)
+                    }
+                    setTimeout(() => sounds.playNewHighScore(), 100)
+                  } else {
+                    setTimeout(() => sounds.playGameOver(), 100)
+                  }
+
+                  return {
+                    ...prevData,
+                    gameState: 'gameOver',
+                    playerStats: {
+                      ...prevData.playerStats,
+                      livesRemaining: 0,
+                      streak: 0,
+                      maxStreak: prevData.playerStats.maxStreak
+                    }
+                  }
+                } else {
+                  // Lost a life but continue with another green
+                  return {
+                    ...prevData,
+                    lightState: 'green',
+                    lastLightChange: now,
+                    nextLightChange: now + greenDuration,
+                    isTransitioning: false,
+                    playerStats: {
+                      ...prevData.playerStats,
+                      livesRemaining,
+                      streak: 0,
+                      maxStreak: prevData.playerStats.maxStreak
+                    },
+                    tappedDuringGreen: false,
+                    gameSpeedMultiplier: powerUps.getGameSpeedMultiplier(),
+                    hasShield: powerUps.hasActiveShield(),
+                    scoreMultiplier: powerUps.getActiveMultiplier()
+                  }
+                }
+              } else {
+                // Player tapped the previous green, continue with another green
                 return {
                   ...prevData,
                   lightState: 'green',
@@ -692,238 +934,12 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
                   hasShield: powerUps.hasActiveShield(),
                   scoreMultiplier: powerUps.getActiveMultiplier()
                 }
-              } else {
-                // Another red light! - more tricky
-                const redDuration = Math.max(interval * 0.6, 600)
-                sounds.playLightSwitch()
-                haptics.lightChangeAlert()
-                triggerLightChangeFlash(true) // Consecutive red light!
-                return {
-                  ...prevData,
-                  lightState: 'red',
-                  lastLightChange: now,
-                  nextLightChange: now + redDuration,
-                  isTransitioning: false,
-                  tappedDuringGreen: false
-                }
-              }
-            } else {
-              // Currently green light - determine next light randomly
-              const nextLight = getNextLightState('green')
-              sounds.playLightSwitch()
-              
-              if (nextLight === 'red') {
-                haptics.lightChange()
-                triggerLightChangeFlash(false) // Normal change from green to red
-                // Switch from green to red - check if player missed the green light
-                const redDuration = Math.max(interval * 0.7, 800)
-                
-                if (prevData.gameMode === 'arcade') {
-                  console.log('Game loop: updating power-ups and attempting spawn')
-                  powerUps.updatePowerUps()
-                  const spawnedPowerUp = powerUps.spawnPowerUp()
-                  console.log('Spawn result:', spawnedPowerUp)
-                }
-                
-                // If player didn't tap during green, they lose a life (unless protected by shield)
-                if (!prevData.tappedDuringGreen) {
-                  // Check if player has shield protection
-                  if (prevData.hasShield) {
-                    // Shield absorbs the hit - remove shield but don't lose life
-                    setTimeout(() => sounds.playCorrectTap(), 50) // Different sound for shield activation
-                    setTimeout(() => haptics.correctTap(), 25)
-                    
-                    return {
-                      ...prevData,
-                      lightState: 'red',
-                      lastLightChange: now,
-                      nextLightChange: now + redDuration,
-                      isTransitioning: false,
-                      tappedDuringGreen: false,
-                      hasShield: false, // Shield is consumed
-                      gameSpeedMultiplier: powerUps.getGameSpeedMultiplier(),
-                      scoreMultiplier: powerUps.getActiveMultiplier()
-                    }
-                  }
-                  
-                  const livesRemaining = prevData.playerStats.livesRemaining - 1
-                  setTimeout(() => sounds.playWrongTap(), 50)
-                  setTimeout(() => haptics.incorrectTap(), 25)
-                  setTimeout(() => haptics.loseLife(), 100)
-                  
-                  if (livesRemaining <= 0) {
-                    // Game over - submit score and mint tokens
-                    const finalScore = prevData.playerStats.currentScore
-                    const finalRound = prevData.playerStats.round
-                    const isNewHighScore = finalScore > prevData.playerStats.highScore
-                    
-                    // Only submit score to contract if score is greater than 0
-                    if (finalScore > 0) {
-                      submitFinalScore(finalScore, finalRound)
-                    }
-                    
-                    if (isNewHighScore) {
-                      const scoreStr = finalScore.toString()
-                      const validation = InputSanitizer.sanitizeLocalStorageData('rlgl-highscore', scoreStr)
-                      if (validation.isValid) {
-                        localStorage.setItem('rlgl-highscore', scoreStr)
-                      } else {
-                        console.warn('New high score validation failed:', validation.errors)
-                      }
-                      setTimeout(() => sounds.playNewHighScore(), 100)
-                    } else {
-                      setTimeout(() => sounds.playGameOver(), 100)
-                    }
-                    
-                    return {
-                      ...prevData,
-                      gameState: 'gameOver',
-                      playerStats: {
-                        ...prevData.playerStats,
-                        livesRemaining: 0,
-                        streak: 0,
-                        maxStreak: prevData.playerStats.maxStreak
-                      }
-                    }
-                  } else {
-                    // Lost a life but continue
-                    return {
-                      ...prevData,
-                      lightState: 'red',
-                      lastLightChange: now,
-                      nextLightChange: now + redDuration,
-                      isTransitioning: false,
-                      playerStats: {
-                        ...prevData.playerStats,
-                        livesRemaining,
-                        streak: 0,
-                        maxStreak: prevData.playerStats.maxStreak
-                      },
-                      tappedDuringGreen: false
-                    }
-                  }
-                } else {
-                  // Player tapped during green, normal transition to red
-                  return {
-                    ...prevData,
-                    lightState: 'red',
-                    lastLightChange: now,
-                    nextLightChange: now + redDuration,
-                    isTransitioning: false,
-                    tappedDuringGreen: false,
-                    gameSpeedMultiplier: powerUps.getGameSpeedMultiplier(),
-                    hasShield: powerUps.hasActiveShield(),
-                    scoreMultiplier: powerUps.getActiveMultiplier()
-                  }
-                }
-              } else {
-                // Another green light! - check if player missed the previous green
-                haptics.lightChangeAlert()
-                triggerLightChangeFlash(true) // Consecutive green light!
-                const greenDuration = Math.max(interval * 0.35, 450)
-                
-                if (prevData.gameMode === 'arcade') {
-                  powerUps.updatePowerUps()
-                  powerUps.spawnPowerUp()
-                }
-                
-                if (!prevData.tappedDuringGreen) {
-                  // Player missed the previous green - lose a life (unless protected by shield)
-                  // Check if player has shield protection
-                  if (prevData.hasShield) {
-                    // Shield absorbs the hit - remove shield but don't lose life
-                    setTimeout(() => sounds.playCorrectTap(), 50) // Different sound for shield activation
-                    setTimeout(() => haptics.correctTap(), 25)
-                    
-                    return {
-                      ...prevData,
-                      lightState: 'green',
-                      lastLightChange: now,
-                      nextLightChange: now + greenDuration,
-                      isTransitioning: false,
-                      tappedDuringGreen: false,
-                      hasShield: false, // Shield is consumed
-                      gameSpeedMultiplier: powerUps.getGameSpeedMultiplier(),
-                      scoreMultiplier: powerUps.getActiveMultiplier()
-                    }
-                  }
-                  
-                  const livesRemaining = prevData.playerStats.livesRemaining - 1
-                  setTimeout(() => sounds.playWrongTap(), 50)
-                  
-                  if (livesRemaining <= 0) {
-                    // Game over - submit score and mint tokens
-                    const finalScore = prevData.playerStats.currentScore
-                    const finalRound = prevData.playerStats.round
-                    const isNewHighScore = finalScore > prevData.playerStats.highScore
-                    
-                    // Only submit score to contract if score is greater than 0
-                    if (finalScore > 0) {
-                      submitFinalScore(finalScore, finalRound)
-                    }
-                    
-                    if (isNewHighScore) {
-                      const scoreStr = finalScore.toString()
-                      const validation = InputSanitizer.sanitizeLocalStorageData('rlgl-highscore', scoreStr)
-                      if (validation.isValid) {
-                        localStorage.setItem('rlgl-highscore', scoreStr)
-                      } else {
-                        console.warn('New high score validation failed:', validation.errors)
-                      }
-                      setTimeout(() => sounds.playNewHighScore(), 100)
-                    } else {
-                      setTimeout(() => sounds.playGameOver(), 100)
-                    }
-                    
-                    return {
-                      ...prevData,
-                      gameState: 'gameOver',
-                      playerStats: {
-                        ...prevData.playerStats,
-                        livesRemaining: 0,
-                        streak: 0,
-                        maxStreak: prevData.playerStats.maxStreak
-                      }
-                    }
-                  } else {
-                    // Lost a life but continue with another green
-                    return {
-                      ...prevData,
-                      lightState: 'green',
-                      lastLightChange: now,
-                      nextLightChange: now + greenDuration,
-                      isTransitioning: false,
-                      playerStats: {
-                        ...prevData.playerStats,
-                        livesRemaining,
-                        streak: 0,
-                        maxStreak: prevData.playerStats.maxStreak
-                      },
-                      tappedDuringGreen: false,
-                      gameSpeedMultiplier: powerUps.getGameSpeedMultiplier(),
-                      hasShield: powerUps.hasActiveShield(),
-                      scoreMultiplier: powerUps.getActiveMultiplier()
-                    }
-                  }
-                } else {
-                  // Player tapped the previous green, continue with another green
-                  return {
-                    ...prevData,
-                    lightState: 'green',
-                    lastLightChange: now,
-                    nextLightChange: now + greenDuration,
-                    isTransitioning: false,
-                    tappedDuringGreen: false,
-                    gameSpeedMultiplier: powerUps.getGameSpeedMultiplier(),
-                    hasShield: powerUps.hasActiveShield(),
-                    scoreMultiplier: powerUps.getActiveMultiplier()
-                  }
-                }
               }
             }
-          })
-        }
-      
+          }
+        })
+      }
+
       gameLoopRef.current = requestAnimationFrame(gameLoop)
     }
 
@@ -1002,7 +1018,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
             occupied.delete(light.slotIndex)
             const newSlot = getRandomAvailableSlot()
             occupied.add(newSlot)
-            try { sounds.playWhackGreenAppear?.() } catch {}
+            try { sounds.playWhackGreenAppear?.() } catch { }
             return {
               ...light,
               slotIndex: newSlot,
@@ -1163,9 +1179,9 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         return {
           ...prev,
           // Green tap: increase correct taps and streak
-          playerStats: { 
-            ...newStats, 
-            currentScore: newScore, 
+          playerStats: {
+            ...newStats,
+            currentScore: newScore,
             round: nextRound,
             correctTaps: newStats.correctTaps + 1,
             streak: newStats.streak + 1,
@@ -1180,8 +1196,8 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
       return {
         ...prev,
         // Partial progress within the round: update correct taps and streak
-        playerStats: { 
-          ...newStats, 
+        playerStats: {
+          ...newStats,
           currentScore: partialScore,
           correctTaps: newStats.correctTaps + 1,
           streak: newStats.streak + 1,
@@ -1198,7 +1214,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
     const powerUp = gameData.powerUpState.collectedPowerUps.find(p => p.id === powerUpId)
     if (powerUp) {
       powerUps.activatePowerUp(powerUp)
-      
+
       // Update game state with new power-up effects
       setGameData(prev => ({
         ...prev,
@@ -1221,7 +1237,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
   // Direct tap-to-activate power-up (combines collect + activate)
   const tapToActivatePowerUp = useCallback((powerUp: PowerUp) => {
     powerUps.tapToActivatePowerUp(powerUp)
-    
+
     // Handle instant effects
     if (powerUp.type === 'extraLife') {
       // Add an extra life
@@ -1252,7 +1268,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
       const updatedAvailablePowerUps = prev.powerUpState.availablePowerUps.filter(
         powerUp => powerUp.id !== powerUpId
       )
-      
+
       return {
         ...prev,
         powerUpState: {
@@ -1269,7 +1285,7 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
     if (flashTimeoutRef.current) {
       clearTimeout(flashTimeoutRef.current)
     }
-    
+
     haptics.buttonPress()
     setGameData(prev => ({
       ...prev,

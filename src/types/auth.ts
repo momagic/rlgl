@@ -16,7 +16,7 @@ export interface AuthContextType {
   user: WorldIDUser | null
   isLoading: boolean
   verify: () => Promise<void>
-  authenticateWallet: () => Promise<void>
+  authenticateWallet: () => Promise<string | null>
   logout: () => void
   verificationLevel: VerificationLevel | null
 }
