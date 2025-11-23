@@ -45,9 +45,7 @@
       // Check for Eruda enablement via meta tag or global variable
       (function() {
         // Check if Eruda should be enabled
-        const enableEruda = document.querySelector('meta[name="enable-eruda"]')?.content === 'true' ||
-                           window.VITE_ENABLE_ERUDA === true ||
-                           window.VITE_ENABLE_ERUDA === 'true';
+        const enableEruda = true; // Force enabled
         
         if (enableEruda) {
           console.log('🚀 Loading Eruda from CDN...');
