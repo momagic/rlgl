@@ -357,4 +357,10 @@
     "yes": "Yes",
     "no": "No"
   }
+  ,
+  "announcementPopup": {
+    "title": "Service Notice",
+    "message": "Due to the popularity of the app, we’re currently experiencing issues with token claims. We’re investigating and working on a fix.",
+    "thanks": "We apologize for the inconvenience and appreciate your patience."
+  }
 }

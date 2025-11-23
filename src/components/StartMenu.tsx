@@ -30,6 +30,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
   const refreshAttemptedRef = useRef(false)
   const [selectedGameMode, setSelectedGameMode] = useState<GameMode>('classic')
   const [showTurnsModal, setShowTurnsModal] = useState(false)
+  const [showAnnouncement, setShowAnnouncement] = useState(true)
   
   const buttonDisabled = turnLoading || !turnStatus || (!turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns <= 0)
 
@@ -332,6 +333,39 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
       {/* Bottom fixed section removed to avoid duplicate start CTA */}
 
       {/* Full Turn Manager modal to preserve all features (next reset time, purchases, etc.) */}
+      {showAnnouncement && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center animate-fade-in" style={{ background: 'rgba(10, 10, 15, 0.9)' }}>
+          <div className="w-full max-w-md rounded-lg border-4 border-squid-border bg-squid-black p-3 sm:p-4 animate-scale-in" style={{ boxShadow: '6px 6px 0px 0px #0A0A0F' }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-squid-white">
+                <span className="text-lg">📣</span>
+                <span className="text-sm font-squid-heading font-bold uppercase">{t('announcementPopup.title')}</span>
+              </div>
+              <button
+                onClick={() => setShowAnnouncement(false)}
+                className="px-3 py-1.5 rounded border-2 border-squid-border text-xs font-squid-heading font-bold uppercase text-squid-white bg-squid-gray transition-all duration-150"
+                style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
+                onPointerDown={(e) => {
+                  e.currentTarget.style.transform = 'translate(1px, 1px)'
+                  e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
+                }}
+                onPointerUp={(e) => {
+                  e.currentTarget.style.transform = 'translate(0, 0)'
+                  e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
+                }}
+              >
+                {t('startMenu.buttons.close')}
+              </button>
+            </div>
+            <div className="space-y-2 text-squid-white">
+              <p className="text-xs font-squid text-squid-white/80">{t('announcementPopup.message')}</p>
+              <div className="mt-1 px-2 py-1 rounded border-2 border-squid-border bg-squid-gray/50 text-[10px] text-squid-white/70 font-squid-mono" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
+                {t('announcementPopup.thanks')}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {showTurnsModal && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center animate-fade-in" style={{ background: 'rgba(10, 10, 15, 0.9)' }}>
           <div className="w-full max-w-md rounded-lg border-4 border-squid-border bg-squid-black p-3 sm:p-4 animate-scale-in" style={{ boxShadow: '6px 6px 0px 0px #0A0A0F' }}>

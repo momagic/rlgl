@@ -181,6 +181,7 @@
     "playToEarn": "🎮 Jogue para ganhar tokens RLGL!",
     "beatTopScore": "Supere a pontuação mais alta e reivindique seu lugar! 🚀",
     "cached": "Em cache",
+    "updating": "Atualizando",
     "retry": "Tentar Novamente",
     "updatedRealTime": "A tabela de líderes é atualizada em tempo real",
     "noScores": {
@@ -357,5 +358,11 @@
     "ok": "OK",
     "yes": "Sim",
     "no": "Não"
+  }
+  ,
+  "announcementPopup": {
+    "title": "Aviso de serviço",
+    "message": "Devido à popularidade do app, estamos enfrentando problemas nas solicitações de tokens. Estamos investigando e trabalhando em uma correção.",
+    "thanks": "Pedimos desculpas pelo inconveniente e agradecemos sua paciência."
   }
 }
