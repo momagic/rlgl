@@ -30,7 +30,9 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
   const refreshAttemptedRef = useRef(false)
   const [selectedGameMode, setSelectedGameMode] = useState<GameMode>('classic')
   const [showTurnsModal, setShowTurnsModal] = useState(false)
-  const [showAnnouncement, setShowAnnouncement] = useState(true)
+  const [showAnnouncement, setShowAnnouncement] = useState(false) // Set to false by default, change to true to enable popup
+  // @ts-ignore - Variables kept for future use
+  void showAnnouncement, setShowAnnouncement
   
   const buttonDisabled = turnLoading || !turnStatus || (!turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns <= 0)
 
@@ -333,6 +335,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
       {/* Bottom fixed section removed to avoid duplicate start CTA */}
 
       {/* Full Turn Manager modal to preserve all features (next reset time, purchases, etc.) */}
+      {/* SERVICE NOTICE POPUP - COMMENTED OUT FOR FUTURE USE
       {showAnnouncement && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center animate-fade-in" style={{ background: 'rgba(10, 10, 15, 0.9)' }}>
           <div className="w-full max-w-md rounded-lg border-4 border-squid-border bg-squid-black p-3 sm:p-4 animate-scale-in" style={{ boxShadow: '6px 6px 0px 0px #0A0A0F' }}>
@@ -365,7 +368,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
             </div>
           </div>
         </div>
-      )}
+      )} */}
       {showTurnsModal && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center animate-fade-in" style={{ background: 'rgba(10, 10, 15, 0.9)' }}>
           <div className="w-full max-w-md rounded-lg border-4 border-squid-border bg-squid-black p-3 sm:p-4 animate-scale-in" style={{ boxShadow: '6px 6px 0px 0px #0A0A0F' }}>
