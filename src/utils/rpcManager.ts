@@ -22,10 +22,10 @@ const RATE_LIMITS = {
 
 // Cache configuration
 const CACHE_CONFIG = {
-  leaderboardTTL: 60000, // 60 seconds
-  playerStatsTTL: 15000, // 15 seconds
-  contractDataTTL: 60000, // 1 minute
-  blockNumberTTL: 5000, // 5 seconds
+  leaderboardTTL: 24 * 60 * 60 * 1000, // 24 hours (reduced RPC calls)
+  playerStatsTTL: 15 * 60 * 1000, // 15 minutes
+  contractDataTTL: 5 * 60 * 1000, // 5 minutes
+  blockNumberTTL: 30000, // 30 seconds
 }
 
 // Retry configuration

@@ -147,7 +147,7 @@ function Leaderboard() {
     if (cached) {
       try {
         const { username, timestamp } = JSON.parse(cached)
-        const TTL = 24 * 60 * 60 * 1000 // 24 hours
+        const TTL = 24 * 60 * 60 * 1000 // 24 hours (extended for consistency with leaderboard caching)
         if (Date.now() - timestamp < TTL) {
           return username
         } else {
@@ -270,7 +270,7 @@ function Leaderboard() {
       const { dataKey, tsKey } = getCacheKeys(mode)
       const cachedData = localStorage.getItem(dataKey)
       const cacheTimestamp = localStorage.getItem(tsKey)
-      const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
+      const CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 hours (reduced RPC calls)
 
       
       if (cachedData && cacheTimestamp) {
@@ -278,7 +278,7 @@ function Leaderboard() {
         const maxAge = forceExpired ? 0 : CACHE_DURATION
         
         if (age < maxAge) {
-          console.log('✅ Cache is valid, age:', Math.round(age / 1000), 'seconds')
+          console.log('✅ Cache is valid, age:', Math.round(age / 3600000), 'hours')
           const parsedData = JSON.parse(cachedData)
           
           // Sanitize cached data
@@ -301,7 +301,7 @@ function Leaderboard() {
           
           return sanitizedData
         } else {
-          console.log('❌ Cache expired or forced refresh, age:', Math.round(age / 1000), 'seconds')
+          console.log('❌ Cache expired or forced refresh, age:', Math.round(age / 3600000), 'hours')
         }
       } else {
         console.log('❌ No cache found')
@@ -361,9 +361,9 @@ function Leaderboard() {
         setLastUpdated(new Date(parseInt(cacheTimestamp)))
       }
       
-      // Check if cache is getting stale (older than 5 minutes)
+      // Check if cache is getting stale (older than 12 hours)
       const cacheAge = Date.now() - parseInt(cacheTimestamp || '0')
-      const STALE_THRESHOLD = 5 * 60 * 1000 // 5 minutes
+      const STALE_THRESHOLD = 12 * 60 * 60 * 1000 // 12 hours
       
       if (cacheAge > STALE_THRESHOLD) {
         console.log('🔄 Cache is stale, refreshing in background...')
@@ -482,11 +482,11 @@ function Leaderboard() {
       console.log('✅ Already have data loaded, skipping initial fetch')
     }
     
-    // Set up hourly background refresh
+    // Set up daily background refresh (reduced frequency due to 24-hour caching)
     const refreshInterval = setInterval(() => {
-      console.log('🕐 Hourly background refresh triggered')
+      console.log('🕐 Daily background refresh triggered')
       fetchLeaderboard()
-    }, 60 * 60 * 1000) // 1 hour
+    }, 24 * 60 * 60 * 1000) // 24 hours
     
     // Add a timeout to prevent infinite loading
     const timeout = setTimeout(() => {
