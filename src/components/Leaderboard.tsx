@@ -474,9 +474,24 @@ function Leaderboard() {
 
   // Fetch leaderboard on component mount
   useEffect(() => {
-    // Only fetch if we don't already have cached data loaded
-    if (allLeaderboardData.length === 0) {
-      console.log('🚀 No data loaded, attempting to fetch (will use cache if available)')
+    // Check cache first, then fetch if needed
+    const cached = getCachedLeaderboard(selectedMode)
+    if (cached && cached.length > 0) {
+      console.log('📦 Found cached data on mount, using cache immediately')
+      const filteredCached = cached.filter((e: any) => !bannedAddresses.includes(String(e.player).toLowerCase()))
+      setAllLeaderboardData(filteredCached)
+      const { tsKey } = getCacheKeys(selectedMode)
+      const cacheTimestamp = localStorage.getItem(tsKey)
+      if (cacheTimestamp) {
+        setLastUpdated(new Date(parseInt(cacheTimestamp)))
+      }
+      // Still fetch in background to update cache, but don't show loading
+      setTimeout(() => {
+        console.log('🔄 Background refresh triggered after mount')
+        fetchLeaderboard()
+      }, 2000) // 2 second delay to prioritize user experience
+    } else if (allLeaderboardData.length === 0) {
+      console.log('🚀 No cached data found, fetching fresh data')
       fetchLeaderboard()
     } else {
       console.log('✅ Already have data loaded, skipping initial fetch')
@@ -494,7 +509,7 @@ function Leaderboard() {
         console.log('⏰ Loading timeout reached, forcing loading to false')
         setIsLoading(false)
         // Only set error if we don't have data yet
-        if (allLeaderboardData.length === 0) {
+        if (allLeaderboardData.length === 0 && isLoading) {
           setError('Loading timeout - please try refreshing the page')
         }
       }
@@ -538,7 +553,7 @@ function Leaderboard() {
       clearTimeout(timeout)
       clearInterval(refreshInterval)
     }
-  }, [fetchLeaderboard, isLoading, allLeaderboardData.length])
+  }, [fetchLeaderboard, isLoading, allLeaderboardData.length, getCachedLeaderboard, selectedMode, getCacheKeys, bannedAddresses])
 
   useEffect(() => {
     const onScoreSubmitted = (e: any) => {
@@ -624,9 +639,12 @@ function Leaderboard() {
             <div className="flex-shrink-0 mt-3 pt-3 border-t-2 border-squid-border text-center">
               <button 
                 onClick={() => {
-                  console.log('🔄 Manual refresh clicked')
-                  setIsLoading(false)
-                  setTimeout(() => fetchLeaderboard(), 100)
+                  console.log('🔄 Manual refresh clicked - forcing fresh data')
+                  // Force refresh by clearing cache and fetching fresh data
+                  const { dataKey, tsKey } = getCacheKeys(selectedMode)
+                  localStorage.removeItem(dataKey)
+                  localStorage.removeItem(tsKey)
+                  fetchLeaderboard(true) // Force refresh
                 }}
                 className="px-4 py-2 rounded border-3 border-squid-black text-squid-black font-squid-heading font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 mb-2 text-sm"
                 style={{ background: '#00A878', boxShadow: '3px 3px 0px 0px #0A0A0F' }}
@@ -697,7 +715,9 @@ function Leaderboard() {
     )
   }
 
-  if (allLeaderboardData.length === 0) {
+  // Only show loading state if we have no data AND no cache
+  const cached = getCachedLeaderboard(selectedMode)
+  if (allLeaderboardData.length === 0 && (!cached || cached.length === 0)) {
     return (
       <div className="h-full flex flex-col animate-fade-in overflow-hidden">
         <div className="flex-1 flex flex-col rounded-2xl shadow-2xl p-4 mx-4 border border-white/20 bg-white/8 backdrop-blur-sm overflow-hidden">
