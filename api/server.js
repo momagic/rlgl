@@ -51,11 +51,11 @@ const PRIVATE_KEY = process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const SIGNER_PRIVATE_KEY = process.env.SIGNER_PRIVATE_KEY || process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const RPC_URLS = [
   ...(process.env.RPC_URL ? [process.env.RPC_URL] : []),
-  'https://worldchain-mainnet.g.alchemy.com/public',
-  'https://480.rpc.thirdweb.com',
-  'https://worldchain-mainnet.gateway.tenderly.co',
-  'https://worldchain.drpc.org',
-  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro'
+  'https://worldchain.drpc.org',                    // Fastest in testing
+  'https://480.rpc.thirdweb.com',                  // Good performance
+  'https://worldchain-mainnet.gateway.tenderly.co', // Reliable
+  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro', // Alternative
+  'https://worldchain-mainnet.g.alchemy.com/public' // Public endpoint (rate limited)
 ];
 const CONTRACT_ADDRESS = process.env.GAME_CONTRACT_ADDRESS;
 const BAN_ADMIN_TOKEN = process.env.BAN_ADMIN_TOKEN || process.env.ADMIN_TOKEN;
@@ -190,12 +190,13 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
       }
     }
     if (currentStatus && currentStatus.isVerified && Number(currentStatus.verificationLevel) === Number(level)) {
-      console.log('Skipping on-chain submission: user already verified at same level');
+      console.log(`User ${userAddress} already verified at level ${level}, skipping duplicate submission`);
       return {
         success: true,
         transactionHash: null,
         blockNumber: null,
-        gasUsed: '0'
+        gasUsed: '0',
+        message: 'Already verified at this level - no new transaction needed'
       };
     }
 
@@ -204,10 +205,10 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
       const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, w);
       return c.setUserVerification(userAddress, level, isVerified);
     });
-    console.log('Transaction submitted:', tx.hash);
+    console.log('✅ Transaction submitted:', tx.hash);
 
     const receipt = await tx.wait();
-    console.log('Transaction confirmed:', receipt.hash);
+    console.log('✅ Transaction confirmed:', receipt.hash, 'at block', receipt.blockNumber);
 
     return {
       success: true,
@@ -216,13 +217,15 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
       gasUsed: receipt.gasUsed.toString()
     };
   } catch (error) {
-    console.error('On-chain verification error:', error);
+    console.error('❌ On-chain verification error:', error);
     
     // Check if it's a contract revert error
     if (error.reason) {
       throw new Error(`Contract error: ${error.reason}`);
     } else if (error.message.includes('insufficient funds')) {
       throw new Error('Insufficient funds for gas');
+    } else if (error.message.includes('network') || error.message.includes('detect network')) {
+      throw new Error('Network connectivity issue - please try again in a moment');
     } else {
       throw new Error(`On-chain submission failed: ${error.message}`);
     }
@@ -843,7 +846,7 @@ function nextRpcUrl() {
 }
 function isTransientError(error) {
   const msg = (error && error.message) ? error.message.toLowerCase() : '';
-  return msg.includes('rate') || msg.includes('429') || msg.includes('timeout') || msg.includes('fetch') || msg.includes('connection') || msg.includes('retry');
+  return msg.includes('rate') || msg.includes('429') || msg.includes('timeout') || msg.includes('fetch') || msg.includes('connection') || msg.includes('retry') || msg.includes('network') || msg.includes('detect network');
 }
 function withTimeout(promise, ms) {
   return Promise.race([
@@ -867,12 +870,23 @@ async function getHealthyProvider() {
     if (isCoolingDown(url)) continue;
     try {
       const provider = new ethers.JsonRpcProvider(url);
-      await withTimeout(provider.getBlockNumber(), 5000);
+      // Test both block number and network detection
+      const blockNumber = await withTimeout(provider.getBlockNumber(), 5000);
+      const network = await withTimeout(provider.getNetwork(), 5000);
+      
+      if (network.chainId !== 480n) {
+        console.warn(`RPC ${url} returned wrong chain ID: ${network.chainId}, expected 480`);
+        continue;
+      }
+      
+      console.log(`✅ RPC endpoint healthy: ${url} (block: ${blockNumber})`);
       currentProvider = provider;
       currentUrl = url;
       lastValidatedAt = Date.now();
       return provider;
-    } catch {}
+    } catch (error) {
+      console.warn(`❌ RPC endpoint failed: ${url} - ${error.message}`);
+    }
   }
   throw new Error('No healthy RPC endpoints available');
 }

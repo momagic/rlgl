@@ -36,6 +36,7 @@ async function getVerifyCloudProof() {
 const APP_ID = process.env.WORLD_ID_APP_ID || 'app_f11a49a98aab37a10e7dcfd20139f605';
 const ACTION_ID = process.env.WORLD_ID_ACTION_ID || 'play-game';
 const PRIVATE_KEY = process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
+const ENABLE_ONCHAIN_SUBMISSION = process.env.ENABLE_ONCHAIN_SUBMISSION !== 'false'; // Default to true, set to 'false' to disable
 const RPC_URLS = [
   ...(process.env.RPC_URL ? [process.env.RPC_URL] : []),
   'https://worldchain-mainnet.g.alchemy.com/public',
@@ -237,14 +238,17 @@ async function handleVerification(req, res) {
     
     let onChainResult = null;
     
-    // Step 2: Submit verification on-chain if requested
-    if (submitOnChain) {
+    // Step 2: Submit verification on-chain if requested and enabled
+    const shouldSubmitOnChain = submitOnChain && ENABLE_ONCHAIN_SUBMISSION;
+    if (shouldSubmitOnChain) {
       console.log('Submitting verification on-chain...');
       onChainResult = await submitVerificationOnChain(
         userAddress, 
         verificationResult.verificationLevel,
         true
       );
+    } else if (submitOnChain && !ENABLE_ONCHAIN_SUBMISSION) {
+      console.log('On-chain submission disabled by server configuration');
     }
 
     const response = {

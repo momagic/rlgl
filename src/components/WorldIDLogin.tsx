@@ -14,13 +14,16 @@ export function WorldIDLogin() {
     setError(null)
     try {
       await verify()
-    } catch {
+      // Only check verification status if verify() completed successfully
+      setTimeout(() => {
+        if (!user?.verified) {
+          setError(t('worldIdLogin.error'))
+        }
+      }, 500)
+    } catch (error) {
+      console.error('❌ World ID verification failed:', error)
       setError(t('worldIdLogin.error'))
     }
-    // If verify does not throw, but user is not verified, show error
-    setTimeout(() => {
-      if (!user?.verified) setError(t('worldIdLogin.error'))
-    }, 500)
   }
 
   if (user?.verified) {

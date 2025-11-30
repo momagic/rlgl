@@ -164,14 +164,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (finalPayload.status === 'error') {
         haptics.verificationError()
         setIsLoading(false)
-        return
+        throw new Error('World ID verification was cancelled or failed. Please try again.')
       }
 
       // Validate nullifier hash
       if (!finalPayload.nullifier_hash || finalPayload.nullifier_hash.length < 40) {
         haptics.verificationError()
         setIsLoading(false)
-        return
+        throw new Error('Invalid World ID verification data received. Please try again.')
       }
 
       let walletAddress = user?.walletAddress
@@ -239,6 +239,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error('❌ Verification failed:', error)
       haptics.verificationError()
+      
+      // Provide more specific error information
+      if (error instanceof Error) {
+        if (error.message.includes('World ID verification failed')) {
+          throw new Error('World ID verification failed. Please ensure you have completed the verification in the World App.')
+        } else if (error.message.includes('MiniKit')) {
+          throw new Error('World App connection failed. Please ensure the World App is installed and try again.')
+        } else {
+          throw new Error(`Verification error: ${error.message}`)
+        }
+      } else {
+        throw new Error('Verification failed. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }
