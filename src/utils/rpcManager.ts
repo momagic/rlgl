@@ -9,8 +9,8 @@ const PUBLIC_RPC_ENDPOINTS = [
   'https://worldchain-mainnet.gateway.tenderly.co',
   'https://worldchain-mainnet.gateway.tenderly.co/3G1TRsj1himyamFio0krcS',
   'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro',
-  'https://morning-still-pallet.worldchain-mainnet.quiknode.pro/ffbce91f9e32cff0c9ceb19fb91e5e56f51a6980/',
   'https://worldchain.drpc.org',
+  'https://lb.drpc.live/worldchain/ApYMfJtMHE86hqeu5dgpaOBnb1THxzUR8JUJQmlfqV1j',
 ] as const
 
 // Rate limiting configuration
