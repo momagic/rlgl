@@ -809,6 +809,72 @@ app.use((error, req, res, next) => {
   });
 });
 
+// Manual cache sync endpoint for on-chain verified users
+app.post('/world-id/cache-sync', async (req, res) => {
+  const { userAddress, verificationLevel, nullifierHash, timestamp } = req.body;
+
+  if (!userAddress || !verificationLevel || !nullifierHash) {
+    return res.status(400).json({ 
+      error: 'Missing required fields',
+      details: 'userAddress, verificationLevel, and nullifierHash are required'
+    });
+  }
+
+  try {
+    if (isBanned(userAddress)) {
+      return res.status(403).json({ error: 'User is banned' });
+    }
+
+    console.log('🔄 MANUAL_CACHE_SYNC', {
+      userAddress,
+      verificationLevel,
+      nullifierHash,
+      timestamp: timestamp || Date.now(),
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress
+    });
+
+    // Create cache entry
+    const cacheKey = `${userAddress}-${nullifierHash}`;
+    verificationCache.set(cacheKey, {
+      timestamp: timestamp || Date.now(),
+      verificationLevel: verificationLevel,
+      nullifierHash: nullifierHash,
+      userAddress: userAddress
+    });
+
+    console.log('✅ MANUAL_CACHE_SYNC_SUCCESS', {
+      userAddress,
+      verificationLevel,
+      nullifierHash,
+      cacheKey,
+      timestamp: new Date().toISOString()
+    });
+
+    res.json({
+      success: true,
+      message: 'User verification synced to cache successfully',
+      userAddress,
+      verificationLevel,
+      nullifierHash,
+      cacheKey
+    });
+
+  } catch (error) {
+    console.log('❌ MANUAL_CACHE_SYNC_FAILED', {
+      userAddress,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      ip: req.ip || req.connection.remoteAddress
+    });
+    
+    res.status(500).json({ 
+      error: 'Cache sync failed',
+      message: error.message 
+    });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
