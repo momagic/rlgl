@@ -581,6 +581,40 @@ export function useContract(): UseContractReturn {
     return getLeaderboard(gameMode, count)
   }, [getLeaderboard])
 
+  // Fetch top scores from ALL game modes in parallel and merge them
+  const getTopScoresAllModes = useCallback(async (countPerMode: number = 5): Promise<LeaderboardEntry[]> => {
+    try {
+      const gameModes: GameMode[] = ['Classic', 'Arcade', 'WhackLight']
+      
+      // Fetch all modes in parallel for efficiency
+      const results = await Promise.allSettled(
+        gameModes.map(mode => getLeaderboard(mode, countPerMode))
+      )
+      
+      // Merge successful results
+      const allEntries: LeaderboardEntry[] = []
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value.length > 0) {
+          allEntries.push(...result.value)
+        } else if (result.status === 'rejected') {
+          console.warn(`Failed to fetch ${gameModes[index]} leaderboard:`, result.reason)
+        }
+      })
+      
+      // Sort by score descending and take top entries
+      const sorted = allEntries.sort((a, b) => b.score - a.score)
+      
+      // Re-assign ranks based on merged order
+      return sorted.slice(0, countPerMode).map((entry, index) => ({
+        ...entry,
+        rank: index + 1
+      }))
+    } catch (err) {
+      console.error('Failed to fetch combined leaderboard:', err)
+      return []
+    }
+  }, [getLeaderboard])
+
   const getBatchPlayerStats = useCallback(async (playerAddresses: string[]): Promise<any[]> => {
     try {
       const result = await rpcManager.readContract({
@@ -1201,6 +1235,7 @@ export function useContract(): UseContractReturn {
     getPlayerRank,
     getLeaderboardPaginated,
     getTopScores,
+    getTopScoresAllModes,
     getBatchPlayerStats,
     getLeaderboardStats,
     getPlayerGameHistory,

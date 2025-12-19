@@ -194,6 +194,7 @@ export interface UseContractReturn {
   getPlayerRank: (playerAddress: string, gameMode: GameMode) => Promise<number>
   getLeaderboardPaginated: (offset: number, limit: number, gameMode: GameMode) => Promise<LeaderboardEntry[]>
   getTopScores: (count: number, gameMode: GameMode) => Promise<LeaderboardEntry[]>
+  getTopScoresAllModes: (countPerMode?: number) => Promise<LeaderboardEntry[]>
   getBatchPlayerStats: (playerAddresses: string[]) => Promise<any>
   getLeaderboardStats: () => Promise<{ totalGames: number; totalPlayers: number; leaderboardSize: number; highestScore: number }>
   getPlayerGameHistory: (playerAddress: string, offset: number, limit: number) => Promise<GameResult[]>
