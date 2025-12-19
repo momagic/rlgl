@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
@@ -42,7 +43,16 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(compression()); // Enable gzip/brotli compression
+app.use(express.json({ limit: '1mb' })); // Limit payload size
+
+// Request timeout middleware (30 seconds)
+app.use((req, res, next) => {
+  req.setTimeout(30000, () => {
+    res.status(408).json({ error: 'Request timeout' });
+  });
+  next();
+});
 
 // Environment variables
 const APP_ID = process.env.WORLD_ID_APP_ID || process.env.VITE_WORLD_ID_APP_ID || 'app_f11a49a98aab37a10e7dcfd20139f605';
@@ -108,6 +118,45 @@ const CACHE_TTL = (process.env.CACHE_TTL_MINUTES || 5) * 60 * 1000; // 5 minutes
 const permitRateMap = new Map();
 const PERMIT_WINDOW_MS = 10 * 60 * 1000;
 const PERMIT_MAX = 20;
+
+// Network name cache (avoids redundant RPC calls)
+let cachedNetworkName = null;
+let networkNameCacheTime = 0;
+const NETWORK_NAME_CACHE_TTL = 60000; // 1 minute
+
+// Cleanup expired cache entries every 5 minutes
+const CLEANUP_INTERVAL = 5 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  
+  // Cleanup verificationCache
+  for (const [key, value] of verificationCache.entries()) {
+    if (now - value.timestamp > CACHE_TTL) {
+      verificationCache.delete(key);
+    }
+  }
+  
+  // Cleanup permitRateMap
+  for (const [address, timestamps] of permitRateMap.entries()) {
+    const recent = timestamps.filter(ts => now - ts <= PERMIT_WINDOW_MS);
+    if (recent.length === 0) {
+      permitRateMap.delete(address);
+    } else {
+      permitRateMap.set(address, recent);
+    }
+  }
+  
+  // Cleanup endpointCooldowns (will be defined below)
+  if (typeof endpointCooldowns !== 'undefined') {
+    for (const [url, until] of endpointCooldowns.entries()) {
+      if (now >= until) {
+        endpointCooldowns.delete(url);
+      }
+    }
+  }
+  
+  console.log(`🧹 Cache cleanup: verification=${verificationCache.size}, rateLimit=${permitRateMap.size}`);
+}, CLEANUP_INTERVAL);
 
 /**
  * Verify World ID proof with cloud verification
@@ -455,23 +504,14 @@ app.post('/session/start', async (req, res) => {
   if (!userAddress || !proof) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+  
+  const startTime = Date.now();
+  
   try {
     if (isBanned(userAddress)) {
-      console.log('🚫 SESSION_START_BLOCKED', {
-        userAddress,
-        reason: 'User is banned',
-        timestamp: new Date().toISOString(),
-        ip: req.ip || req.connection.remoteAddress
-      });
+      console.log(`🚫 SESSION_BLOCKED: ${userAddress.slice(0,10)}... (banned)`);
       return res.status(403).json({ error: 'User is banned' });
     }
-    
-    console.log('🎮 SESSION_START_ATTEMPT', {
-      userAddress,
-      timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
 
     const verificationResult = await verifyWorldIDProof(proof, userAddress);
     const provider = await getHealthyProvider();
@@ -479,30 +519,12 @@ app.post('/session/start', async (req, res) => {
     const nonce = Math.floor(Date.now());
     const deadline = Math.floor(Date.now() / 1000) + 900;
     const sessionId = ethers.id(`sess:${userAddress}:${nonce}`);
-    const network = await getNetworkName();
     
-    console.log('✅ SESSION_START_SUCCESS', {
-      userAddress,
-      sessionId,
-      nonce,
-      deadline,
-      chainId,
-      network,
-      verificationLevel: verificationResult.verificationLevel,
-      estimatedSessionExpiry: new Date(deadline * 1000).toISOString(),
-      timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress
-    });
+    console.log(`✅ SESSION_START: ${userAddress.slice(0,10)}... level=${verificationResult.verificationLevel} chain=${chainId} (${Date.now() - startTime}ms)`);
     
     res.json({ success: true, sessionId, nonce, deadline, chainId, verificationLevel: verificationResult.verificationLevel });
   } catch (error) {
-    console.log('❌ SESSION_START_FAILED', {
-      userAddress,
-      error: error.message,
-      timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress,
-      stackTrace: error.stack?.substring(0, 300) || 'No stack trace'
-    });
+    console.error(`❌ SESSION_FAILED: ${userAddress.slice(0,10)}... error=${error.message} (${Date.now() - startTime}ms)`);
     res.status(400).json({ error: error.message });
   }
 });
@@ -518,43 +540,40 @@ app.post('/score/permit', async (req, res) => {
   if (!CONTRACT_ADDRESS) {
     return res.status(500).json({ error: 'GAME_CONTRACT_ADDRESS not configured' });
   }
+  
+  const requestId = `${userAddress.slice(-6)}-${Date.now().toString(36)}`;
+  const startTime = Date.now();
+  
   try {
     if (isBanned(userAddress)) {
       return res.status(403).json({ error: 'User is banned' });
     }
-    console.log('🎮 GAME_COMPLETION_ATTEMPT', {
-      userAddress,
-      score,
-      round,
-      gameMode,
-      sessionId,
-      timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
-    console.log('Permit request', { userAddress, score, round, gameMode, nonce, deadline });
+    
+    // Rate limiting check
     const now = Date.now();
     const arr = permitRateMap.get(userAddress) || [];
     const recent = arr.filter(ts => now - ts <= PERMIT_WINDOW_MS);
     if (recent.length >= PERMIT_MAX) {
-      console.warn('Permit rate limit', { userAddress, count: recent.length });
+      console.warn(`⚠️ [${requestId}] Rate limit exceeded for ${userAddress}`);
       return res.status(429).json({ error: 'Rate limit exceeded' });
     }
     recent.push(now);
     permitRateMap.set(userAddress, recent);
+    
+    // Validation
     if (round <= 0 || round > 1000) {
-      console.warn('Permit validation failed', { userAddress, reason: 'Invalid round', round });
       return res.status(400).json({ error: 'Invalid round' });
     }
     if (score <= 0) {
-      console.warn('Permit validation failed', { userAddress, reason: 'Invalid score', score });
       return res.status(400).json({ error: 'Invalid score' });
     }
     const maxScore = calculateMaxTheoreticalScore(gameMode, round);
     if (score > maxScore) {
-      console.warn('Permit validation failed', { userAddress, reason: 'Score exceeds theoretical maximum', score, maxScore });
+      console.warn(`⚠️ [${requestId}] Score ${score} exceeds max ${maxScore}`);
       return res.status(400).json({ error: 'Score exceeds theoretical maximum' });
     }
+    
+    // Sign permit
     const provider = await getHealthyProvider();
     const wallet = new ethers.Wallet(SIGNER_PRIVATE_KEY, provider);
     const chainId = await provider.getNetwork().then(n => Number(n.chainId));
@@ -578,111 +597,21 @@ app.post('/score/permit', async (req, res) => {
       nonce: value.nonce.toString(),
       deadline: value.deadline.toString()
     };
-    console.log('🏆 GAME_COMPLETION_SUCCESS', {
-      userAddress,
-      score,
-      round,
-      gameMode,
-      sessionId,
-      estimatedTokens: Math.floor(score * 0.1),
-      timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent'],
-      permitSignature: signature.substring(0, 10) + '...' + signature.substring(signature.length - 8),
-      permitDeadline: deadline,
-      network: await getNetworkName(),
-      // Add guidance for frontend developers
-      nextSteps: 'To track token claim failures, call /token/claim/status when user attempts to claim',
-      permitData: {
-        player: userAddress,
-        score: score.toString(),
-        round: round.toString(),
-        gameMode: gameMode,
-        sessionId: sessionId,
-        nonce: nonce.toString(),
-        deadline: deadline.toString()
-      }
-    });
-    console.log('💰 TOKEN_ESTIMATION', {
-      userAddress,
-      score,
-      estimatedTokens: Math.floor(score * 0.1),
-      tokenCalculation: `${score} * 0.1 = ${Math.floor(score * 0.1)}`,
-      timestamp: new Date().toISOString()
-    });
-    console.log('📋 PERMIT_ISSUED', {
-      userAddress,
-      score,
-      round,
-      gameMode,
-      sessionId,
-      permitSignature: signature.substring(0, 10) + '...' + signature.substring(signature.length - 8),
-      permitDeadline: deadline,
-      network: await getNetworkName(),
-      // Frontend guidance
-      frontendNote: 'When user attempts to claim tokens with this permit, log the attempt to help debug failures',
-      claimTrackingUrl: '/token/claim/status',
-      permitUsageUrl: '/permit/usage',
-      exampleClaimLog: {
-        userAddress: userAddress,
-        status: 'failed|success',
-        error: 'Transaction error message',
-        txHash: '0x...',
-        claimedAmount: Math.floor(score * 0.1).toString()
-      }
-    });
-    // Add tracking information to help frontend developers understand the claim process
-    const trackingInfo = {
-      trackingGuidance: {
-        message: "To debug token claim failures, have your frontend call these endpoints when user attempts to claim:",
-        steps: [
-          "1. When user clicks 'Claim Tokens' button, call /token/claim/status with status='attempt'",
-          "2. If transaction fails, call /token/claim/status with status='failed' and include the error",
-          "3. If transaction succeeds, call /token/claim/status with status='success' and include txHash"
-        ],
-        endpoints: {
-          claimStatus: "/token/claim/status",
-          permitUsage: "/permit/usage"
-        },
-        examplePayload: {
-          userAddress: userAddress,
-          status: "failed",
-          error: "Transaction reverted: insufficient gas",
-          txHash: "0x...",
-          claimedAmount: Math.floor(score * 0.1).toString(),
-          permitData: {
-            score: score.toString(),
-            round: round.toString(),
-            gameMode: gameMode,
-            signature: signature.substring(0, 10) + "..."
-          }
-        }
-      }
-    };
+    
+    // Single consolidated log (use cached network name)
+    const network = await getNetworkName();
+    console.log(`✅ [${requestId}] PERMIT_ISSUED: ${userAddress.slice(0,10)}... score=${score} round=${round} mode=${gameMode} tokens≈${Math.floor(score * 0.1)} network=${network} (${Date.now() - startTime}ms)`);
     
     res.json({ 
       success: true, 
       signature, 
       domain, 
       types: ScorePermitTypes, 
-      value: valueOut,
-      tracking: trackingInfo
+      value: valueOut
     });
   } catch (error) {
-    console.log('🔴 GAME_COMPLETION_FAILED', {
-      userAddress,
-      score,
-      round,
-      gameMode,
-      sessionId,
-      error: error.message,
-      timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent'],
-      network: await getNetworkName(),
-      stackTrace: error.stack?.substring(0, 500) || 'No stack trace'
-    });
-    console.error('Permit issuance failed', { userAddress, score, round, gameMode, error: error && error.message ? error.message : String(error) });
+    const network = await getNetworkName();
+    console.error(`❌ [${requestId}] PERMIT_FAILED: ${userAddress.slice(0,10)}... error=${error.message} network=${network} (${Date.now() - startTime}ms)`);
     res.status(500).json({ error: error.message });
   }
 });
@@ -994,19 +923,30 @@ function calculateMaxTheoreticalScore(mode, round) {
 }
 
 async function getNetworkName() {
+  // Return cached network name if still valid
+  if (cachedNetworkName && (Date.now() - networkNameCacheTime) < NETWORK_NAME_CACHE_TTL) {
+    return cachedNetworkName;
+  }
+  
   try {
     const provider = await getHealthyProvider();
     const network = await provider.getNetwork();
+    let networkName;
     switch (network.chainId.toString()) {
-      case '480': return 'worldchain-mainnet';
-      case '4801': return 'worldchain-testnet';
-      case '1': return 'ethereum-mainnet';
-      case '5': return 'ethereum-goerli';
-      case '11155111': return 'ethereum-sepolia';
-      default: return `chain-${network.chainId}`;
+      case '480': networkName = 'worldchain-mainnet'; break;
+      case '4801': networkName = 'worldchain-testnet'; break;
+      case '1': networkName = 'ethereum-mainnet'; break;
+      case '5': networkName = 'ethereum-goerli'; break;
+      case '11155111': networkName = 'ethereum-sepolia'; break;
+      default: networkName = `chain-${network.chainId}`;
     }
+    
+    // Cache the result
+    cachedNetworkName = networkName;
+    networkNameCacheTime = Date.now();
+    return networkName;
   } catch (error) {
-    return 'unknown-network';
+    return cachedNetworkName || 'unknown-network';
   }
 }
 
