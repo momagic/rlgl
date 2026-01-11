@@ -95,12 +95,12 @@ function GameApp() {
     return <MaintenanceScreen />
   }
 
-  if (user?.verified && isBanned) {
+  if (user?.authenticated && isBanned) {
     return <BannedScreen />
   }
 
-  // Show login screen if user is not verified
-  if (!user?.verified) {
+  // Show login screen if user is not authenticated (wallet auth)
+  if (!user?.authenticated) {
     return <WorldIDLogin />
   }
 

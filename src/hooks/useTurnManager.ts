@@ -163,7 +163,7 @@ export function useTurnManager(): UseTurnManagerReturn {
       throw new Error('User not authenticated')
     }
     
-    if (!user?.walletAuthenticated || !user?.walletAddress) {
+    if (!user?.authenticated || !user?.walletAddress) {
       throw new Error('Wallet not authenticated')
     }
     
@@ -189,7 +189,7 @@ export function useTurnManager(): UseTurnManagerReturn {
         return
       }
       
-      if (!user?.walletAuthenticated || !user?.walletAddress) {
+      if (!user?.authenticated || !user?.walletAddress) {
         setTurnStatus(null)
         return
       }
@@ -472,10 +472,10 @@ export function useTurnManager(): UseTurnManagerReturn {
     cleanupOldPurchases() // Cleanup old purchases on mount
     
     // Only refresh if user is authenticated
-    if (user?.verified && user?.walletAuthenticated) {
+    if (user?.authenticated) {
       refreshTurnStatus(true) // manual=true on mount
     }
-  }, [user?.verified, user?.walletAuthenticated]) // Only depend on auth state changes, remove cleanupOldPurchases
+  }, [user?.authenticated]) // Only depend on auth state changes, remove cleanupOldPurchases
 
   useEffect(() => {
     if (pendingTransactionId && isConfirmed) {

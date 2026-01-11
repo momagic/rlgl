@@ -30,7 +30,7 @@ export function DebugInfo() {
     },
     user: {
       verified: user?.verified,
-      walletAuthenticated: user?.walletAuthenticated,
+      authenticated: user?.authenticated,
       walletAddress: user?.walletAddress,
       nullifier: user?.nullifierHash,
     },

@@ -23,7 +23,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
   const { t } = useTranslation()
   // const { playMenuSound } = useSoundEffects()  // COMMENTED OUT: Remove comment to re-enable menu music
 
-  const { user, authenticateWallet, isLoading: authLoading } = useAuth()
+  const { user, verify, isLoading: authLoading } = useAuth()
   const { turnStatus, isLoading: turnLoading, error: turnError, refreshTurnStatus } = turnManager
   const payment = usePayment()
   const haptics = useHapticFeedback()
@@ -54,7 +54,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
 
   // Watch for successful payments and auto-refresh turn status
   useEffect(() => {
-    if (payment.lastPaymentResult?.success && user?.walletAuthenticated) {
+    if (payment.lastPaymentResult?.success && user?.authenticated) {
       // Add a delay to ensure the payment has been processed
       const timer = setTimeout(() => {
         refreshTurnStatus(true) // Force refresh after successful payment
@@ -62,11 +62,11 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
       
       return () => clearTimeout(timer)
     }
-  }, [payment.lastPaymentResult?.success, user?.walletAuthenticated, refreshTurnStatus])
+  }, [payment.lastPaymentResult?.success, user?.authenticated, refreshTurnStatus])
 
   // Refresh turn status when returning to menu to reflect consumed turns
   useEffect(() => {
-    if (user?.walletAuthenticated && !refreshAttemptedRef.current) {
+    if (user?.authenticated && !refreshAttemptedRef.current) {
       refreshAttemptedRef.current = true
       const timer = setTimeout(() => refreshTurnStatus(true), 300)
       return () => clearTimeout(timer)
@@ -74,14 +74,15 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
     return () => {
       refreshAttemptedRef.current = false
     }
-  }, [user?.walletAuthenticated])
+  }, [user?.authenticated])
 
   const handleStartGame = async () => {
+    // User must be verified with World ID to play
     if (!user?.verified) {
       return
     }
 
-    if (!user?.walletAuthenticated) {
+    if (!user?.authenticated) {
       return
     }
 
@@ -97,9 +98,13 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
     await onStartGame(selectedGameMode)
   }
 
-  const handleAuthenticateWallet = async () => {
+  const handleVerify = async () => {
     haptics.importantButton()
-    await authenticateWallet()
+    try {
+      await verify()
+    } catch (err) {
+      console.error('Verification failed:', err)
+    }
   }
 
   // Derived UI values for compact turn summary
@@ -183,7 +188,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
       
       <Container className="flex-1 flex flex-col p-2 sm:p-3 animate-fade-in relative z-10" spacing="sm">
         {/* Top utility row: turns summary + best score (compact) */}
-        {user?.walletAuthenticated && (
+        {user?.authenticated && (
           <div className="flex items-center justify-between gap-1 mb-1">
             <div className="flex items-center gap-1">
               <div className="px-2 py-1 rounded border-2 border-squid-border bg-squid-gray text-squid-white text-xs font-squid-heading uppercase tracking-wider font-bold" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
@@ -246,30 +251,16 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
           </div>
         )}
 
-        {/* Auth prompts compact cards */}
-        {!user?.verified && (
-          <div className="mb-2 p-2 rounded-lg border-3 border-squid-border bg-squid-gray" style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-squid-white">
-                <span className="text-sm">🌍</span>
-                <span className="text-xs font-squid font-semibold">{t('startMenu.verification.title')}</span>
-              </div>
-              <Button disabled variant="secondary" size="sm" className="opacity-70 text-xs px-2 py-1">
-                {t('startMenu.buttons.verifyWorldId')}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {user?.verified && !user?.walletAuthenticated && (
+        {/* World ID verification prompt - required to play games */}
+        {user?.authenticated && !user?.verified && (
           <div className="mb-2 p-2 rounded-lg border-3 border-squid-border bg-squid-gray" style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}>
             <div className="flex items-center justify-between">
               <div className="flex-1 text-squid-white">
-                <div className="text-xs font-squid-heading font-bold uppercase">{t('startMenu.authentication.title')}</div>
-                <div className="text-xs font-squid text-squid-white/70">{t('startMenu.authentication.subtitle')}</div>
+                <div className="text-xs font-squid-heading font-bold uppercase">{t('startMenu.verification.title')}</div>
+                <div className="text-xs font-squid text-squid-white/70">{t('humanVerification.description')}</div>
               </div>
               <Button
-                onClick={handleAuthenticateWallet}
+                onClick={handleVerify}
                 disabled={authLoading}
                 variant={authLoading ? 'secondary' : 'primary'}
                 size="sm"
@@ -277,10 +268,10 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
                 {authLoading ? (
                   <Stack direction="row" spacing="sm" className="items-center justify-center">
                     <div className="w-3 h-3 border-2 border-squid-white border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-xs">{t('startMenu.buttons.authenticating')}</span>
+                    <span className="text-xs">{t('humanVerification.verifying')}</span>
                   </Stack>
                 ) : (
-                  t('startMenu.buttons.authenticateWallet')
+                  t('startMenu.buttons.verifyWorldId')
                 )}
               </Button>
             </div>
@@ -288,7 +279,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
         )}
 
         {/* Daily Claim positioned above game mode selector */}
-        {user?.walletAuthenticated && (
+        {user?.authenticated && (
           <div className="mb-2">
             <DailyClaim variant="compact" onClaimSuccess={() => refreshTurnStatus(true)} />
           </div>
@@ -305,15 +296,15 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
             turnLoading={turnLoading}
             turnError={turnError}
             onStartGame={handleStartGame}
-            userAuthenticated={!!user?.walletAuthenticated}
+            userAuthenticated={!!user?.authenticated}
             buttonDisabled={buttonDisabled}
           />
         </div>
 
         
 
-        {/* Error hint when not authenticated but verified (optional small) */}
-        {user?.verified && !user?.walletAuthenticated && turnError && (
+        {/* Error hint when authenticated (optional small) */}
+        {user?.authenticated && turnError && (
           <div className="mt-1 p-2 rounded-lg border-2 border-squid-red bg-squid-red/10" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
             <Typography variant="caption" className="text-squid-red text-xs font-squid font-semibold">
               {t('startMenu.turnStatus.error', { error: turnError })}

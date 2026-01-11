@@ -35,11 +35,12 @@ export function UserInfo() {
     return () => clearInterval(interval)
   }, [user?.walletAddress, getPlayerStats])
 
-  if (!user?.verified) return null
+  if (!user?.authenticated) return null
 
   const displayName = getDisplayName(user)
   const hasProfilePicture = user.profilePictureUrl
   const getVerificationLabel = () => {
+    if (!user?.verified) return null // Not verified yet
     const raw = (user?.onChainVerified && user?.onChainVerificationLevel)
       ? (user?.onChainVerificationLevel as string)
       : (user?.verificationLevel as unknown as string) || ''
@@ -48,7 +49,8 @@ export function UserInfo() {
     if (level === 'orb') { return 'Orb' }
     if (level === 'secure_document' || level === 'securedocument') { return 'Secure Document' }
     if (level === 'document') { return 'Document' }
-    return raw || ''
+    if (level === 'device') { return 'Device' }
+    return raw || 'Verified'
   }
   const formattedBalance = (() => {
     try {
@@ -107,7 +109,11 @@ export function UserInfo() {
               {displayName}
             </p>
             <p className="text-gray-300 text-xs truncate">
-              {getVerificationLabel()} {t('userInfo.verified')}
+              {getVerificationLabel() ? (
+                <>{getVerificationLabel()} {t('userInfo.verified')}</>
+              ) : (
+                <>Connected</>
+              )}
             </p>
           </div>
         </div>

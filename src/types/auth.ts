@@ -1,13 +1,16 @@
 import type { VerificationLevel } from '@worldcoin/minikit-js'
 
 export interface WorldIDUser {
-  nullifierHash: string
-  verificationLevel: VerificationLevel
-  verified: boolean
-  walletAddress?: string
+  // Core authentication (wallet auth)
+  walletAddress: string
   username?: string
   profilePictureUrl?: string
-  walletAuthenticated?: boolean
+  authenticated: boolean
+  
+  // World ID verification (optional, for game play)
+  nullifierHash?: string
+  verificationLevel?: VerificationLevel
+  verified: boolean
   onChainVerified?: boolean
   onChainVerificationLevel?: string
 }
@@ -15,8 +18,8 @@ export interface WorldIDUser {
 export interface AuthContextType {
   user: WorldIDUser | null
   isLoading: boolean
+  login: () => Promise<void>
   verify: () => Promise<void>
-  authenticateWallet: () => Promise<void>
   logout: () => void
   verificationLevel: VerificationLevel | null
 }
