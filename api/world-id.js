@@ -39,11 +39,12 @@ const PRIVATE_KEY = process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const ENABLE_ONCHAIN_SUBMISSION = process.env.ENABLE_ONCHAIN_SUBMISSION !== 'false'; // Default to true, set to 'false' to disable
 const RPC_URLS = [
   ...(process.env.RPC_URL ? [process.env.RPC_URL] : []),
-  'https://worldchain-mainnet.g.alchemy.com/public',
+  'https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs', // Primary dRPC (210M CU/month free)
+  'https://worldchain.drpc.org',                    // dRPC public fallback
   'https://480.rpc.thirdweb.com',
   'https://worldchain-mainnet.gateway.tenderly.co',
-  'https://worldchain.drpc.org',
-  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro'
+  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro',
+  'https://worldchain-mainnet.g.alchemy.com/public'
 ];
 const CONTRACT_ADDRESS = process.env.GAME_CONTRACT_ADDRESS;
 

@@ -18,6 +18,7 @@ envContent.split('\n').forEach(line => {
 const CONTRACT_ADDRESS = envVars.GAME_CONTRACT_ADDRESS;
 const RPC_URLS = [
   ...(envVars.RPC_URL ? [envVars.RPC_URL] : []),
+  'https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs', // Primary dRPC (210M CU/month free)
   'https://worldchain.drpc.org',
   'https://480.rpc.thirdweb.com',
   'https://worldchain-mainnet.gateway.tenderly.co',

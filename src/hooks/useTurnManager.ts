@@ -124,9 +124,9 @@ export function useTurnManager(): UseTurnManagerReturn {
       id: 480,
       name: 'worldchain',
       nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-      rpcUrls: { default: { http: ['https://worldchain-mainnet.g.alchemy.com/public'] } }
+      rpcUrls: { default: { http: ['https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs'] } }
     },
-    transport: http('https://worldchain-mainnet.g.alchemy.com/public')
+    transport: http('https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs')
   })
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({

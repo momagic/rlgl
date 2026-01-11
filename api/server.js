@@ -61,7 +61,8 @@ const PRIVATE_KEY = process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const SIGNER_PRIVATE_KEY = process.env.SIGNER_PRIVATE_KEY || process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const RPC_URLS = [
   ...(process.env.RPC_URL ? [process.env.RPC_URL] : []),
-  'https://worldchain.drpc.org',                    // Fastest in testing
+  'https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs', // Primary dRPC (210M CU/month free)
+  'https://worldchain.drpc.org',                    // dRPC public fallback
   'https://480.rpc.thirdweb.com',                  // Good performance
   'https://worldchain-mainnet.gateway.tenderly.co', // Reliable
   'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro', // Alternative

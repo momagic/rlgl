@@ -1,11 +1,12 @@
 import { ethers } from 'ethers'
 
 const RPC_URLS = [
-  'https://worldchain-mainnet.g.alchemy.com/public',
+  'https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs', // Primary dRPC (210M CU/month free)
+  'https://worldchain.drpc.org',
   'https://480.rpc.thirdweb.com',
   'https://worldchain-mainnet.gateway.tenderly.co',
-  'https://worldchain.drpc.org',
-  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro'
+  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro',
+  'https://worldchain-mainnet.g.alchemy.com/public'
 ]
 
 const GAME_CONTRACT_ADDRESS = '0xc4201D1C64625C45944Ef865f504F995977733F7'
