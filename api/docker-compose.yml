@@ -11,7 +11,7 @@ services:
       # Required Configuration
       - WORLD_ID_APP_ID=${WORLD_ID_APP_ID}
       - WORLD_ID_ACTION_ID=${WORLD_ID_ACTION_ID:-play-game}
-      - RPC_URL=${RPC_URL:-https://worldchain-mainnet.g.alchemy.com/public}
+      - RPC_URL=${RPC_URL:-https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs}
       - GAME_CONTRACT_ADDRESS=${GAME_CONTRACT_ADDRESS}
       - AUTHORIZED_SUBMITTER_PRIVATE_KEY=${AUTHORIZED_SUBMITTER_PRIVATE_KEY}
       
