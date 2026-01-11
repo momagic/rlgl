@@ -39,12 +39,12 @@ const PRIVATE_KEY = process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const ENABLE_ONCHAIN_SUBMISSION = process.env.ENABLE_ONCHAIN_SUBMISSION !== 'false'; // Default to true, set to 'false' to disable
 const RPC_URLS = [
   ...(process.env.RPC_URL ? [process.env.RPC_URL] : []),
-  'https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs', // Primary dRPC (210M CU/month free)
+  'https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs', // Primary dRPC (210M CU/month, 100 req/s)
   'https://worldchain.drpc.org',                    // dRPC public fallback
-  'https://480.rpc.thirdweb.com',
-  'https://worldchain-mainnet.gateway.tenderly.co',
-  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro',
-  'https://worldchain-mainnet.g.alchemy.com/public'
+  'https://worldchain-mainnet.gateway.tenderly.co', // Reliable fallback
+  'https://480.rpc.thirdweb.com',                  // ThirdWeb (rate limited)
+  // Removed QuickNode - 2/second limit is too restrictive
+  // Removed Alchemy public - severe rate limits
 ];
 const CONTRACT_ADDRESS = process.env.GAME_CONTRACT_ADDRESS;
 
@@ -358,11 +358,17 @@ module.exports.config = {
   }
 };
 
-let rpcIndex = 0;
-function nextRpcUrl() {
-  const url = RPC_URLS[rpcIndex % RPC_URLS.length];
-  rpcIndex++;
-  return url;
+// Static network config to avoid automatic network detection (faster startup)
+const WORLDCHAIN_NETWORK = new ethers.Network('worldchain', 480n);
+const endpointCooldowns = new Map();
+const COOLDOWN_MS = 60000; // 1 minute cooldown for failed endpoints
+
+function isCoolingDown(url) {
+  const until = endpointCooldowns.get(url) || 0;
+  return Date.now() < until;
+}
+function markCooldown(url, ms) {
+  endpointCooldowns.set(url, Date.now() + ms);
 }
 function isTransientError(error) {
   const msg = (error && error.message) ? error.message.toLowerCase() : '';
@@ -375,13 +381,20 @@ function withTimeout(promise, ms) {
   ]);
 }
 async function getHealthyProvider() {
+  // Try endpoints in priority order
   for (let i = 0; i < RPC_URLS.length; i++) {
-    const url = nextRpcUrl();
+    const url = RPC_URLS[i];
+    if (isCoolingDown(url)) continue;
     try {
-      const provider = new ethers.JsonRpcProvider(url);
-      await withTimeout(provider.getBlockNumber(), 5000);
+      // Use static network to skip automatic detection (faster connection)
+      const provider = new ethers.JsonRpcProvider(url, WORLDCHAIN_NETWORK, {
+        staticNetwork: WORLDCHAIN_NETWORK
+      });
+      await withTimeout(provider.getBlockNumber(), 8000);
       return provider;
-    } catch {}
+    } catch (error) {
+      markCooldown(url, COOLDOWN_MS);
+    }
   }
   throw new Error('No healthy RPC endpoints available');
 }

@@ -61,13 +61,15 @@ const PRIVATE_KEY = process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const SIGNER_PRIVATE_KEY = process.env.SIGNER_PRIVATE_KEY || process.env.AUTHORIZED_SUBMITTER_PRIVATE_KEY;
 const RPC_URLS = [
   ...(process.env.RPC_URL ? [process.env.RPC_URL] : []),
-  'https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs', // Primary dRPC (210M CU/month free)
+  'https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs', // Primary dRPC (210M CU/month, 100 req/s)
   'https://worldchain.drpc.org',                    // dRPC public fallback
-  'https://480.rpc.thirdweb.com',                  // Good performance
-  'https://worldchain-mainnet.gateway.tenderly.co', // Reliable
-  'https://sparkling-autumn-dinghy.worldchain-mainnet.quiknode.pro', // Alternative
-  'https://worldchain-mainnet.g.alchemy.com/public' // Public endpoint (rate limited)
+  'https://worldchain-mainnet.gateway.tenderly.co', // Reliable fallback
+  'https://480.rpc.thirdweb.com',                  // ThirdWeb (rate limited)
+  // Removed QuickNode - 2/second limit is too restrictive
+  // Removed Alchemy public - severe rate limits
 ];
+console.log('🔗 Configured RPC endpoints:', RPC_URLS.length, 'endpoints');
+console.log('   Primary:', RPC_URLS[0]?.substring(0, 60) + '...');
 const CONTRACT_ADDRESS = process.env.GAME_CONTRACT_ADDRESS;
 const BAN_ADMIN_TOKEN = process.env.BAN_ADMIN_TOKEN || process.env.ADMIN_TOKEN;
 const BANS_FILE = path.join(__dirname, 'bans.json');
@@ -828,18 +830,12 @@ app.listen(PORT, () => {
 
 module.exports = app;
 
-let rpcIndex = 0;
 const endpointCooldowns = new Map();
 let currentProvider = null;
 let currentUrl = null;
 let lastValidatedAt = 0;
 const VALIDATION_TTL_MS = 30000;
 const RATE_COOLDOWN_MS = 5 * 60 * 1000;
-function nextRpcUrl() {
-  const url = RPC_URLS[rpcIndex % RPC_URLS.length];
-  rpcIndex++;
-  return url;
-}
 function isTransientError(error) {
   const msg = (error && error.message) ? error.message.toLowerCase() : '';
   return msg.includes('rate') || msg.includes('429') || msg.includes('timeout') || msg.includes('fetch') || msg.includes('connection') || msg.includes('retry') || msg.includes('network') || msg.includes('detect network');
@@ -857,31 +853,41 @@ function isCoolingDown(url) {
 function markCooldown(url, ms) {
   endpointCooldowns.set(url, Date.now() + ms);
 }
+// Static network config to avoid automatic network detection (faster startup)
+const WORLDCHAIN_NETWORK = new ethers.Network('worldchain', 480n);
+
 async function getHealthyProvider() {
+  // Return cached provider if still valid and not cooling down
   if (currentProvider && currentUrl && !isCoolingDown(currentUrl) && (Date.now() - lastValidatedAt) < VALIDATION_TTL_MS) {
     return currentProvider;
   }
+  
+  // Always try endpoints in priority order (first = highest priority)
   for (let i = 0; i < RPC_URLS.length; i++) {
-    const url = nextRpcUrl();
-    if (isCoolingDown(url)) continue;
+    const url = RPC_URLS[i];
+    if (isCoolingDown(url)) {
+      console.log(`⏳ RPC endpoint cooling down: ${url.substring(0, 50)}...`);
+      continue;
+    }
     try {
-      const provider = new ethers.JsonRpcProvider(url);
-      // Test both block number and network detection
-      const blockNumber = await withTimeout(provider.getBlockNumber(), 5000);
-      const network = await withTimeout(provider.getNetwork(), 5000);
+      console.log(`🔄 Trying RPC endpoint: ${url.substring(0, 50)}...`);
+      // Use static network to skip automatic detection (faster connection)
+      const provider = new ethers.JsonRpcProvider(url, WORLDCHAIN_NETWORK, {
+        staticNetwork: WORLDCHAIN_NETWORK
+      });
       
-      if (network.chainId !== 480n) {
-        console.warn(`RPC ${url} returned wrong chain ID: ${network.chainId}, expected 480`);
-        continue;
-      }
-      
-      console.log(`✅ RPC endpoint healthy: ${url} (block: ${blockNumber})`);
+      // Just test block number - network is already set statically
+      const blockNumber = await withTimeout(provider.getBlockNumber(), 8000);
+
+      console.log(`✅ RPC endpoint healthy: ${url.substring(0, 50)}... (block: ${blockNumber})`);
       currentProvider = provider;
       currentUrl = url;
       lastValidatedAt = Date.now();
       return provider;
     } catch (error) {
-      console.warn(`❌ RPC endpoint failed: ${url} - ${error.message}`);
+      console.warn(`❌ RPC endpoint failed: ${url.substring(0, 50)}... - ${error.message}`);
+      // Mark failed endpoint for cooldown to avoid retrying immediately
+      markCooldown(url, 60000); // 1 minute cooldown for failed endpoints
     }
   }
   throw new Error('No healthy RPC endpoints available');
