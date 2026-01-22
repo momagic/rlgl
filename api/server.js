@@ -611,15 +611,7 @@ app.post('/game/record', async (req, res) => {
     const tokensNum = Number(tokensEarned || 0);
     const gameIdNum = gameId ? Number(gameId) : Date.now(); // Fallback if no gameId yet
 
-    // 1. Insert into game_history
-    await db.query(`
-      INSERT INTO game_history (
-        player, score, round, game_mode, tokens_earned, game_id, timestamp, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-      ON CONFLICT (game_id, game_mode) DO NOTHING
-    `, [player, scoreNum, Number(round || 0), modeStr, tokensNum, gameIdNum]);
-
-    // 2. Update users table (High Score & Tokens)
+    // 1. Update users table (High Score & Tokens) - Must be done first to ensure user exists
     const highScoreCol = `high_score_${modeStr.toLowerCase()}`;
     // Only update if column is valid to prevent injection
     if (!['high_score_classic', 'high_score_arcade', 'high_score_whack'].includes(highScoreCol)) {
@@ -635,6 +627,14 @@ app.post('/game/record', async (req, res) => {
         total_tokens_earned = users.total_tokens_earned + $3,
         last_seen = NOW()
     `, [player, scoreNum, tokensNum]);
+
+    // 2. Insert into game_history
+    await db.query(`
+      INSERT INTO game_history (
+        player, score, round, game_mode, tokens_earned, game_id, timestamp, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      ON CONFLICT (game_id, game_mode) DO NOTHING
+    `, [player, scoreNum, Number(round || 0), modeStr, tokensNum, gameIdNum]);
 
     res.json({ success: true, message: 'Game recorded successfully' });
   } catch (err) {

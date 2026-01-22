@@ -110,12 +110,26 @@ async function processEvent(event) {
                 }
             }
         }
+        
+        if (round === 0 && tx.data && tx.data.length > 10) {
+            console.warn(`   ⚠️ Round 0 for ${txHash}. Data start: ${tx.data.slice(0, 30)}...`);
+        }
     }
 
     const modeStr = GAME_MODES[Number(gameMode)] || 'Classic';
     const scoreNum = Number(score);
     const tokensNum = Number(ethers.formatEther(tokensEarned));
     const gameIdNum = Number(gameId);
+
+    // Ensure user exists to avoid FK violations
+    const highScoreCol = `high_score_${modeStr.toLowerCase()}`;
+    if (['high_score_classic', 'high_score_arcade', 'high_score_whack'].includes(highScoreCol)) {
+        await db.query(`
+          INSERT INTO users (address, ${highScoreCol}, total_tokens_earned, last_seen)
+          VALUES ($1, $2, $3, to_timestamp($4))
+          ON CONFLICT (address) DO NOTHING
+        `, [player, scoreNum, tokensNum, timestamp]);
+    }
 
     // Update DB
     await db.query(`
@@ -154,9 +168,9 @@ async function main() {
     const currentBlock = await provider.getBlockNumber();
     const CHUNK_SIZE = 1000; // Smaller chunk size to avoid rate limits
     
-    // Default to last 20,000 blocks (~10 hours) to catch recent activity quickly
+    // Default to last 50,000 blocks (~24+ hours on 2s chain) to catch recent activity
     // unless a specific start block is provided env var
-    const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : (currentBlock - 20000);
+    const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : (currentBlock - 50000);
 
     console.log(`   Range: ${START_BLOCK} to ${currentBlock} (${currentBlock - START_BLOCK} blocks)`);
 
