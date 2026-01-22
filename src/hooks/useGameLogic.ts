@@ -292,6 +292,28 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         }
       }
 
+      // Helper to record game to DB
+      const recordGameToDb = async (txHash: string, tokensEarned: any) => {
+        try {
+          console.log('Recording game to DB:', { txHash, tokensEarned, round: finalRound })
+          await fetch(`${apiBase}/game/record`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              player: userAddress,
+              score: finalScore,
+              round: finalRound,
+              gameMode,
+              tokensEarned: tokensEarned?.toString() || '0',
+              gameId: Date.now(),
+              transactionHash: txHash
+            })
+          })
+        } catch (e) {
+          console.error('Failed to record game to DB:', e)
+        }
+      }
+
       try {
         console.log('Calling score permit API:', `${apiBase}/score/permit`);
         console.log('Request body:', { userAddress, score: finalScore, round: finalRound, gameMode, sessionId, nonce, deadline });
@@ -423,6 +445,9 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
           timestamp: new Date().toISOString(),
           submissionMethod: 'direct_onchain'
         })
+
+        // Record to DB
+        await recordGameToDb(submission.transactionHash, submission.tokensEarned)
 
         setGameData(currentData => ({
           ...currentData,

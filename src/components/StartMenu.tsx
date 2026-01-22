@@ -36,9 +36,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
   
   const buttonDisabled = turnLoading || !turnStatus || (!turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns <= 0)
 
-  // State for the contract deployment notification banner
-  const [showContractBanner, setShowContractBanner] = useState(true)
-  const [contractExpanded, setContractExpanded] = useState(false)
+
 
   // REMOVED: Auto-switch to classic mode restriction - arcade mode is now available to all users
 
@@ -115,69 +113,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
     <div className="h-full flex flex-col overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #0A0A0F 0%, #1A1A20 50%, #0A0A0F 100%)' }}>
       <UserInfo />
       
-      {showContractBanner && (
-        <div className="px-2 pt-2">
-          <div className="rounded-lg border-3 border-squid-border bg-squid-gray" style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}>
-            <div className="flex items-center justify-between px-2 py-1">
-              <div className="flex items-center gap-2 text-squid-white">
-                <span className="text-sm">🚀</span>
-                <div className="flex flex-col">
-                  <span className="text-xs font-squid-heading font-bold uppercase">{t('startMenu.contractBanner.title')}</span>
-                  <span className="text-[10px] text-squid-white/70">{t('startMenu.contractBanner.subtitle')}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setContractExpanded(v => !v)}
-                  className="px-2 py-1 rounded border-2 border-squid-border text-xs font-squid-heading font-bold uppercase text-squid-white bg-squid-black/20 transition-all duration-150"
-                  style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
-                  onPointerDown={(e) => {
-                    e.currentTarget.style.transform = 'translate(1px, 1px)'
-                    e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
-                  }}
-                  onPointerUp={(e) => {
-                    e.currentTarget.style.transform = 'translate(0, 0)'
-                    e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
-                  }}
-                >
-                  {contractExpanded ? '▾' : '▸'}
-                </button>
-                <button
-                  onClick={() => setShowContractBanner(false)}
-                  className="px-2 py-1 rounded border-2 border-squid-border text-xs font-squid-heading font-bold uppercase text-squid-white bg-squid-gray transition-all duration-150"
-                  style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
-                  onPointerDown={(e) => {
-                    e.currentTarget.style.transform = 'translate(1px, 1px)'
-                    e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
-                  }}
-                  onPointerUp={(e) => {
-                    e.currentTarget.style.transform = 'translate(0, 0)'
-                    e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
-                  }}
-                >
-                  {t('startMenu.buttons.close')}
-                </button>
-              </div>
-            </div>
-            {contractExpanded && (
-              <div className="px-2 pb-2 text-squid-white text-xs">
-                <div className="mb-1">
-                  <span className="font-squid-heading uppercase text-[11px]">{t('startMenu.contractBanner.highlights.title')}</span>
-                </div>
-                <ul className="list-disc pl-4 space-y-1">
-                  <li>{t('startMenu.contractBanner.highlights.item1')}</li>
-                  <li>{t('startMenu.contractBanner.highlights.item2')}</li>
-                  <li>{t('startMenu.contractBanner.highlights.item3')}</li>
-                  <li>{t('startMenu.contractBanner.highlights.item4')}</li>
-                </ul>
-                <div className="mt-2">
-                  <span className="text-[10px] text-squid-white/70">{t('startMenu.contractBanner.migrationNote')}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+
       
       {/* Squid Game Neon Accents */}
       <div className="pointer-events-none absolute inset-0">

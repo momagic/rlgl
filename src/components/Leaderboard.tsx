@@ -222,7 +222,7 @@ function Leaderboard() {
   const fetchLeaderboard = useCallback(async (force = false, mode: GameMode = selectedMode) => {
     if (fetchInProgress.current) return
     
-    // Check cache first
+    // Check cache first (short circuit if not forcing refresh)
     if (!force) {
       const cached = getCachedLeaderboard(mode)
       if (cached && cached.length > 0) {
@@ -232,6 +232,8 @@ function Leaderboard() {
         if (timestamp) setLastUpdated(new Date(parseInt(timestamp)))
         setIsLoading(false)
         setError(null)
+        // Background update if cache is stale > 1 min?
+        // For now, return early
         return
       }
     }
@@ -241,12 +243,33 @@ function Leaderboard() {
     setError(null)
     
     try {
-      // Fetch top 5 for selected mode
-      const data = await getTopScores(5, mode)
+      // Fetch from API (Supabase backed)
+      // Note: This replaces the contract call to reduce RPC usage
+      const apiUrl = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_VERIFICATION_API_BASE || 'http://localhost:3000';
+      const response = await fetch(`${apiUrl}/leaderboard?mode=${mode}&limit=10`);
       
-      if (!data || !Array.isArray(data)) {
-        throw new Error('Invalid leaderboard data')
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
       }
+      
+      const { leaderboard: apiData } = await response.json();
+      
+      if (!Array.isArray(apiData)) {
+        throw new Error('Invalid API response');
+      }
+      
+      // Transform API data to LeaderboardEntry
+      const data: LeaderboardEntry[] = apiData.map((item: any) => ({
+        player: item.player,
+        score: Number(item.score),
+        timestamp: Number(item.timestamp || Date.now()),
+        round: 0, // Not provided by API aggregate, fallback
+        gameMode: mode,
+        rank: item.rank,
+        // Optional: username/avatar if we add them to type
+        displayName: item.username || undefined,
+        avatar: item.avatar || undefined
+      }));
       
       // Filter banned and process
       const filtered = data
@@ -255,7 +278,7 @@ function Leaderboard() {
         .map((entry, index) => ({
           ...entry,
           rank: index + 1,
-          displayName: getPlayerDisplayName(entry.player),
+          displayName: entry.displayName || getPlayerDisplayName(entry.player), // Use API username if available
           isCurrentUser: isCurrentUser(entry.player)
         }))
       
@@ -267,7 +290,31 @@ function Leaderboard() {
     } catch (err) {
       console.error('Leaderboard fetch error:', err)
       
-      // Try cache as fallback
+      // Try contract fallback if API fails
+      try {
+        console.log('⚠️ API failed, falling back to contract call...');
+        const data = await getTopScores(5, mode);
+        if (data && Array.isArray(data)) {
+           const filtered = data
+            .filter(e => !bannedAddresses.includes(String(e.player).toLowerCase()))
+            .slice(0, 5)
+            .map((entry, index) => ({
+              ...entry,
+              rank: index + 1,
+              displayName: getPlayerDisplayName(entry.player),
+              isCurrentUser: isCurrentUser(entry.player)
+            }));
+          setLeaderboard(filtered);
+          setCachedLeaderboard(mode, filtered);
+          setLastUpdated(new Date());
+          hasFetchedOnce.current = true;
+          return;
+        }
+      } catch (contractErr) {
+        console.error('Contract fallback failed:', contractErr);
+      }
+      
+      // Try cache as final fallback
       const cached = getCachedLeaderboard(mode)
       if (cached && cached.length > 0) {
         const filtered = cached.filter(e => !bannedAddresses.includes(String(e.player).toLowerCase()))

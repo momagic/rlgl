@@ -37,9 +37,20 @@ async function getVerifyCloudProof() {
   throw new Error('verifyCloudProof is not a function')
 }
 require('dotenv').config();
+const { Client } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Database connection
+const db = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+db.connect()
+  .then(() => console.log('✅ Connected to database'))
+  .catch(err => console.error('❌ Database connection error:', err));
 
 // Middleware
 app.use(cors());
@@ -479,6 +490,147 @@ app.get('/world-id', async (req, res) => {
 app.get('/bans', (req, res) => {
   res.json({ addresses: Array.from(bannedAddresses) });
 });
+
+// Leaderboard API
+app.get('/leaderboard', async (req, res) => {
+  const { mode = 'Classic', limit = 10, offset = 0 } = req.query;
+  
+  // Validate mode
+  const validModes = ['Classic', 'Arcade', 'WhackLight'];
+  // Case insensitive match
+  const normalizedMode = validModes.find(m => m.toLowerCase() === String(mode).toLowerCase());
+  
+  if (!normalizedMode) {
+    return res.status(400).json({ error: 'Invalid game mode' });
+  }
+
+  try {
+    const colName = `high_score_${normalizedMode.toLowerCase()}`;
+    const query = `
+      SELECT 
+        address as player, 
+        username, 
+        avatar_url, 
+        ${colName} as score,
+        verification_level
+      FROM users 
+      WHERE ${colName} > 0
+      ORDER BY ${colName} DESC 
+      LIMIT $1 OFFSET $2
+    `;
+    
+    const result = await db.query(query, [Math.min(limit, 100), offset]);
+    
+    // Transform for frontend compatibility
+    const leaderboard = result.rows.map((row, index) => ({
+      rank: Number(offset) + index + 1,
+      player: row.player,
+      username: row.username, // New field
+      avatar: row.avatar_url, // New field
+      score: Number(row.score),
+      gameMode: normalizedMode,
+      verificationLevel: row.verification_level,
+      // Fallbacks for compatibility
+      tokensEarned: '0', 
+      timestamp: Date.now() 
+    }));
+    
+    res.json({ leaderboard });
+  } catch (err) {
+    console.error('Leaderboard query error:', err);
+    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+  }
+});
+
+// User Profile API
+app.get('/user/:address', async (req, res) => {
+  const { address } = req.params;
+  
+  try {
+    const result = await db.query('SELECT * FROM users WHERE address = $1', [address]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('User profile query error:', err);
+    res.status(500).json({ error: 'Failed to fetch user profile' });
+  }
+});
+
+// Record Game Completion API (called by frontend after tx)
+app.post('/game/record', async (req, res) => {
+  const { player, score, round, gameMode, tokensEarned, gameId, transactionHash } = req.body;
+  
+  if (!player || !score || !gameMode) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const modeStr = String(gameMode);
+    const scoreNum = Number(score);
+    const tokensNum = Number(tokensEarned || 0);
+    const gameIdNum = gameId ? Number(gameId) : Date.now(); // Fallback if no gameId yet
+
+    // 1. Insert into game_history
+    await db.query(`
+      INSERT INTO game_history (
+        player, score, round, game_mode, tokens_earned, game_id, timestamp, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      ON CONFLICT (game_id, game_mode) DO NOTHING
+    `, [player, scoreNum, Number(round || 0), modeStr, tokensNum, gameIdNum]);
+
+    // 2. Update users table (High Score & Tokens)
+    const highScoreCol = `high_score_${modeStr.toLowerCase()}`;
+    // Only update if column is valid to prevent injection
+    if (!['high_score_classic', 'high_score_arcade', 'high_score_whack'].includes(highScoreCol)) {
+       throw new Error('Invalid game mode for high score update');
+    }
+
+    await db.query(`
+      INSERT INTO users (address, ${highScoreCol}, total_tokens_earned, last_seen)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (address) 
+      DO UPDATE SET 
+        ${highScoreCol} = GREATEST(users.${highScoreCol}, $2),
+        total_tokens_earned = users.total_tokens_earned + $3,
+        last_seen = NOW()
+    `, [player, scoreNum, tokensNum]);
+
+    res.json({ success: true, message: 'Game recorded successfully' });
+  } catch (err) {
+    console.error('Record game error:', err);
+    res.status(500).json({ error: 'Failed to record game' });
+  }
+});
+
+// Update User Profile API (Protected)
+app.post('/user/profile', async (req, res) => {
+  const { address, username, avatar_url } = req.body;
+  // TODO: Add auth/signature verification here
+  
+  if (!address) return res.status(400).json({ error: 'Address required' });
+  
+  try {
+    await db.query(`
+      INSERT INTO users (address, username, avatar_url, last_seen)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (address) 
+      DO UPDATE SET 
+        username = COALESCE($2, users.username),
+        avatar_url = COALESCE($3, users.avatar_url),
+        last_seen = NOW()
+    `, [address, username, avatar_url]);
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
 
 app.post('/admin/ban', (req, res) => {
   const token = (req.headers['authorization'] || '').replace(/^Bearer\s+/i, '') || req.headers['x-admin-token'];
