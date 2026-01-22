@@ -630,10 +630,12 @@ app.post('/game/record', async (req, res) => {
     // 2. Insert into game_history
     await db.query(`
       INSERT INTO game_history (
-        player, score, round, game_mode, tokens_earned, game_id, timestamp, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-      ON CONFLICT (game_id, game_mode) DO NOTHING
-    `, [player, scoreNum, Number(round || 0), modeStr, tokensNum, gameIdNum]);
+        player, score, round, game_mode, tokens_earned, game_id, timestamp, created_at, transaction_hash
+      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), $7)
+      ON CONFLICT (game_id, game_mode) 
+      DO UPDATE SET 
+        transaction_hash = COALESCE($7, game_history.transaction_hash)
+    `, [player, scoreNum, Number(round || 0), modeStr, tokensNum, gameIdNum, transactionHash || null]);
 
     res.json({ success: true, message: 'Game recorded successfully' });
   } catch (err) {

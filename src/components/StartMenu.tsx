@@ -8,7 +8,7 @@ import type { UseTurnManagerReturn } from '../types/contract'
 import type { GameMode } from '../types/game'
 import TurnDisplay from './TurnDisplay'
 import GameModeSelector from './GameModeSelector'
- 
+
 import { Button, Typography, Container, Stack } from './ui'
 import { UserInfo } from './UserInfo'
 import { DailyClaim } from './DailyClaim'
@@ -33,7 +33,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
   const [showAnnouncement, setShowAnnouncement] = useState(false) // Set to false by default, change to true to enable popup
   // @ts-ignore - Variables kept for future use
   void showAnnouncement, setShowAnnouncement
-  
+
   const buttonDisabled = turnLoading || !turnStatus || (!turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns <= 0)
 
 
@@ -57,7 +57,7 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
       const timer = setTimeout(() => {
         refreshTurnStatus(true) // Force refresh after successful payment
       }, 2000) // 2 second delay
-      
+
       return () => clearTimeout(timer)
     }
   }, [payment.lastPaymentResult?.success, user?.authenticated, refreshTurnStatus])
@@ -110,100 +110,104 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
   const formattedTimeUntilReset = (turnStatus as any)?.formattedTimeUntilReset as string | undefined
 
   return (
-    <div className="h-full flex flex-col overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #0A0A0F 0%, #1A1A20 50%, #0A0A0F 100%)' }}>
-      <UserInfo />
-      
+    <div className="h-full flex flex-col overflow-hidden relative bg-[#0A0A0F]">
+      {/* Cinematic Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-[url('/backgrounds/splash.webp')] bg-cover bg-center opacity-40 mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-[#0A0A0F]/90 to-[#0A0A0F]"></div>
 
-      
-      {/* Squid Game Neon Accents */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-10 -left-20 w-72 h-72 rounded-full blur-3xl opacity-30" style={{ background: 'radial-gradient(circle, #FF1F8C 0%, transparent 70%)' }}></div>
-        <div className="absolute top-1/3 -right-16 w-56 h-56 rounded-full blur-3xl opacity-25" style={{ background: 'radial-gradient(circle, #00D9C0 0%, transparent 70%)' }}></div>
-        <div className="absolute bottom-0 left-1/4 right-1/4 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, #FF1F8C 50%, transparent 100%)' }}></div>
+        {/* Animated Neon Accents */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-pink-600/20 rounded-full blur-[100px] animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-teal-600/10 rounded-full blur-[100px] animate-pulse delay-1000"></div>
       </div>
-      
-      <Container className="flex-1 flex flex-col p-2 sm:p-3 animate-fade-in relative z-10" spacing="sm">
-        {/* Top utility row: turns summary + best score (compact) */}
+
+      <UserInfo />
+
+      <Container className="flex-1 flex flex-col p-4 animate-fade-in relative z-10 overflow-y-auto" spacing="sm">
+        {/* Top Claims & Stats Row */}
         {user?.authenticated && (
-          <div className="flex items-center justify-between gap-1 mb-1">
-            <div className="flex items-center gap-1">
-              <div className="px-2 py-1 rounded border-2 border-squid-border bg-squid-gray text-squid-white text-xs font-squid-heading uppercase tracking-wider font-bold" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                🎯 <span className="neon-text-teal">{turnsLabel}</span>
-              </div>
-              {!turnStatus?.hasActiveWeeklyPass && formattedTimeUntilReset && (
-                <div className="px-2 py-1 rounded border-2 border-squid-border bg-squid-gray text-[10px] text-squid-white/80 font-squid-mono" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                  ⏱️ {formattedTimeUntilReset}
+          <div className="flex flex-col gap-3 mb-2">
+            {/* Turn Status Bar */}
+            <div className="flex items-center justify-between bg-zinc-900/60 backdrop-blur-md p-2 rounded-xl border border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center border border-white/10">
+                    <span className="text-xl">🎯</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Turns</span>
+                    <span className="text-white font-squid-mono font-bold leading-none">
+                      {turnsLabel}
+                    </span>
+                  </div>
                 </div>
-              )}
+
+                {!turnStatus?.hasActiveWeeklyPass && formattedTimeUntilReset && (
+                  <div className="h-6 w-px bg-white/10 mx-1"></div>
+                )}
+
+                {!turnStatus?.hasActiveWeeklyPass && formattedTimeUntilReset && (
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Reset</span>
+                    <span className="text-emerald-400 font-squid-mono text-xs font-bold leading-none">
+                      {formattedTimeUntilReset}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Manage Turns Button */}
+              <button
+                onClick={() => setShowTurnsModal(true)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${!!turnStatus && !turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns === 0
+                    ? 'bg-pink-600 text-white shadow-lg shadow-pink-600/30 hover:bg-pink-500'
+                    : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+                  }`}
+              >
+                {!!turnStatus && !turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns === 0
+                  ? t('startMenu.buttons.buyTurns')
+                  : t('startMenu.buttons.manage')}
+              </button>
             </div>
-            {(() => {
-              const showBuyCTA = !!turnStatus && !turnStatus.hasActiveWeeklyPass
-              const isOutOfTurns = !!turnStatus && !turnStatus.hasActiveWeeklyPass && turnStatus.availableTurns === 0
-              if (showBuyCTA && isOutOfTurns) {
-                 return (
-                   <button
-                     onClick={() => setShowTurnsModal(true)}
-                     className={`${isOutOfTurns ? 'animate-neon-pulse' : ''} px-2 py-1 rounded border-2 border-squid-black text-xs font-squid-heading font-bold uppercase tracking-wider text-squid-white transition-all duration-150`}
-                     style={{ background: '#FF1F8C', boxShadow: '2px 2px 0px 0px #0A0A0F' }}
-                     onPointerDown={(e) => {
-                       e.currentTarget.style.transform = 'translate(1px, 1px)'
-                       e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
-                     }}
-                     onPointerUp={(e) => {
-                       e.currentTarget.style.transform = 'translate(0, 0)'
-                       e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
-                     }}
-                   >
-                     {t('startMenu.buttons.buyTurns')}
-                   </button>
-                 )
-               }
-               return (
-                 <button
-                   onClick={() => setShowTurnsModal(true)}
-                   className="px-2 py-1 rounded border-2 border-squid-border text-xs font-squid-heading font-bold uppercase tracking-wider text-squid-white bg-squid-gray transition-all duration-150"
-                   style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
-                   onPointerDown={(e) => {
-                     e.currentTarget.style.transform = 'translate(1px, 1px)'
-                     e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
-                   }}
-                   onPointerUp={(e) => {
-                     e.currentTarget.style.transform = 'translate(0, 0)'
-                     e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
-                   }}
-                 >
-                   {t('startMenu.buttons.manage')}
-                 </button>
-               )
-            })()}
+
+            {/* Daily Claim (Compact) */}
+            <DailyClaim variant="compact" onClaimSuccess={() => refreshTurnStatus(true)} />
           </div>
         )}
 
-        {/* High Score (compact) */}
+        {/* High Score Banner */}
         {highScore > 0 && (
-          <div className="mb-1 px-2 py-1 rounded border-2 border-squid-border bg-squid-gray/50 flex items-center gap-2 text-xs" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-            <span>🏆</span>
-            <span className="font-squid text-squid-white/80">{t('startMenu.bestLabel')} <span className="neon-text-pink font-squid-mono font-bold">{highScore.toLocaleString()}</span></span>
+          <div className="relative mb-2 overflow-hidden rounded-xl bg-gradient-to-r from-zinc-900 to-black border border-white/10 p-3">
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-transparent opacity-50"></div>
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">👑</span>
+                <span className="text-sm font-squid-heading text-gray-300 uppercase tracking-widest">{t('startMenu.bestLabel')}</span>
+              </div>
+              <span className="font-squid-mono text-xl font-bold text-yellow-500 drop-shadow-sm">{highScore.toLocaleString()}</span>
+            </div>
           </div>
         )}
 
-        {/* World ID verification prompt - required to play games */}
+        {/* World ID Verification Warning */}
         {user?.authenticated && !user?.verified && (
-          <div className="mb-2 p-2 rounded-lg border-3 border-squid-border bg-squid-gray" style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}>
-            <div className="flex items-center justify-between">
-              <div className="flex-1 text-squid-white">
-                <div className="text-xs font-squid-heading font-bold uppercase">{t('startMenu.verification.title')}</div>
-                <div className="text-xs font-squid text-squid-white/70">{t('humanVerification.description')}</div>
+          <div className="mb-4 p-4 rounded-xl border border-pink-500/30 bg-pink-900/10 relative overflow-hidden group">
+            <div className="absolute -right-4 -top-4 text-8xl opacity-5 rotate-12">⚠️</div>
+            <div className="relative z-10 flex flex-col gap-3">
+              <div>
+                <h4 className="text-pink-400 font-squid-heading text-sm uppercase tracking-wider mb-1">{t('startMenu.verification.title')}</h4>
+                <p className="text-gray-400 text-xs leading-relaxed">{t('humanVerification.description')}</p>
               </div>
               <Button
                 onClick={handleVerify}
                 disabled={authLoading}
-                variant={authLoading ? 'secondary' : 'primary'}
+                variant={'primary'}
                 size="sm"
+                className="w-full shadow-lg shadow-pink-900/20"
               >
                 {authLoading ? (
                   <Stack direction="row" spacing="sm" className="items-center justify-center">
-                    <div className="w-3 h-3 border-2 border-squid-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span className="text-xs">{t('humanVerification.verifying')}</span>
                   </Stack>
                 ) : (
@@ -214,21 +218,14 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
           </div>
         )}
 
-        {/* Daily Claim positioned above game mode selector */}
-        {user?.authenticated && (
-          <div className="mb-2">
-            <DailyClaim variant="compact" onClaimSuccess={() => refreshTurnStatus(true)} />
-          </div>
-        )}
-
-        {/* Main focus: Game Mode selection */}
-        <div className="mt-1 rounded-lg border-3 border-squid-border bg-squid-gray p-2" style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
+        {/* Game Mode Selector */}
+        <div className="flex-1 mt-2 mb-20">
           <GameModeSelector
             selectedMode={selectedGameMode}
             onModeChange={setSelectedGameMode}
             turnStatus={turnStatus}
             onShowBuyTurns={() => setShowTurnsModal(true)}
-            className="!space-y-2"
+            className="!space-y-4"
             turnLoading={turnLoading}
             turnError={turnError}
             onStartGame={handleStartGame}
@@ -237,87 +234,29 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
           />
         </div>
 
-        
-
-        {/* Error hint when authenticated (optional small) */}
-        {user?.authenticated && turnError && (
-          <div className="mt-1 p-2 rounded-lg border-2 border-squid-red bg-squid-red/10" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-            <Typography variant="caption" className="text-squid-red text-xs font-squid font-semibold">
-              {t('startMenu.turnStatus.error', { error: turnError })}
-            </Typography>
-          </div>
-        )}
-
-        {/* Footer note */}
-        <div className="mt-auto pt-1">
-          <div className="rounded-lg p-2 border-2 border-squid-border bg-squid-gray/50" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-            <Typography variant="caption" className="text-center px-1 font-squid text-squid-white/60 text-[10px]">
-              {t('startMenu.footer.line1')}<br />
-              {t('startMenu.footer.line2')}
+        {/* Footer info */}
+        <div className="mt-8 mb-4 text-center">
+          <div className="inline-block px-3 py-1 rounded-full bg-black/40 border border-white/5 backdrop-blur-sm">
+            <Typography variant="caption" className="text-white/40 text-[10px] tracking-widest uppercase">
+              {t('startMenu.footer.line1')} • {t('startMenu.footer.line2')}
             </Typography>
           </div>
         </div>
       </Container>
 
-      {/* Bottom fixed section removed to avoid duplicate start CTA */}
-
-      {/* Full Turn Manager modal to preserve all features (next reset time, purchases, etc.) */}
-      {/* SERVICE NOTICE POPUP - COMMENTED OUT FOR FUTURE USE
-      {showAnnouncement && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center animate-fade-in" style={{ background: 'rgba(10, 10, 15, 0.9)' }}>
-          <div className="w-full max-w-md rounded-lg border-4 border-squid-border bg-squid-black p-3 sm:p-4 animate-scale-in" style={{ boxShadow: '6px 6px 0px 0px #0A0A0F' }}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-squid-white">
-                <span className="text-lg">📣</span>
-                <span className="text-sm font-squid-heading font-bold uppercase">{t('announcementPopup.title')}</span>
-              </div>
-              <button
-                onClick={() => setShowAnnouncement(false)}
-                className="px-3 py-1.5 rounded border-2 border-squid-border text-xs font-squid-heading font-bold uppercase text-squid-white bg-squid-gray transition-all duration-150"
-                style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
-                onPointerDown={(e) => {
-                  e.currentTarget.style.transform = 'translate(1px, 1px)'
-                  e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
-                }}
-                onPointerUp={(e) => {
-                  e.currentTarget.style.transform = 'translate(0, 0)'
-                  e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
-                }}
-              >
-                {t('startMenu.buttons.close')}
-              </button>
-            </div>
-            <div className="space-y-2 text-squid-white">
-              <p className="text-xs font-squid text-squid-white/80">{t('announcementPopup.message')}</p>
-              <div className="mt-1 px-2 py-1 rounded border-2 border-squid-border bg-squid-gray/50 text-[10px] text-squid-white/70 font-squid-mono" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                {t('announcementPopup.thanks')}
-              </div>
-            </div>
-          </div>
-        </div>
-      )} */}
       {showTurnsModal && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center animate-fade-in" style={{ background: 'rgba(10, 10, 15, 0.9)' }}>
-          <div className="w-full max-w-md rounded-lg border-4 border-squid-border bg-squid-black p-3 sm:p-4 animate-scale-in" style={{ boxShadow: '6px 6px 0px 0px #0A0A0F' }}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-squid-white">
-                <span className="text-lg">🕹</span>
-                <span className="text-sm font-squid-heading font-bold uppercase">{t('turnDisplay.yourTurns')}</span>
+        <div className="fixed inset-0 z-[80] flex items-center justify-center animate-fade-in bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md m-4 rounded-2xl border border-white/10 bg-[#0A0A0F] p-4 shadow-2xl animate-scale-in">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-white">
+                <span className="text-xl">🕹</span>
+                <span className="text-sm font-squid-heading font-bold uppercase tracking-wider">{t('turnDisplay.yourTurns')}</span>
               </div>
               <button
                 onClick={() => setShowTurnsModal(false)}
-                className="px-3 py-1.5 rounded border-2 border-squid-border text-xs font-squid-heading font-bold uppercase text-squid-white bg-squid-gray transition-all duration-150"
-                style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
-                onPointerDown={(e) => {
-                  e.currentTarget.style.transform = 'translate(1px, 1px)'
-                  e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
-                }}
-                onPointerUp={(e) => {
-                  e.currentTarget.style.transform = 'translate(0, 0)'
-                  e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
-                }}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
               >
-                {t('startMenu.buttons.close')}
+                <span className="text-white text-lg">×</span>
               </button>
             </div>
             <div className="max-h-[70vh] overflow-y-auto pb-safe-bottom">
@@ -329,5 +268,6 @@ function StartMenu({ highScore, onStartGame, turnManager }: StartMenuProps) {
     </div>
   )
 }
+
 
 export default StartMenu

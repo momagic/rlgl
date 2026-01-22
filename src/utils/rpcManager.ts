@@ -4,7 +4,6 @@ import { worldchain } from 'viem/chains'
 // Public RPC endpoints for World Chain
 // Primary: dRPC free tier (210M CU/month, 100 req/s normal, 40 req/s minimum)
 const PUBLIC_RPC_ENDPOINTS = [
-  'https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs', // Primary dRPC endpoint
   'https://worldchain.drpc.org', // dRPC public fallback
   'https://worldchain-mainnet.g.alchemy.com/public',
   'https://worldchain-mainnet.g.alchemy.com/v2/mLzne7L6CEdRUufdPJ2ql',

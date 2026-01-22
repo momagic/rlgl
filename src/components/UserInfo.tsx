@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+
 import { formatEther } from 'viem'
 import { useAuth } from '../contexts/AuthContext'
 import { useContract } from '../hooks/useContract'
@@ -6,7 +6,6 @@ import { getDisplayName } from '../utils'
 import { useEffect, useState } from 'react'
 
 export function UserInfo() {
-  const { t } = useTranslation()
   const { user } = useAuth()
   const { getPlayerStats } = useContract()
   const [tokenBalance, setTokenBalance] = useState<string>('0')
@@ -15,7 +14,7 @@ export function UserInfo() {
   useEffect(() => {
     const fetchTokenBalance = async () => {
       if (!user?.walletAddress) return
-      
+
       try {
         setIsLoadingBalance(true)
         const stats = await getPlayerStats(user.walletAddress)
@@ -29,7 +28,7 @@ export function UserInfo() {
     }
 
     fetchTokenBalance()
-    
+
     // Refresh balance every 30 seconds
     const interval = setInterval(fetchTokenBalance, 30000)
     return () => clearInterval(interval)
@@ -61,90 +60,57 @@ export function UserInfo() {
   })()
 
   return (
-    <header 
-      className="w-full" 
+    <header
+      className="w-full relative z-50"
       role="banner"
-      style={{
-        background: 'linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(30,30,30,0.95) 50%, rgba(0,0,0,0.95) 100%)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-        padding: '8px 0'
-      }}
     >
-      {/* Subtle pattern overlay */}
-      <div 
-        className="absolute inset-0 opacity-5"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}
-      />
-      
-      <div className="relative flex items-center justify-between px-2 sm:px-4">
+      <div className="flex items-center justify-between px-4 py-3">
         {/* User Profile Section */}
-        <div className="flex items-center min-w-0 flex-1">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mr-2 overflow-hidden flex-shrink-0 ring-1 ring-white/20">
-            {hasProfilePicture ? (
-              <img
-                src={user.profilePictureUrl}
-                alt={`${displayName}'s avatar`}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div 
-                className="w-full h-full flex items-center justify-center"
-                style={{
-                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
-                }}
-              >
-                <span className="text-white text-sm sm:text-lg">
-                  {user.username ? '👤' : '🔗'}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-white font-semibold text-xs sm:text-sm truncate tracking-wide">
-              {displayName}
-            </p>
-            <p className="text-gray-300 text-xs truncate">
-              {getVerificationLabel() ? (
-                <>{getVerificationLabel()} {t('userInfo.verified')}</>
+        <div className="flex items-center gap-3">
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full opacity-75 group-hover:opacity-100 transition duration-200 blur-[2px]"></div>
+            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-black border border-white/10">
+              {hasProfilePicture ? (
+                <img
+                  src={user.profilePictureUrl}
+                  alt={`${displayName}'s avatar`}
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                <>Connected</>
+                <div className="w-full h-full flex items-center justify-center bg-zinc-900">
+                  <span className="text-white text-lg">
+                    {user.username ? '👤' : '🔗'}
+                  </span>
+                </div>
               )}
-            </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <span className="text-white font-squid font-bold text-sm tracking-wide shadow-black drop-shadow-md">
+              {displayName}
+            </span>
+            <div className="flex items-center gap-1.5">
+              {getVerificationLabel() && (
+                <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                  {getVerificationLabel()}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Token Balance Section */}
-        <div 
-          className="ml-2 flex items-center rounded-lg px-2 py-1 sm:px-3 sm:py-2 border border-white/20"
-          style={{
-            background: 'rgba(255,255,255,0.1)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)'
-          }}
-        >
-          <div 
-            className="w-4 h-4 sm:w-5 sm:h-5 mr-1 flex-shrink-0 rounded-full flex items-center justify-center"
-            style={{
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
-            }}
-          >
-            <span className="text-white text-xs font-bold">R</span>
-          </div>
-          <div className="text-right">
-            <div className="text-white font-bold text-xs">
-              {isLoadingBalance ? (
-                <span className="animate-pulse">...</span>
-              ) : (
-                `${formattedBalance}`
-              )}
+        <div className="relative group">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl opacity-50 blur-[2px]"></div>
+          <div className="relative flex items-center gap-2 bg-zinc-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+            <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-[0_0_10px_rgba(16,185,129,0.4)]">
+              <span className="text-black font-bold text-xs">$</span>
             </div>
-            <div className="text-gray-300 text-xs hidden sm:block">
-              RLGL
+            <div className="flex flex-col items-end leading-none">
+              <span className="text-white font-squid-mono font-bold text-sm">
+                {isLoadingBalance ? '...' : formattedBalance}
+              </span>
             </div>
           </div>
         </div>

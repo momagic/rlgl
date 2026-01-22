@@ -48,13 +48,13 @@ function LightDisplay({ lightState, isTransitioning, showLightChangeFlash, isCon
 
       {/* Light Circle - Squid Game Inspired */}
       <div className="flex items-center justify-center">
-        <div 
+        <div
           className={`
             w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-64 lg:h-64
-            ${isTransitioning 
-              ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' 
-              : lightState === 'red' 
-                ? 'bg-gradient-to-br from-red-400 to-red-600' 
+            ${isTransitioning
+              ? 'bg-gradient-to-br from-yellow-400 to-yellow-600'
+              : lightState === 'red'
+                ? 'bg-gradient-to-br from-red-400 to-red-600'
                 : 'bg-gradient-to-br from-green-400 to-green-600'
             }
             rounded-full flex items-center justify-center
@@ -62,22 +62,22 @@ function LightDisplay({ lightState, isTransitioning, showLightChangeFlash, isCon
             border-4 border-squid-black
             ${getPulseAnimation()}
           `}
-          style={{ 
+          style={{
             touchAction: 'manipulation',
-            boxShadow: isTransitioning 
+            boxShadow: isTransitioning
               ? '0 0 30px rgba(250, 204, 21, 0.7), 0 0 60px rgba(250, 204, 21, 0.4)'
               : lightState === 'red'
                 ? '0 0 30px rgba(220, 20, 60, 0.7), 0 0 60px rgba(220, 20, 60, 0.4)'
                 : '0 0 30px rgba(0, 168, 120, 0.7), 0 0 60px rgba(0, 168, 120, 0.4)'
           }}
         >
-          <div 
+          <div
             className={`
               w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-56 lg:h-56
-              ${isTransitioning 
-                ? 'bg-gradient-to-br from-yellow-300 to-yellow-500' 
-                : lightState === 'red' 
-                  ? 'bg-gradient-to-br from-red-300 to-red-500' 
+              ${isTransitioning
+                ? 'bg-gradient-to-br from-yellow-300 to-yellow-500'
+                : lightState === 'red'
+                  ? 'bg-gradient-to-br from-red-300 to-red-500'
                   : 'bg-gradient-to-br from-green-300 to-green-500'
               }
               rounded-full flex items-center justify-center
@@ -93,11 +93,11 @@ function LightDisplay({ lightState, isTransitioning, showLightChangeFlash, isCon
       {/* Instruction Text */}
       <div className="text-center px-2 sm:px-4 w-full">
         <p className="text-squid-white mobile-text-base sm:mobile-text-lg font-squid font-medium">
-          {lightState === 'red' 
-            ? "Don't tap when red!" 
+          {lightState === 'red'
+            ? "Don't tap when red!"
             : lightState === 'green'
-            ? "Tap now!"
-            : "Get ready..."
+              ? "Tap now!"
+              : "Get ready..."
           }
         </p>
         <p className="text-squid-teal mobile-text-xs sm:mobile-text-sm mt-1 sm:mt-2 font-squid opacity-80">

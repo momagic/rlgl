@@ -18,7 +18,7 @@ const config = {
   networks: {
     // World Chain Mainnet (OP Stack Optimistic Rollup)
     worldchain: {
-      url: process.env.WORLDCHAIN_RPC_URL || "https://lb.drpc.live/worldchain/AmyJSv1A2UkJm3z6Oj3tIK9iph7n7vIR8JmI_qr8MPTs",
+      url: process.env.WORLDCHAIN_RPC_URL || "https://worldchain-mainnet.g.alchemy.com/public",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 480,
       timeout: 60000,

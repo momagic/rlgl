@@ -5,15 +5,15 @@ interface ScoreBoardProps {
 }
 
 function ScoreBoard({ playerStats }: ScoreBoardProps) {
-  const accuracy = playerStats.totalTaps > 0 
-    ? Math.round((playerStats.correctTaps / playerStats.totalTaps) * 100) 
+  const accuracy = playerStats.totalTaps > 0
+    ? Math.round((playerStats.correctTaps / playerStats.totalTaps) * 100)
     : 100
 
   return (
     <div className="w-full">
       <div className="grid grid-cols-2 gap-2 text-center">
         {/* Score */}
-        <div 
+        <div
           className="rounded p-2 sm:p-3 border-2 border-squid-green bg-squid-green/10 transition-all duration-150"
           style={{ boxShadow: '2px 2px 0px 0px #00A878' }}
         >
@@ -24,7 +24,7 @@ function ScoreBoard({ playerStats }: ScoreBoardProps) {
         </div>
 
         {/* Round */}
-        <div 
+        <div
           className="rounded p-2 sm:p-3 border-2 border-squid-teal bg-squid-teal/10 transition-all duration-150"
           style={{ boxShadow: '2px 2px 0px 0px #00D9C0' }}
         >
@@ -35,7 +35,7 @@ function ScoreBoard({ playerStats }: ScoreBoardProps) {
         </div>
 
         {/* Streak */}
-        <div 
+        <div
           className="rounded p-2 sm:p-3 border-2 border-squid-pink bg-squid-pink/10 transition-all duration-150"
           style={{ boxShadow: '2px 2px 0px 0px #FF1F8C' }}
         >
@@ -49,7 +49,7 @@ function ScoreBoard({ playerStats }: ScoreBoardProps) {
         </div>
 
         {/* Accuracy */}
-        <div 
+        <div
           className="rounded p-2 sm:p-3 border-2 border-squid-teal bg-squid-teal/10 transition-all duration-150"
           style={{ boxShadow: '2px 2px 0px 0px #00D9C0' }}
         >
@@ -63,7 +63,7 @@ function ScoreBoard({ playerStats }: ScoreBoardProps) {
       {/* High Score Display */}
       {playerStats.highScore > 0 && (
         <div className="mt-2">
-          <div 
+          <div
             className="text-center rounded px-2 py-1.5 border-2 border-squid-pink bg-squid-pink/10"
             style={{ boxShadow: '2px 2px 0px 0px #FF1F8C' }}
           >

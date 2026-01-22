@@ -7,263 +7,185 @@ function HowTo() {
   const [activeInstructionTab, setActiveInstructionTab] = useState<'classic' | 'arcade' | 'whack'>('classic')
 
   return (
-    <div className="h-full flex flex-col animate-fade-in overflow-hidden" style={{ background: 'linear-gradient(135deg, #0A0A0F 0%, #1A1A20 50%, #0A0A0F 100%)' }}>
+    <div className="h-full flex flex-col animate-fade-in bg-[#0A0A0F] relative overflow-hidden">
+      {/* Cinematic Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-96 bg-blue-600/10 rounded-full blur-[100px] opacity-30"></div>
+      </div>
+
       <UserInfo />
-      <div 
-        className="flex-1 flex flex-col rounded-lg shadow-2xl p-4 mx-4 border-3 border-squid-border bg-squid-gray overflow-hidden"
-        style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}
-      >
-        {/* Header */}
-        <div className="flex-shrink-0 mb-4">
-          <h3 className="text-squid-white text-lg font-squid-heading font-bold uppercase tracking-wider flex items-center">
-            <span className="mr-3 text-xl">📖</span>
+
+      <div className="flex-1 flex flex-col p-4 relative z-10 overflow-hidden">
+        <div className="flex-shrink-0 mb-6 px-2">
+          <h3 className="text-white text-2xl font-squid-heading font-bold uppercase tracking-widest flex items-center gap-3">
+            <span className="text-3xl">📖</span>
             {t('startMenu.howToPlay')}
           </h3>
+          <p className="text-zinc-400 text-sm mt-1 font-squid">Master the rules to survive and win.</p>
         </div>
-        
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-          {/* Game Lights Section */}
-          <div 
-            className="rounded-lg p-4 border-3 border-squid-border bg-squid-black"
-            style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}
-          >
-            <h4 className="text-squid-white text-base font-squid-heading font-bold uppercase mb-3 flex items-center">
-              Game Lights
+
+        <div className="flex-1 overflow-y-auto space-y-6 pb-8 pr-1">
+
+          {/* VISUAL GUIDE: LIGHTS */}
+          <div className="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 overflow-hidden relative group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -z-10 transition-opacity group-hover:opacity-100 opacity-50"></div>
+
+            <h4 className="text-white font-squid-heading text-sm uppercase tracking-wider mb-6 flex items-center gap-2">
+              <span className="w-1 h-4 bg-pink-500 rounded-full"></span>
+              The Signals
             </h4>
-            <div className="flex items-center justify-center space-x-8">
-              <div className="flex flex-col items-center space-y-2">
-                <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center transform transition-all duration-300 hover:scale-110 border-3 border-squid-black" style={{ boxShadow: '0 0 20px rgba(220, 20, 60, 0.6)' }}>
-                  <div className="w-12 h-12 bg-gradient-to-br from-red-300 to-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-squid-white font-squid-heading font-bold text-xs tracking-wide uppercase">
-                      {t('startMenu.stop')}
-                    </span>
+
+            <div className="flex items-center justify-around">
+              {/* Stop Signal */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-full bg-red-500 shadow-[0_0_30px_rgba(239,68,68,0.4)] flex items-center justify-center border-4 border-black box-content">
+                    <div className="w-16 h-16 rounded-full border-2 border-red-300/30"></div>
+                  </div>
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-0.5 rounded text-[10px] font-bold text-red-500 border border-red-500/30 uppercase tracking-wider">
+                    Freeze
                   </div>
                 </div>
-                <span className="text-squid-red font-squid font-medium text-sm neon-text-green" style={{ textShadow: '0 0 10px rgba(220, 20, 60, 0.8)' }}>
-                  Stop Moving
-                </span>
+                <p className="text-xs text-zinc-400 font-medium text-center max-w-[80px]">Stop moving instantly</p>
               </div>
-              <div className="flex flex-col items-center space-y-2">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center transform transition-all duration-300 hover:scale-110 animate-pulse border-3 border-squid-black" style={{ boxShadow: '0 0 20px rgba(0, 168, 120, 0.6)' }}>
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-300 to-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-squid-white font-squid-heading font-bold text-xs tracking-wide uppercase">
-                      {t('startMenu.tap')}
-                    </span>
+
+              {/* Go Signal */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-full bg-green-500 shadow-[0_0_30px_rgba(34,197,94,0.4)] flex items-center justify-center border-4 border-black box-content animate-pulse">
+                    <div className="w-16 h-16 rounded-full border-2 border-green-300/30"></div>
+                  </div>
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-0.5 rounded text-[10px] font-bold text-green-500 border border-green-500/30 uppercase tracking-wider">
+                    Move
                   </div>
                 </div>
-                <span className="text-squid-green font-squid font-medium text-sm neon-text-green">
-                  Tap to Move
-                </span>
+                <p className="text-xs text-zinc-400 font-medium text-center max-w-[80px]">Run to the finish line</p>
               </div>
             </div>
           </div>
 
-          {/* Game Mode Instructions */}
-          <div 
-            className="rounded-lg p-4 border-3 border-squid-border bg-squid-black"
-            style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}
-          >
-            <h4 className="text-squid-white text-base font-squid-heading font-bold uppercase mb-3 flex items-center">
+          {/* GAME MODES */}
+          <div className="space-y-4">
+            <h4 className="text-white font-squid-heading text-sm uppercase tracking-wider px-2 flex items-center gap-2">
+              <span className="w-1 h-4 bg-teal-500 rounded-full"></span>
               Game Modes
             </h4>
-                
-                {/* Game Mode Tabs */}
-                <div className="flex rounded border-2 border-squid-border overflow-hidden bg-squid-gray p-1 mb-3" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                  <button
-                    onClick={() => setActiveInstructionTab('classic')}
-                    className={`flex-1 py-2 px-3 rounded text-xs font-squid-heading font-bold uppercase transition-all duration-150 ${
-                      activeInstructionTab === 'classic'
-                        ? 'bg-squid-pink text-squid-black'
-                        : 'text-squid-white hover:bg-squid-border'
-                    }`}
-                  >
-                    🎯 {t('gameModeSelector.classicMode.title')}
-                  </button>
-                  <button
-                    onClick={() => setActiveInstructionTab('arcade')}
-                    className={`flex-1 py-2 px-3 rounded text-xs font-squid-heading font-bold uppercase transition-all duration-150 ${
-                      activeInstructionTab === 'arcade'
-                        ? 'bg-squid-teal text-squid-black'
-                        : 'text-squid-white hover:bg-squid-border'
-                    }`}
-                  >
-                    🎮 {t('gameModeSelector.arcadeMode.title')}
-                  </button>
-                  <button
-                    onClick={() => setActiveInstructionTab('whack')}
-                    className={`flex-1 py-2 px-3 rounded text-xs font-squid-heading font-bold uppercase transition-all duration-150 ${
-                      activeInstructionTab === 'whack'
-                        ? 'bg-squid-green text-squid-black'
-                        : 'text-squid-white hover:bg-squid-border'
-                    }`}
-                  >
-                    🔨 {t('whackMode.title')}
-                  </button>
-                </div>
 
-            {/* Tab Content */}
-            <div className="rounded-lg border-2 border-squid-border bg-squid-gray p-3" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-              {activeInstructionTab === 'classic' ? (
-                <div className="space-y-3">
-                  <p className="text-squid-pink font-squid font-medium text-center mb-2 text-xs">
-                    {t('gameModeSelector.classicMode.description')}
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-red bg-squid-red/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #DC143C' }}>
-                      <div className="w-5 h-5 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex-shrink-0 border-2 border-squid-black"></div>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('startMenu.instructions.redLight')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-green bg-squid-green/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #00A878' }}>
-                      <div className="w-5 h-5 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex-shrink-0 border-2 border-squid-black"></div>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('startMenu.instructions.greenLight')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-border bg-squid-black p-2" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                      <span className="text-base">❤️</span>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('startMenu.instructions.lives')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-border bg-squid-black p-2" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                      <span className="text-base">⚡</span>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('startMenu.instructions.speed')}
-                      </span>
+            {/* Custom Tabs */}
+            <div className="flex p-1 bg-zinc-900/60 rounded-xl border border-white/5 mx-2">
+              {(['classic', 'arcade', 'whack'] as const).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setActiveInstructionTab(mode)}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${activeInstructionTab === mode
+                      ? 'bg-white text-black shadow-lg'
+                      : 'text-zinc-500 hover:text-white'
+                    }`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content Card */}
+            <div className="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-5 min-h-[200px] relative transition-all duration-300">
+              {activeInstructionTab === 'classic' && (
+                <div className="animate-fade-in space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-3xl">🎯</span>
+                    <div>
+                      <h5 className="text-pink-500 font-bold uppercase tracking-wider text-sm">Classic</h5>
+                      <p className="text-zinc-400 text-xs">The original Red Light, Green Light experience.</p>
                     </div>
                   </div>
+                  <ul className="space-y-3">
+                    <li className="flex gap-3 text-sm text-zinc-300">
+                      <span className="bg-pink-500/10 text-pink-500 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                      <span>Wait for the Green Light signal to tap.</span>
+                    </li>
+                    <li className="flex gap-3 text-sm text-zinc-300">
+                      <span className="bg-pink-500/10 text-pink-500 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                      <span>Stop tapping <strong>immediately</strong> when Red Light appears.</span>
+                    </li>
+                    <li className="flex gap-3 text-sm text-zinc-300">
+                      <span className="bg-pink-500/10 text-pink-500 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                      <span>Cross the finish line before time runs out.</span>
+                    </li>
+                  </ul>
                 </div>
-              ) : activeInstructionTab === 'arcade' ? (
-                <div className="space-y-3">
-                  <p className="text-squid-teal font-squid font-medium text-center mb-2 text-xs">
-                    {t('gameModeSelector.arcadeMode.description')}
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-red bg-squid-red/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #DC143C' }}>
-                      <div className="w-5 h-5 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex-shrink-0 border-2 border-squid-black"></div>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('startMenu.instructions.redLight')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-green bg-squid-green/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #00A878' }}>
-                      <div className="w-5 h-5 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex-shrink-0 border-2 border-squid-black"></div>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('startMenu.instructions.greenLight')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-border bg-squid-black p-2" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                      <span className="text-base">❤️</span>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('startMenu.instructions.lives')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-border bg-squid-black p-2" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                      <span className="text-base">⚡</span>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('startMenu.instructions.speed')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-teal bg-squid-teal/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #00D9C0' }}>
-                      <span className="text-base">🔮</span>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        Collect floating power-ups for special abilities!
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-teal bg-squid-teal/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #00D9C0' }}>
-                      <span className="text-base">🛡️</span>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        Shield, slow motion, score multiplier & more!
-                      </span>
+              )}
+
+              {activeInstructionTab === 'arcade' && (
+                <div className="animate-fade-in space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-3xl">⚡</span>
+                    <div>
+                      <h5 className="text-teal-400 font-bold uppercase tracking-wider text-sm">Arcade</h5>
+                      <p className="text-zinc-400 text-xs">Fast-paced with power-ups and chaos.</p>
                     </div>
                   </div>
+                  <ul className="space-y-3">
+                    <li className="flex gap-3 text-sm text-zinc-300">
+                      <span className="bg-teal-500/10 text-teal-400 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                      <span>Includes all Classic rules, plus power-ups.</span>
+                    </li>
+                    <li className="flex gap-3 text-sm text-zinc-300">
+                      <span className="bg-teal-500/10 text-teal-400 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                      <span>Collect floating orbs for <strong>Shields</strong> and <strong>Time Slow</strong>.</span>
+                    </li>
+                    <li className="flex gap-3 text-sm text-zinc-300">
+                      <span className="bg-teal-500/10 text-teal-400 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                      <span>Use power-ups strategically to survive impossible patterns.</span>
+                    </li>
+                  </ul>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-squid-green font-squid font-medium text-center mb-2 text-xs">
-                    {t('whackMode.description')}
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-red bg-squid-red/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #DC143C' }}>
-                      <div className="w-5 h-5 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex-shrink-0 border-2 border-squid-black"></div>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('instructions.whackMode.redLight')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-green bg-squid-green/10 p-2 animate-pulse" style={{ boxShadow: '2px 2px 0px 0px #00A878' }}>
-                      <div className="w-5 h-5 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex-shrink-0 border-2 border-squid-black"></div>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('instructions.whackMode.greenLight')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-border bg-squid-black p-2" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                      <span className="text-base">🎯</span>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('instructions.whackMode.grid')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-border bg-squid-black p-2" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                      <span className="text-base">📈</span>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('instructions.whackMode.progression')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-border bg-squid-black p-2" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                      <span className="text-base">⚡</span>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('instructions.whackMode.scoring')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded border-2 border-squid-border bg-squid-black p-2" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
-                      <span className="text-base">⏱️</span>
-                      <span className="text-squid-white font-squid font-medium text-xs">
-                        {t('instructions.whackMode.timing')}
-                      </span>
+              )}
+
+              {activeInstructionTab === 'whack' && (
+                <div className="animate-fade-in space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-3xl">🔨</span>
+                    <div>
+                      <h5 className="text-emerald-500 font-bold uppercase tracking-wider text-sm">Whack-a-Light</h5>
+                      <p className="text-zinc-400 text-xs">Test your reflexes in a grid challenge.</p>
                     </div>
                   </div>
+                  <ul className="space-y-3">
+                    <li className="flex gap-3 text-sm text-zinc-300">
+                      <span className="bg-emerald-500/10 text-emerald-500 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                      <span>Tap the <strong>Green Tiles</strong> as fast as you can.</span>
+                    </li>
+                    <li className="flex gap-3 text-sm text-zinc-300">
+                      <span className="bg-emerald-500/10 text-emerald-500 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                      <span>Avoid the <strong>Red Tiles</strong> - they deduct points/lives.</span>
+                    </li>
+                    <li className="flex gap-3 text-sm text-zinc-300">
+                      <span className="bg-emerald-500/10 text-emerald-500 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                      <span>Speed increases with every successful round.</span>
+                    </li>
+                  </ul>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Pro Tips Section */}
-          <div 
-            className="rounded-lg p-4 border-3 border-squid-border bg-squid-black"
-            style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}
-          >
-            <h4 className="text-squid-white text-base font-squid-heading font-bold uppercase mb-3 flex items-center">
-              💡 Pro Tips
+          {/* PRO TIPS */}
+          <div className="bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-3xl p-5 border border-white/5">
+            <h4 className="text-white font-squid-heading text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span>💡</span> Pro Tips
             </h4>
-            <div className="space-y-2">
-              <div className="rounded border-2 border-squid-pink bg-squid-pink/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #FF1F8C' }}>
-                <p className="text-squid-white font-squid text-xs">
-                  🎯 <strong className="text-squid-pink">Timing is everything:</strong> {t('proTips.timing')}
-                </p>
+            <div className="grid gap-3 text-xs text-zinc-300">
+              <div className="bg-black/20 p-3 rounded-xl flex gap-3 items-center">
+                <span className="text-pink-500 font-bold whitespace-nowrap">Rhythm</span>
+                <span>Don't just mash. Find the rhythm of the lights.</span>
               </div>
-              <div className="rounded border-2 border-squid-teal bg-squid-teal/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #00D9C0' }}>
-                <p className="text-squid-white font-squid text-xs">
-                  🚀 <strong className="text-squid-teal">Speed increases:</strong> {t('proTips.speed')}
-                </p>
-              </div>
-              <div className="rounded border-2 border-squid-teal bg-squid-teal/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #00D9C0' }}>
-                <p className="text-squid-white font-squid text-xs">
-                  💎 <strong className="text-squid-teal">Arcade mode:</strong> {t('proTips.arcade')}
-                </p>
-              </div>
-              <div className="rounded border-2 border-squid-green bg-squid-green/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #00A878' }}>
-                <p className="text-squid-white font-squid text-xs">
-                  🔨 <strong className="text-squid-green">Whack-a-Light mode:</strong> {t('proTips.whack')}
-                </p>
-              </div>
-              <div className="rounded border-2 border-squid-pink bg-squid-pink/10 p-2" style={{ boxShadow: '2px 2px 0px 0px #FF1F8C' }}>
-                <p className="text-squid-white font-squid text-xs">
-                  🏆 <strong className="text-squid-pink">High scores:</strong> {t('proTips.leaderboard')}
-                </p>
+              <div className="bg-black/20 p-3 rounded-xl flex gap-3 items-center">
+                <span className="text-teal-400 font-bold whitespace-nowrap">Focus</span>
+                <span>Watch the doll, not just the lights.</span>
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>

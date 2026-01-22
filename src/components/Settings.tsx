@@ -16,7 +16,7 @@ function Settings({ onClose }: SettingsProps) {
   const { getPlayerStats } = useContract()
   const [contractStats, setContractStats] = useState<{ totalGamesPlayed: number; highScore: number } | null>(null)
   const [isLoadingStats, setIsLoadingStats] = useState(false)
-  
+
   const [soundEnabled, setSoundEnabled] = useState(() => {
     const stored = localStorage.getItem('soundEnabled')
     if (stored) {
@@ -84,7 +84,7 @@ function Settings({ onClose }: SettingsProps) {
   useEffect(() => {
     const fetchContractStats = async () => {
       if (!user?.walletAddress || !user?.onChainVerified) return
-      
+
       try {
         setIsLoadingStats(true)
         const stats = await getPlayerStats(user.walletAddress)
@@ -104,255 +104,175 @@ function Settings({ onClose }: SettingsProps) {
   }, [user?.walletAddress, user?.onChainVerified, getPlayerStats])
 
   return (
-    <div className="h-full flex flex-col animate-fade-in overflow-hidden" style={{ background: 'linear-gradient(135deg, #0A0A0F 0%, #1A1A20 50%, #0A0A0F 100%)' }}>
+    <div className="h-full flex flex-col animate-fade-in bg-[#0A0A0F] relative overflow-hidden">
+      {/* Cinematic Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-600/10 rounded-full blur-[120px] opacity-20"></div>
+        <div className="absolute top-1/4 -left-20 w-64 h-64 bg-pink-600/10 rounded-full blur-[80px] opacity-20"></div>
+      </div>
+
       <UserInfo />
-      <div 
-        className="flex-1 flex flex-col rounded-lg shadow-2xl p-4 mx-4 border-3 border-squid-border bg-squid-gray overflow-hidden"
-        style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}
-      >
-        
+
+      <div className="flex-1 flex flex-col p-4 relative z-10 overflow-hidden">
+
         {/* Header */}
-        <div className="flex-shrink-0 mb-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-squid-white text-lg font-squid-heading font-bold uppercase tracking-wider flex items-center">
-              {t('settings.title')}
-            </h3>
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded border-2 border-squid-border bg-squid-black transition-all duration-150"
-                style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
-                onPointerDown={(e) => {
-                  e.currentTarget.style.transform = 'translate(2px, 2px)'
-                  e.currentTarget.style.boxShadow = '0px 0px 0px 0px #0A0A0F'
-                }}
-                onPointerUp={(e) => {
-                  e.currentTarget.style.transform = 'translate(0, 0)'
-                  e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
-                }}
-                aria-label="Close settings"
-              >
-                <svg className="w-4 h-4 text-squid-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-        </div>
-        
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-          {/* User Info Section */}
-          <div 
-            className="rounded-lg p-3 border-3 border-squid-border bg-squid-black"
-            style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}
-          >
-            <h4 className="text-squid-white text-sm font-squid-heading font-bold uppercase mb-2 flex items-center">
-              {t('settings.account.title')}
-            </h4>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-squid-white/70 text-xs font-squid">{t('settings.account.worldId')}</span>
-                <span 
-                  className="text-squid-white text-xs font-squid-mono px-2 py-1 rounded border-2 border-squid-border bg-squid-gray"
-                  style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
-                >
-                  {user?.walletAddress ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}` : t('settings.account.notConnected')}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-squid-white/70 text-xs font-squid">{t('settings.account.verification')}</span>
-                <span className={`text-xs font-squid-heading font-bold uppercase ${user?.verified ? 'text-squid-green' : 'text-squid-red'}`}>
-                  {user?.verified ? t('settings.account.verified') : t('settings.account.notVerified')}
-                </span>
-              </div>
-            </div>
-            
-            {/* Logout Button */}
+        <div className="flex items-center justify-between mb-6 px-2">
+          <h3 className="text-white text-2xl font-squid-heading font-bold uppercase tracking-widest flex items-center gap-3">
+            <span className="text-3xl">⚙️</span>
+            {t('settings.title')}
+          </h3>
+          {onClose && (
             <button
-              onClick={logout}
-              className="mt-3 w-full px-3 py-2 text-squid-red border-3 border-squid-red rounded text-xs font-squid-heading font-bold uppercase transition-all duration-150"
-              style={{
-                background: 'rgba(220, 20, 60, 0.1)',
-                boxShadow: '3px 3px 0px 0px #DC143C'
-              }}
-              onPointerDown={(e) => {
-                e.currentTarget.style.transform = 'translate(3px, 3px)'
-                e.currentTarget.style.boxShadow = '0px 0px 0px 0px #DC143C'
-              }}
-              onPointerUp={(e) => {
-                e.currentTarget.style.transform = 'translate(0, 0)'
-                e.currentTarget.style.boxShadow = '3px 3px 0px 0px #DC143C'
-              }}
-              aria-label="Logout from account"
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-zinc-800 text-white flex items-center justify-center hover:bg-zinc-700 transition-colors"
             >
-              <div className="flex items-center justify-center space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span>{t('userInfo.logout')}</span>
-              </div>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-          </div>
+          )}
+        </div>
 
-          {/* Language Section */}
-          <div 
-            className="rounded-lg p-3 border-3 border-squid-border bg-squid-black"
-            style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}
-          >
-            <h4 className="text-squid-white text-sm font-squid-heading font-bold uppercase mb-2 flex items-center">
-              {t('settings.language.title')}
-            </h4>
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="text-squid-white/70 text-xs font-squid">{t('settings.language.description')}</div>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto space-y-4 pb-8 pr-1">
+
+          {/* Account Section */}
+          <div className="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-5">
+            <h4 className="text-zinc-500 font-squid text-xs uppercase tracking-widest mb-4 ml-1">Account</h4>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-lg shadow-lg shadow-pink-500/20">
+                    👤
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm">Wallet</p>
+                    <p className="text-zinc-500 text-xs font-mono">
+                      {user?.walletAddress ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}` : t('settings.account.notConnected')}
+                    </p>
+                  </div>
+                </div>
+                <div className={`
+                      px-2 py-1 rounded text-[10px] font-bold uppercase border 
+                      ${user?.verified
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                    : 'bg-red-500/10 border-red-500/30 text-red-400'
+                  }
+                   `}>
+                  {user?.verified ? t('settings.account.verified') : t('settings.account.notVerified')}
+                </div>
               </div>
-              <LanguageSwitcher />
+
+              <div className="h-px bg-white/5 mx-2"></div>
+
+              <button
+                onClick={logout}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500/10 text-red-500 font-bold uppercase text-xs hover:bg-red-500/20 transition-all border border-red-500/20"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                {t('userInfo.logout')}
+              </button>
             </div>
           </div>
 
-          {/* Game Settings Section */}
-          <div 
-            className="rounded-lg p-3 border-3 border-squid-border bg-squid-black"
-            style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}
-          >
-            <h4 className="text-squid-white text-sm font-squid-heading font-bold uppercase mb-2 flex items-center">
-              {t('settings.game.title')}
-            </h4>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center gap-3">
-                <div>
-                  <div className="text-squid-white text-xs font-squid font-medium">{t('settings.game.soundEffects.title')}</div>
-                  <div className="text-squid-white/70 text-xs font-squid">{t('settings.game.soundEffects.description')}</div>
+          {/* Preferences */}
+          <div className="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-5">
+            <h4 className="text-zinc-500 font-squid text-xs uppercase tracking-widest mb-4 ml-1">Preferences</h4>
+
+            <div className="space-y-4">
+              {/* Language */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🌐</span>
+                  <div>
+                    <p className="text-white font-bold text-sm">{t('settings.language.title')}</p>
+                  </div>
+                </div>
+                <div className="scale-90 origin-right">
+                  <LanguageSwitcher />
+                </div>
+              </div>
+
+              {/* Sound */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🔊</span>
+                  <div>
+                    <p className="text-white font-bold text-sm">{t('settings.game.soundEffects.title')}</p>
+                  </div>
                 </div>
                 <button
                   onClick={handleSoundToggle}
-                  className={`relative inline-flex h-7 w-12 items-center rounded border-3 border-squid-black transition-all duration-150 ${
-                    soundEnabled ? 'bg-squid-green' : 'bg-squid-gray'
-                  }`}
-                  style={{ boxShadow: soundEnabled ? '0 0 10px rgba(0, 168, 120, 0.5)' : 'none' }}
-                  aria-label="Toggle sound effects"
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${soundEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
+                    }`}
                 >
                   <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-squid-black border-2 border-squid-white transition-transform ${
-                      soundEnabled ? 'translate-x-6' : 'translate-x-1'
-                    }`}
+                    className={`inline-block w-5 h-5 transform bg-white rounded-full shadow transition-transform duration-200 ease-in-out mt-0.5 ml-0.5 ${soundEnabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>
 
-              <div className="flex justify-between items-center gap-3">
-                <div>
-                  <div className="text-squid-white text-xs font-squid font-medium">{t('settings.game.vibration.title')}</div>
-                  <div className="text-squid-white/70 text-xs font-squid">{t('settings.game.vibration.description')}</div>
+              {/* Vibration */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">📳</span>
+                  <div>
+                    <p className="text-white font-bold text-sm">{t('settings.game.vibration.title')}</p>
+                  </div>
                 </div>
                 <button
                   onClick={handleVibrationToggle}
-                  className={`relative inline-flex h-7 w-12 items-center rounded border-3 border-squid-black transition-all duration-150 ${
-                    vibrationEnabled ? 'bg-squid-green' : 'bg-squid-gray'
-                  }`}
-                  style={{ boxShadow: vibrationEnabled ? '0 0 10px rgba(0, 168, 120, 0.5)' : 'none' }}
-                  aria-label="Toggle vibration"
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${vibrationEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
+                    }`}
                 >
                   <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-squid-black border-2 border-squid-white transition-transform ${
-                      vibrationEnabled ? 'translate-x-6' : 'translate-x-1'
-                    }`}
+                    className={`inline-block w-5 h-5 transform bg-white rounded-full shadow transition-transform duration-200 ease-in-out mt-0.5 ml-0.5 ${vibrationEnabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Stats Section */}
-          <div 
-            className="rounded-lg p-3 border-3 border-squid-border bg-squid-black"
-            style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}
-          >
-            <div className="flex justify-between items-center mb-3">
-              <h4 className="text-squid-white text-sm font-squid-heading font-bold uppercase flex items-center">
-                {t('settings.stats.title')}
-              </h4>
+          {/* Statistics */}
+          <div className="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-zinc-500 font-squid text-xs uppercase tracking-widest ml-1">Your Stats</h4>
               <button
                 onClick={handleResetStats}
-                className="px-2 py-1 text-squid-red border-2 border-squid-red rounded text-xs font-squid-heading font-bold uppercase transition-all duration-150"
-                style={{
-                  background: 'rgba(220, 20, 60, 0.1)',
-                  boxShadow: '2px 2px 0px 0px #DC143C'
-                }}
-                onPointerDown={(e) => {
-                  e.currentTarget.style.transform = 'translate(2px, 2px)'
-                  e.currentTarget.style.boxShadow = '0px 0px 0px 0px #DC143C'
-                }}
-                onPointerUp={(e) => {
-                  e.currentTarget.style.transform = 'translate(0, 0)'
-                  e.currentTarget.style.boxShadow = '2px 2px 0px 0px #DC143C'
-                }}
-                aria-label="Reset statistics"
+                className="text-[10px] text-red-500 font-bold uppercase hover:text-red-400"
               >
                 {t('settings.stats.resetStats')}
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div 
-                className="rounded p-2 text-center border-2 border-squid-pink bg-squid-pink/10"
-                style={{ boxShadow: '2px 2px 0px 0px #FF1F8C' }}
-              >
-                <div className="text-squid-white text-sm font-squid-mono font-bold neon-text-pink">{(() => {
-                  const stored = localStorage.getItem('rlgl-highscore')
-                  if (stored) {
-                    const validation = sanitizeLocalStorageData('rlgl-highscore', stored)
-                    if (validation.isValid) {
-                      return parseInt(stored, 10).toLocaleString()
-                    } else {
-                      console.warn('High score validation failed:', validation.errors)
-                      localStorage.removeItem('rlgl-highscore')
-                    }
-                  }
-                  return '0'
-                })()}</div>
-                <div className="text-squid-white/70 text-xs font-squid">{t('settings.stats.highScore')}</div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-black/30 p-4 rounded-2xl border border-white/5 text-center">
+                <div className="text-2xl font-mono font-bold text-pink-500 drop-shadow-glow">
+                  {(() => {
+                    const stored = localStorage.getItem('rlgl-highscore')
+                    if (stored) return parseInt(stored, 10).toLocaleString()
+                    return '0'
+                  })()}
+                </div>
+                <div className="text-[10px] text-zinc-500 uppercase font-bold mt-1">High Score</div>
               </div>
-              <div 
-                className="rounded p-2 text-center border-2 border-squid-teal bg-squid-teal/10"
-                style={{ boxShadow: '2px 2px 0px 0px #00D9C0' }}
-              >
-                <div className="text-squid-white text-sm font-squid-mono font-bold neon-text-teal">
+
+              <div className="bg-black/30 p-4 rounded-2xl border border-white/5 text-center">
+                <div className="text-2xl font-mono font-bold text-teal-400 drop-shadow-glow">
                   {isLoadingStats ? '...' : (contractStats?.totalGamesPlayed?.toLocaleString() || '0')}
                 </div>
-                <div className="text-squid-white/70 text-xs font-squid">{t('settings.stats.gamesPlayed')}</div>
+                <div className="text-[10px] text-zinc-500 uppercase font-bold mt-1">Games Played</div>
               </div>
             </div>
           </div>
 
-          {/* About Section */}
-          <div 
-            className="rounded-lg p-3 border-3 border-squid-border bg-squid-black"
-            style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}
-          >
-            <h4 className="text-squid-white text-sm font-squid-heading font-bold uppercase mb-2 flex items-center">
-              {t('settings.about.title')}
-            </h4>
-            <div className="space-y-2 text-center">
-              {/* Logo */}
-              <div className="flex justify-center">
-                <img 
-                  src="/logo.webp" 
-                  alt={t('app.title')}
-                  className="h-8 w-auto drop-shadow-lg"
-                />
-              </div>
-              <div>
-                <div className="text-squid-white text-xs font-squid-heading font-bold uppercase">{t('settings.about.version')}</div>
-                <div className="text-squid-teal text-xs font-squid-mono">1.1.0</div>
-              </div>
-              <div>
-                <div className="text-squid-white/60 text-xs font-squid">
-                  {t('settings.about.copyright')}
-                </div>
-              </div>
-            </div>
+          {/* About */}
+          <div className="text-center py-4 opacity-50">
+            <img src="/logo.webp" className="h-6 w-auto mx-auto mb-2 opacity-50 grayscale hover:grayscale-0 transition-all" alt="Logo" />
+            <p className="text-[10px] text-zinc-600 font-mono">v1.1.0 • {t('settings.about.copyright')}</p>
           </div>
+
         </div>
       </div>
     </div>

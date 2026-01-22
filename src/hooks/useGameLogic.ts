@@ -181,10 +181,16 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
         return false
       }
 
-      const onChainStarted = await contract.startGame()
-      if (!onChainStarted) {
-        alert('Failed to start game. Please try again.')
-        return false
+      // Bypass contract call for dev users
+      const isDevUser = user?.walletAddress === '0x1234567890123456789012345678901234567890' ||
+        user?.walletAddress === '0x2345678901234567890123456789012345678901'
+
+      if (!isDevUser) {
+        const onChainStarted = await contract.startGame()
+        if (!onChainStarted) {
+          alert('Failed to start game. Please try again.')
+          return false
+        }
       }
       try { turnManager.decrementTurnOptimistic?.() } catch { }
       await turnManager.refreshTurnStatus(true)

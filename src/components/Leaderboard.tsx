@@ -34,19 +34,19 @@ const generateFriendlyName = (address: string): string => {
     'Swift', 'Brave', 'Quick', 'Sharp', 'Clever', 'Bold', 'Fast', 'Smart',
     'Agile', 'Fierce', 'Mighty', 'Elite', 'Pro', 'Epic', 'Legendary', 'Master'
   ]
-  
+
   const nouns = [
     'Player', 'Gamer', 'Champion', 'Hero', 'Warrior', 'Runner', 'Ninja',
     'Ace', 'Star', 'Legend', 'Phantom', 'Shadow', 'Tiger', 'Eagle', 'Wolf', 'Fox'
   ]
-  
+
   const addressLower = address.toLowerCase()
   const hash = addressLower.slice(2)
-  
+
   const adjIndex = parseInt(hash.slice(0, 8), 16) % adjectives.length
   const nounIndex = parseInt(hash.slice(8, 16), 16) % nouns.length
   const suffix = address.slice(-4)
-  
+
   return `${adjectives[adjIndex]} ${nouns[nounIndex]} ${suffix}`
 }
 
@@ -66,7 +66,7 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 hours
 function Leaderboard() {
   const { t } = useTranslation()
   const { user } = useAuth()
-  
+
   const [selectedMode, setSelectedMode] = useState<GameMode>(() => {
     const saved = localStorage.getItem('leaderboard-mode')
     return (saved as GameMode) || 'Classic'
@@ -76,7 +76,7 @@ function Leaderboard() {
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [bannedAddresses, setBannedAddresses] = useState<string[]>([])
-  
+
   const fetchInProgress = useRef(false)
   const hasFetchedOnce = useRef(false)
 
@@ -88,7 +88,7 @@ function Leaderboard() {
       try {
         const arr = await worldIDVerificationService.getBans()
         setBannedAddresses(arr.map(a => a.toLowerCase()))
-      } catch {}
+      } catch { }
     }
     loadBans()
     const interval = setInterval(loadBans, 60000)
@@ -141,12 +141,12 @@ function Leaderboard() {
       }
       return displayName
     }
-    
+
     const cached = getUsernameFromCache(playerAddress) || usernameCache.get(playerAddress.toLowerCase())
     if (cached) return cached
-    
+
     const friendlyName = generateFriendlyName(playerAddress)
-    
+
     // Background resolution
     setTimeout(async () => {
       try {
@@ -154,16 +154,16 @@ function Leaderboard() {
           const worldIdUser = await MiniKit.getUserByAddress(playerAddress)
           if (worldIdUser?.username) {
             setUsernameToCache(playerAddress, worldIdUser.username)
-            setLeaderboard(prev => prev.map(entry => 
-              entry.player.toLowerCase() === playerAddress.toLowerCase() 
+            setLeaderboard(prev => prev.map(entry =>
+              entry.player.toLowerCase() === playerAddress.toLowerCase()
                 ? { ...entry, displayName: worldIdUser.username }
                 : entry
             ))
           }
         }
-      } catch {}
+      } catch { }
     }, 0)
-    
+
     return friendlyName
   }, [user, getUsernameFromCache, setUsernameToCache])
 
@@ -179,7 +179,7 @@ function Leaderboard() {
       const cacheTsKey = getCacheTsKey(mode)
       const cached = localStorage.getItem(cacheKey)
       const timestamp = localStorage.getItem(cacheTsKey)
-      
+
       if (cached && timestamp) {
         const age = Date.now() - parseInt(timestamp)
         if (age < CACHE_DURATION) {
@@ -215,13 +215,13 @@ function Leaderboard() {
       }))
       localStorage.setItem(getCacheKey(mode), JSON.stringify(serialized))
       localStorage.setItem(getCacheTsKey(mode), Date.now().toString())
-    } catch {}
+    } catch { }
   }, [])
 
   // Main fetch function
   const fetchLeaderboard = useCallback(async (force = false, mode: GameMode = selectedMode) => {
     if (fetchInProgress.current) return
-    
+
     // Check cache first (short circuit if not forcing refresh)
     if (!force) {
       const cached = getCachedLeaderboard(mode)
@@ -237,27 +237,27 @@ function Leaderboard() {
         return
       }
     }
-    
+
     fetchInProgress.current = true
     if (!hasFetchedOnce.current) setIsLoading(true)
     setError(null)
-    
+
     try {
       // Fetch from API (Supabase backed)
       // Note: This replaces the contract call to reduce RPC usage
       const apiUrl = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_VERIFICATION_API_BASE || 'http://localhost:3000';
       const response = await fetch(`${apiUrl}/leaderboard?mode=${mode}&limit=10`);
-      
+
       if (!response.ok) {
         throw new Error(`API Error: ${response.status}`);
       }
-      
+
       const { leaderboard: apiData, lastUpdated: serverLastUpdated } = await response.json();
-      
+
       if (!Array.isArray(apiData)) {
         throw new Error('Invalid API response');
       }
-      
+
       // Transform API data to LeaderboardEntry
       const data: LeaderboardEntry[] = apiData.map((item: any) => ({
         player: item.player,
@@ -270,7 +270,7 @@ function Leaderboard() {
         displayName: item.username || undefined,
         avatar: item.avatar || undefined
       }));
-      
+
       // Filter banned and process
       const filtered = data
         .filter(e => !bannedAddresses.includes(String(e.player).toLowerCase()))
@@ -281,21 +281,21 @@ function Leaderboard() {
           displayName: entry.displayName || getPlayerDisplayName(entry.player), // Use API username if available
           isCurrentUser: isCurrentUser(entry.player)
         }))
-      
+
       setLeaderboard(filtered)
       setCachedLeaderboard(mode, filtered)
       setLastUpdated(serverLastUpdated ? new Date(serverLastUpdated) : new Date())
       hasFetchedOnce.current = true
-      
+
     } catch (err) {
       console.error('Leaderboard fetch error:', err)
-      
+
       // Try contract fallback if API fails
       try {
         console.log('⚠️ API failed, falling back to contract call...');
         const data = await getTopScores(10, mode);
         if (data && Array.isArray(data)) {
-           const filtered = data
+          const filtered = data
             .filter(e => !bannedAddresses.includes(String(e.player).toLowerCase()))
             .slice(0, 10)
             .map((entry, index) => ({
@@ -313,7 +313,7 @@ function Leaderboard() {
       } catch (contractErr) {
         console.error('Contract fallback failed:', contractErr);
       }
-      
+
       // Try cache as final fallback
       const cached = getCachedLeaderboard(mode)
       if (cached && cached.length > 0) {
@@ -347,7 +347,7 @@ function Leaderboard() {
   useEffect(() => {
     // Background refresh every 12 hours
     const interval = setInterval(() => fetchLeaderboard(true), 12 * 60 * 60 * 1000)
-    
+
     return () => clearInterval(interval)
   }, [fetchLeaderboard])
 
@@ -364,33 +364,33 @@ function Leaderboard() {
     return new Date(timestamp).toLocaleDateString()
   }
 
-  const getRankEmoji = (rank: number) => {
-    switch (rank) {
-      case 1: return '🥇'
-      case 2: return '🥈'
-      case 3: return '🥉'
-      default: return `#${rank}`
-    }
-  }
+
 
   // Mode selector component
   const ModeSelector = () => (
-    <div className="flex items-center justify-center mb-2">
-      <div className="flex rounded border-2 border-squid-border overflow-hidden bg-squid-black" style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}>
+    <div className="flex items-center justify-center mb-4">
+      <div className="flex p-1 rounded-2xl bg-zinc-900/50 backdrop-blur-md border border-white/10">
         {(['Classic', 'Arcade', 'WhackLight'] as GameMode[]).map((mode) => (
           <button
             key={mode}
             onClick={() => handleModeChange(mode)}
-            className={`px-3 py-1.5 text-xs font-squid-heading font-bold uppercase transition-all duration-150 ${
-              selectedMode === mode
-                ? 'text-squid-black'
-                : 'text-squid-white/70 hover:text-squid-white'
-            }`}
-            style={{
-              background: selectedMode === mode ? '#00D9C0' : 'transparent'
-            }}
+            className={`relative px-4 py-2 rounded-xl text-xs font-squid-heading font-bold uppercase transition-all duration-300 ${selectedMode === mode
+              ? 'text-white shadow-lg'
+              : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
           >
-            {getGameModeEmoji(mode)} {mode === 'WhackLight' ? 'Whack' : mode}
+            {selectedMode === mode && (
+              <div
+                className={`absolute inset-0 rounded-xl opacity-80 ${mode === 'Classic' ? 'bg-gradient-to-r from-pink-600 to-rose-600' :
+                  mode === 'Arcade' ? 'bg-gradient-to-r from-teal-500 to-emerald-500' :
+                    'bg-gradient-to-r from-emerald-600 to-green-600'
+                  }`}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <span className="text-base">{getGameModeEmoji(mode)}</span>
+              {mode === 'WhackLight' ? 'Whack' : mode}
+            </span>
           </button>
         ))}
       </div>
@@ -400,30 +400,17 @@ function Leaderboard() {
   // Loading state
   if (isLoading && leaderboard.length === 0) {
     return (
-      <div className="h-full flex flex-col animate-fade-in overflow-hidden">
-        <div className="flex-1 flex flex-col rounded-lg shadow-2xl p-3 mx-2 border-3 border-squid-border bg-squid-gray overflow-hidden" style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
-          <div className="flex-shrink-0 mb-2">
-            <h3 className="text-squid-white text-lg font-squid-heading font-bold uppercase tracking-wider flex items-center">
-              <span className="mr-2 text-xl">🏆</span>
-              Top 5
-            </h3>
-          </div>
-          
+      <div className="h-full flex flex-col animate-fade-in bg-[#0A0A0F]">
+        <UserInfo />
+        <div className="flex-1 flex flex-col p-4">
           <ModeSelector />
-          
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-3">
             {Array.from({ length: 5 }, (_, i) => (
-              <div key={i} className="animate-pulse">
-                <div 
-                  className="flex items-center space-x-3 p-2 rounded-lg border-2 border-squid-border bg-squid-gray"
-                  style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
-                >
-                  <div className="w-8 h-8 rounded-full border-2 border-squid-black bg-squid-green/30"></div>
-                  <div className="flex-1">
-                    <div className="h-3 bg-squid-border rounded w-3/4 mb-1"></div>
-                    <div className="h-2 bg-squid-border rounded w-1/2"></div>
-                  </div>
-                  <div className="h-4 bg-squid-border rounded w-12"></div>
+              <div key={i} className="animate-pulse flex items-center gap-3 p-3 rounded-2xl bg-zinc-900/30 border border-white/5">
+                <div className="w-8 h-8 rounded-full bg-white/5"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-white/5 rounded w-1/3"></div>
+                  <div className="h-2 bg-white/5 rounded w-1/4"></div>
                 </div>
               </div>
             ))}
@@ -433,31 +420,23 @@ function Leaderboard() {
     )
   }
 
-  // Error state with no data
+  // Error state
   if (error && leaderboard.length === 0) {
     return (
-      <div className="h-full flex flex-col animate-fade-in overflow-hidden">
-        <div className="flex-1 flex flex-col rounded-lg shadow-2xl p-3 mx-2 border-3 border-squid-border bg-squid-gray overflow-hidden" style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
-          <div className="flex-shrink-0 mb-2">
-            <h3 className="text-squid-white text-lg font-squid-heading font-bold uppercase tracking-wider flex items-center">
-              <span className="mr-2 text-xl">🏆</span>
-              Top 10
-            </h3>
+      <div className="h-full flex flex-col animate-fade-in bg-[#0A0A0F]">
+        <UserInfo />
+        <div className="flex-1 flex flex-col p-4 items-center justify-center text-center">
+          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-4 animate-bounce">
+            <span className="text-4xl">⚠️</span>
           </div>
-          
-          <ModeSelector />
-          
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <div className="text-4xl mb-3">⚠️</div>
-            <div className="text-squid-red text-sm mb-4 font-squid font-semibold">{error}</div>
-            <button 
-              onClick={() => fetchLeaderboard(true)}
-              className="px-4 py-2 rounded border-3 border-squid-black text-squid-black font-squid-heading font-bold uppercase text-sm"
-              style={{ background: '#00A878', boxShadow: '3px 3px 0px 0px #0A0A0F' }}
-            >
-              Retry
-            </button>
-          </div>
+          <h3 className="text-white font-squid-heading text-lg mb-2">{t('leaderboard.error')}</h3>
+          <p className="text-gray-400 text-sm mb-6 max-w-xs">{error}</p>
+          <button
+            onClick={() => fetchLeaderboard(true)}
+            className="px-6 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 text-white font-bold uppercase text-sm shadow-lg shadow-pink-600/20"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     )
@@ -466,25 +445,14 @@ function Leaderboard() {
   // Empty state
   if (leaderboard.length === 0) {
     return (
-      <div className="h-full flex flex-col animate-fade-in overflow-hidden">
-        <div className="flex-1 flex flex-col rounded-lg shadow-2xl p-3 mx-2 border-3 border-squid-border bg-squid-gray overflow-hidden" style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
-          <div className="flex-shrink-0 mb-2">
-            <h3 className="text-squid-white text-lg font-squid-heading font-bold uppercase tracking-wider flex items-center">
-              <span className="mr-2 text-xl">🏆</span>
-              Top 10
-            </h3>
-          </div>
-          
+      <div className="h-full flex flex-col animate-fade-in bg-[#0A0A0F]">
+        <UserInfo />
+        <div className="flex-1 flex flex-col p-4">
           <ModeSelector />
-          
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <div className="text-4xl mb-4">🎮</div>
-            <div className="text-squid-white text-lg font-squid-heading font-bold mb-2">
-              No scores yet!
-            </div>
-            <div className="text-squid-white/60 text-sm font-squid">
-              Be the first to set a high score in {selectedMode}
-            </div>
+          <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
+            <span className="text-6xl mb-4 grayscale">🏆</span>
+            <p className="text-white font-squid-heading text-lg">No Scores Yet</p>
+            <p className="text-gray-500 text-sm mt-1">Be the first to claim the throne!</p>
           </div>
         </div>
       </div>
@@ -493,82 +461,86 @@ function Leaderboard() {
 
   // Main leaderboard view
   return (
-    <div className="h-full flex flex-col animate-fade-in overflow-hidden">
+    <div className="h-full flex flex-col animate-fade-in bg-[#0A0A0F relative overflow-hidden">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px] opacity-30"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-pink-600/10 rounded-full blur-[100px] opacity-20"></div>
+      </div>
+
       <UserInfo />
-      <div className="flex-1 flex flex-col rounded-lg shadow-2xl p-3 mx-3 border-3 border-squid-border bg-squid-gray overflow-hidden" style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
-        
-        {/* Header */}
-        <div className="flex-shrink-0 mb-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-squid-white text-lg font-squid-heading font-bold uppercase tracking-wider flex items-center">
-                <span className="mr-2 text-xl">🏆</span>
-                Top 10
-              </h3>
-              {lastUpdated && (
-                <p className="text-squid-white/40 text-xs mt-0.5 font-squid-mono">
-                  {lastUpdated.toLocaleTimeString()}
-                </p>
-              )}
-            </div>
-            {error && (
-              <div className="text-squid-red text-xs px-2 py-1 rounded border-2 border-squid-red bg-squid-red/10 font-squid-heading font-bold uppercase">
-                ⚠️ Cached
-              </div>
-            )}
-          </div>
+
+      <div className="flex-1 flex flex-col p-4 relative z-10 overflow-hidden">
+        <div className="flex items-center justify-between mb-4 px-2">
+          <h3 className="text-white font-squid-heading font-bold text-xl uppercase tracking-widest flex items-center gap-2">
+            <span className="text-yellow-500 text-2xl drop-shadow-glow">👑</span>
+            Top 10
+          </h3>
+          {lastUpdated && (
+            <span className="text-xs text-zinc-500 font-mono">
+              {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
         </div>
 
-        {/* Mode Selector */}
         <ModeSelector />
 
-        {/* Leaderboard entries */}
-        <div className="flex-1 overflow-y-auto space-y-2 pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0, 217, 192, 0.5) transparent' }}>
-          {leaderboard.map((entry) => {
+        <div className="flex-1 overflow-y-auto space-y-3 pb-safe-bottom pr-1">
+          {leaderboard.map((entry, index) => {
             const isCurrentUserEntry = isCurrentUser(entry.player)
             const displayName = entry.displayName || generateFriendlyName(entry.player)
-            
+            const isTop3 = index < 3
+
             return (
               <div
                 key={`${entry.player}-${entry.timestamp}-${entry.gameMode}`}
                 className={`
-                  flex items-center space-x-3 p-2 rounded-lg border-2 transition-all duration-150
-                  ${isCurrentUserEntry ? 'border-squid-pink' : 'border-squid-border'}
+                  relative group flex items-center gap-4 p-3 rounded-2xl border transition-all duration-300
+                  ${isCurrentUserEntry
+                    ? 'bg-pink-600/10 border-pink-500/50 shadow-[0_0_20px_rgba(236,72,153,0.1)]'
+                    : 'bg-zinc-900/40 border-white/5 hover:bg-zinc-800/60'
+                  }
                 `}
-                style={{
-                  background: isCurrentUserEntry ? 'rgba(255, 31, 140, 0.15)' : '#1A1A20',
-                  boxShadow: isCurrentUserEntry ? '3px 3px 0px 0px #FF1F8C' : '2px 2px 0px 0px #0A0A0F'
-                }}
               >
-                {/* Rank */}
-                <div className="w-10 text-center font-squid-heading font-bold text-lg neon-text-teal">
-                  {getRankEmoji(entry.rank)}
+                {/* Rank Badge */}
+                <div className={`
+                   flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg
+                   ${index === 0 ? 'bg-gradient-to-br from-yellow-300 to-yellow-600 text-black shadow-lg shadow-yellow-500/20' :
+                    index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-black shadow-lg shadow-gray-400/20' :
+                      index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-700 text-black shadow-lg shadow-orange-500/20' :
+                        'bg-zinc-800 text-gray-500'
+                  }
+                `}>
+                  {index + 1}
                 </div>
-                
+
                 {/* Player info */}
                 <div className="flex-1 min-w-0">
-                  <div className={`font-squid font-semibold text-sm truncate ${
-                    isCurrentUserEntry ? 'text-squid-pink' : 'text-squid-white'
-                  }`}>
-                    {displayName}
+                  <div className="flex items-center gap-2">
+                    <span className={`font-bold truncate text-sm ${isCurrentUserEntry ? 'text-pink-400' : 'text-white'}`}>
+                      {displayName}
+                    </span>
                     {isCurrentUserEntry && (
-                      <span className="ml-1 text-xs px-1 py-0.5 rounded border border-squid-pink font-squid-heading font-bold uppercase" style={{ background: 'rgba(255, 31, 140, 0.2)', color: '#FF1F8C' }}>
+                      <span className="text-[10px] bg-pink-500/20 text-pink-300 px-1.5 py-0.5 rounded border border-pink-500/30 uppercase font-bold tracking-wider">
                         You
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-squid-white/60 font-squid-mono">
-                    R{entry.round} • {formatDate(entry.timestamp)}
+                  <div className="text-xs text-gray-500 font-mono mt-0.5 flex items-center gap-2">
+                    <span>Round {entry.round}</span>
+                    <span className="w-1 h-1 rounded-full bg-gray-700"></span>
+                    <span>{formatDate(entry.timestamp)}</span>
                   </div>
                 </div>
-                
+
                 {/* Score */}
                 <div className="text-right">
-                  <div className="font-squid-mono font-bold text-sm neon-text-green">
+                  <div className={`font-mono font-bold text-lg leading-none ${isTop3 ? 'text-emerald-400' : 'text-white'
+                    }`}>
                     {entry.score.toLocaleString()}
                   </div>
-                  <div className="text-xs text-squid-white/60 font-squid">
-                    {(entry.score * 0.1).toFixed(1)} RLGL
+                  <div className="text-[10px] text-gray-500 font-bold uppercase mt-1">
+                    Points
                   </div>
                 </div>
               </div>
@@ -576,20 +548,19 @@ function Leaderboard() {
           })}
         </div>
 
-        {/* Footer */}
-        <div className="flex-shrink-0 mt-2 pt-2 border-t-2 border-squid-border">
-          <div className="flex items-center justify-between">
-            <button 
-              onClick={() => fetchLeaderboard(true)}
-              className="px-3 py-1.5 rounded border-2 border-squid-border text-squid-white/80 font-squid-heading font-bold uppercase text-xs hover:border-squid-green hover:text-squid-green transition-colors"
-              disabled={fetchInProgress.current}
-            >
-              🔄 Refresh
-            </button>
-            <div className="text-squid-white/60 text-xs font-squid">
-              {t('leaderboard.playToEarn')}
-            </div>
-          </div>
+        {/* Floating Refresh Button */}
+        <div className="absolute bottom-6 right-6 z-20">
+          <button
+            onClick={() => fetchLeaderboard(true)}
+            disabled={fetchInProgress.current}
+            className={`
+               w-12 h-12 rounded-full bg-teal-500 text-black flex items-center justify-center shadow-lg shadow-teal-500/30
+               transition-all duration-300 hover:scale-110 active:scale-95
+               ${fetchInProgress.current ? 'opacity-50 cursor-not-allowed' : 'hover:bg-teal-400'}
+             `}
+          >
+            <span className={`text-xl ${fetchInProgress.current ? 'animate-spin' : ''}`}>🔄</span>
+          </button>
         </div>
       </div>
     </div>

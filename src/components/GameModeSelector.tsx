@@ -36,7 +36,7 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
   const { verificationLevel } = useAuth()
   const { getVerificationMultipliers } = useContract()
   const haptics = useHapticFeedback()
-  
+
   const [verificationBenefits, setVerificationBenefits] = useState<{
     scoreMultiplier: number
     tokenMultiplier: number
@@ -51,10 +51,10 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
           // Map verification level to appropriate multiplier
           let scoreMultiplier = 1
           let tokenMultiplier = 1
-          
+
           // Convert verification level to lowercase string for comparison
           const levelStr = verificationLevel?.toLowerCase() || ''
-          
+
           switch (levelStr) {
             case 'orb_plus':
               scoreMultiplier = multipliers.orbPlusMultiplier / 100
@@ -76,7 +76,7 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
               scoreMultiplier = 1
               tokenMultiplier = 1
           }
-          
+
           setVerificationBenefits({
             scoreMultiplier,
             tokenMultiplier,
@@ -87,7 +87,7 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
         }
       }
     }
-    
+
     loadVerificationBenefits()
   }, [verificationLevel, getVerificationMultipliers])
 
@@ -98,7 +98,7 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
       onShowBuyTurns?.()
       return
     }
-    
+
     haptics.buttonPress()
     onModeChange(mode)
   }
@@ -106,42 +106,40 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
   const StartCTA: React.FC = () => {
     if (!userAuthenticated) return null
     return (
-      <div className="mt-3">
+      <div className="mt-2 animate-slide-up">
         <Button
           onClick={onStartGame}
           disabled={!!buttonDisabled}
           variant={buttonDisabled ? 'secondary' : 'primary'}
-          size="md"
-          className="w-full"
+          size="lg"
+          className="w-full relative overflow-hidden group shadow-[0_0_15px_rgba(255,31,140,0.5)] border-none"
         >
           {turnLoading ? (
             <Stack spacing="xs" className="items-center justify-center">
               <Stack direction="row" spacing="sm" className="items-center">
-                <div className="w-4 h-4 border-2 border-pure-white border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm font-bold">{t('startMenu.buttons.checkingTurns')}</span>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-base font-bold tracking-wider">{t('startMenu.buttons.checkingTurns')}</span>
               </Stack>
             </Stack>
           ) : turnError ? (
             <div className="flex items-center justify-center space-x-2">
-              <span className="text-lg">⚠️</span>
-              <span className="text-sm font-bold">{t('startMenu.buttons.startAnyway')}</span>
+              <span className="text-xl">⚠️</span>
+              <span className="text-base font-bold uppercase tracking-wider">{t('startMenu.buttons.startAnyway')}</span>
             </div>
           ) : !turnStatus ? (
             <div className="flex items-center justify-center space-x-2">
-              <div className="w-4 h-4 border-2 border-pure-white border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm font-bold">{t('startMenu.buttons.checkingTurns')}</span>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-base font-bold uppercase tracking-wider">{t('startMenu.buttons.checkingTurns')}</span>
             </div>
           ) : turnStatus.availableTurns <= 0 && !turnStatus.hasActiveWeeklyPass ? (
-            t('startMenu.buttons.noTurns')
+            <span className="uppercase tracking-wider font-bold">{t('startMenu.buttons.noTurns')}</span>
           ) : (
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-base">🚦</span>
-              <span>
-                {turnStatus.hasActiveWeeklyPass
-                  ? t('startMenu.buttons.startGame', { turns: '∞' })
-                  : t('startMenu.buttons.startGame', { turns: turnStatus.availableTurns })}
+            <div className="flex items-center justify-center gap-3 py-1">
+              <span className="text-2xl animate-pulse">🚦</span>
+              <span className="text-xl font-black italic tracking-widest uppercase">
+                {t('startMenu.buttons.startGame', { turns: turnStatus.hasActiveWeeklyPass ? '∞' : turnStatus.availableTurns })}
               </span>
-              <span className="text-base">🕹</span>
+              <span className="text-2xl animate-pulse delay-75">🚦</span>
             </div>
           )}
         </Button>
@@ -150,144 +148,158 @@ export const GameModeSelector: React.FC<GameModeSelectorProps> = ({
   }
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      <h3 className="font-squid-heading text-squid-white text-2xl font-bold text-center mb-4 flex items-center justify-center uppercase tracking-wider">
-        <span className="mr-3 text-3xl">🎮</span>
-        {t('gameModeSelector.title')}
-      </h3>
-      
-      <div className="grid grid-cols-1 gap-3">
-        {/* Classic Mode */}
-        <button
-          onClick={() => handleModeSelect('classic')}
-          className={`p-4 text-left transition-all duration-150 rounded-lg border-3 ${
-            selectedMode === 'classic'
-              ? 'border-squid-pink bg-squid-pink/20'
-              : 'border-squid-border bg-squid-gray hover:translate-x-[-1px] hover:translate-y-[-1px]'
-          }`}
-          style={{
-            boxShadow: selectedMode === 'classic' 
-              ? '4px 4px 0px 0px #FF1F8C' 
-              : '3px 3px 0px 0px #0A0A0F'
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">🎯</span>
-                <h4 className="font-squid-heading text-lg font-bold uppercase text-squid-white">{t('gameModeSelector.classicMode.title')}</h4>
-                {selectedMode === 'classic' && (
-                  <div className="w-5 h-5 bg-squid-pink rounded-full flex items-center justify-center border-2 border-squid-black">
-                    <span className="text-squid-white text-xs font-bold">✓</span>
-                  </div>
-                )}
-              </div>
-              <p className="font-squid text-xs text-squid-white/80 leading-relaxed">
-                {t('gameModeSelector.classicMode.description')}
-              </p>
-              {selectedMode === 'classic' && <StartCTA />}
-            </div>
-          </div>
-        </button>
-
-        {/* Arcade Mode */}
-        <button
-          onClick={() => handleModeSelect('arcade')}
-          className={`p-4 text-left transition-all duration-150 rounded-lg border-3 ${
-            selectedMode === 'arcade'
-              ? 'border-squid-teal bg-squid-teal/20'
-              : 'border-squid-border bg-squid-gray hover:translate-x-[-1px] hover:translate-y-[-1px]'
-          }`}
-          style={{
-            boxShadow: selectedMode === 'arcade' 
-              ? '4px 4px 0px 0px #00D9C0' 
-              : '3px 3px 0px 0px #0A0A0F'
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">⚡</span>
-                <h4 className="font-squid-heading text-lg font-bold uppercase text-squid-white">{t('gameModeSelector.arcadeMode.title')}</h4>
-                {selectedMode === 'arcade' && (
-                  <div className="w-5 h-5 bg-squid-teal rounded-full flex items-center justify-center border-2 border-squid-black">
-                    <span className="text-squid-black text-xs font-bold">✓</span>
-                  </div>
-                )}
-              </div>
-              <p className="font-squid text-xs text-squid-white/80 leading-relaxed">
-                {t('gameModeSelector.arcadeMode.description')}
-              </p>
-              {selectedMode === 'arcade' && <StartCTA />}
-            </div>
-          </div>
-        </button>
-
-        {/* Whack-a-Light Mode */}
-        <button
-          onClick={() => handleModeSelect('whack')}
-          className={`p-4 text-left transition-all duration-150 rounded-lg border-3 ${
-            selectedMode === 'whack'
-              ? 'border-squid-green bg-squid-green/20'
-              : 'border-squid-border bg-squid-gray hover:translate-x-[-1px] hover:translate-y-[-1px]'
-          }`}
-          style={{
-            boxShadow: selectedMode === 'whack' 
-              ? '4px 4px 0px 0px #00A878' 
-              : '3px 3px 0px 0px #0A0A0F'
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-squid-heading text-lg font-bold uppercase text-squid-white">{t('gameModeSelector.whackMode.title')}</h4>
-                {selectedMode === 'whack' && (
-                  <div className="w-5 h-5 bg-squid-green rounded-full flex items-center justify-center border-2 border-squid-black">
-                    <span className="text-squid-black text-xs font-bold">✓</span>
-                  </div>
-                )}
-              </div>
-              <p className="font-squid text-xs text-squid-white/80 leading-relaxed">
-                {t('gameModeSelector.whackMode.description')}
-              </p>
-              {selectedMode === 'whack' && <StartCTA />}
-            </div>
-          </div>
-        </button>
+    <div className={`space-y-6 ${className}`}>
+      <div className="flex items-center justify-center mb-2">
+        <h3 className="font-squid-heading text-white text-xl font-bold uppercase tracking-[0.2em] opacity-80">
+          Select Mode
+        </h3>
       </div>
 
-      {/* Verification Benefits */}
+      <div className="grid grid-cols-1 gap-4">
+        {/* Classic Mode */}
+        <div>
+          <button
+            onClick={() => handleModeSelect('classic')}
+            className={`w-full relative p-5 text-left transition-all duration-300 rounded-2xl border-2 overflow-hidden group ${selectedMode === 'classic'
+              ? 'border-pink-500 bg-pink-500/10 shadow-[0_0_30px_rgba(236,72,153,0.2)] scale-[1.02]'
+              : 'border-white/10 bg-zinc-900/50 hover:bg-zinc-800/80 hover:border-white/20'
+              }`}
+          >
+            {selectedMode === 'classic' && (
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 to-transparent opacity-50" />
+            )}
+            <div className="relative z-10 flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`p-2 rounded-lg ${selectedMode === 'classic' ? 'bg-pink-500 text-white' : 'bg-zinc-800 text-gray-400'}`}>
+                    <span className="text-2xl">🎯</span>
+                  </div>
+                  <h4 className={`font-squid-heading text-xl font-bold uppercase ${selectedMode === 'classic' ? 'text-white' : 'text-gray-300'}`}>
+                    {t('gameModeSelector.classicMode.title')}
+                  </h4>
+                </div>
+                <p className="font-squid text-sm text-gray-400 leading-relaxed pl-1">
+                  {t('gameModeSelector.classicMode.description')}
+                </p>
+              </div>
+              {selectedMode === 'classic' && (
+                <div className="absolute top-4 right-4 animate-scale-in">
+                  <div className="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center shadow-lg shadow-pink-500/50">
+                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+            </div>
+          </button>
+          {selectedMode === 'classic' && <StartCTA />}
+        </div>
+
+        {/* Arcade Mode */}
+        <div>
+          <button
+            onClick={() => handleModeSelect('arcade')}
+            className={`w-full relative p-5 text-left transition-all duration-300 rounded-2xl border-2 overflow-hidden group ${selectedMode === 'arcade'
+              ? 'border-teal-400 bg-teal-400/10 shadow-[0_0_30px_rgba(45,212,191,0.2)] scale-[1.02]'
+              : 'border-white/10 bg-zinc-900/50 hover:bg-zinc-800/80 hover:border-white/20'
+              }`}
+          >
+            {selectedMode === 'arcade' && (
+              <div className="absolute inset-0 bg-gradient-to-r from-teal-400/10 to-transparent opacity-50" />
+            )}
+            <div className="relative z-10 flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`p-2 rounded-lg ${selectedMode === 'arcade' ? 'bg-teal-400 text-black' : 'bg-zinc-800 text-gray-400'}`}>
+                    <span className="text-2xl">⚡</span>
+                  </div>
+                  <h4 className={`font-squid-heading text-xl font-bold uppercase ${selectedMode === 'arcade' ? 'text-white' : 'text-gray-300'}`}>
+                    {t('gameModeSelector.arcadeMode.title')}
+                  </h4>
+                </div>
+                <p className="font-squid text-sm text-gray-400 leading-relaxed pl-1">
+                  {t('gameModeSelector.arcadeMode.description')}
+                </p>
+              </div>
+              {selectedMode === 'arcade' && (
+                <div className="absolute top-4 right-4 animate-scale-in">
+                  <div className="w-6 h-6 bg-teal-400 rounded-full flex items-center justify-center shadow-lg shadow-teal-400/50">
+                    <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+            </div>
+          </button>
+          {selectedMode === 'arcade' && <StartCTA />}
+        </div>
+
+        {/* Whack-a-Light Mode */}
+        <div>
+          <button
+            onClick={() => handleModeSelect('whack')}
+            className={`w-full relative p-5 text-left transition-all duration-300 rounded-2xl border-2 overflow-hidden group ${selectedMode === 'whack'
+              ? 'border-emerald-500 bg-emerald-500/10 shadow-[0_0_30px_rgba(16,185,129,0.2)] scale-[1.02]'
+              : 'border-white/10 bg-zinc-900/50 hover:bg-zinc-800/80 hover:border-white/20'
+              }`}
+          >
+            {selectedMode === 'whack' && (
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent opacity-50" />
+            )}
+            <div className="relative z-10 flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`p-2 rounded-lg ${selectedMode === 'whack' ? 'bg-emerald-500 text-black' : 'bg-zinc-800 text-gray-400'}`}>
+                    <span className="text-2xl">🔨</span>
+                  </div>
+                  <h4 className={`font-squid-heading text-xl font-bold uppercase ${selectedMode === 'whack' ? 'text-white' : 'text-gray-300'}`}>
+                    {t('gameModeSelector.whackMode.title')}
+                  </h4>
+                </div>
+                <p className="font-squid text-sm text-gray-400 leading-relaxed pl-1">
+                  {t('gameModeSelector.whackMode.description')}
+                </p>
+              </div>
+              {selectedMode === 'whack' && (
+                <div className="absolute top-4 right-4 animate-scale-in">
+                  <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/50">
+                    <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+            </div>
+          </button>
+          {selectedMode === 'whack' && <StartCTA />}
+        </div>
+      </div>
+
+      {/* Verification Benefits - Collapsible or Compact */}
       {verificationLevel && verificationBenefits && (
-        <div className="mt-6 p-4 rounded-lg border-3 border-squid-green bg-squid-green/20" style={{ boxShadow: '4px 4px 0px 0px #00A878' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xl animate-pulse">🎯</span>
-            <span className="text-squid-green font-squid-heading font-bold text-sm uppercase">
-              {t('gameModeSelector.verificationBenefits.title')}
-            </span>
-            <span className="text-squid-green font-squid text-xs bg-squid-green/20 px-2 py-1 rounded-full">
+        <div className="mt-4 p-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💎</span>
+              <span className="text-emerald-400 font-squid-heading text-xs uppercase tracking-wider font-bold">
+                {t('gameModeSelector.verificationBenefits.title')}
+              </span>
+            </div>
+            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">
               {verificationLevel}
             </span>
           </div>
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-squid-white/80">Score Multiplier:</span>
-              <span className="text-squid-green font-bold">{verificationBenefits.scoreMultiplier}x</span>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-black/20 p-2 rounded flex justify-between items-center">
+              <span className="text-gray-400">Score</span>
+              <span className="text-emerald-400 font-bold">{verificationBenefits.scoreMultiplier}x</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-squid-white/80">Token Multiplier:</span>
-              <span className="text-squid-green font-bold">{verificationBenefits.tokenMultiplier}x</span>
+            <div className="bg-black/20 p-2 rounded flex justify-between items-center">
+              <span className="text-gray-400">Tokens</span>
+              <span className="text-emerald-400 font-bold">{verificationBenefits.tokenMultiplier}x</span>
             </div>
-            {verificationBenefits.bonusTurns > 0 && (
-              <div className="flex items-center justify-between">
-                <span className="text-squid-white/80">Bonus Turns:</span>
-                <span className="text-squid-green font-bold">+{verificationBenefits.bonusTurns}</span>
-              </div>
-            )}
-          </div>
-          <div className="mt-3 pt-3 border-t border-squid-green/30">
-            <p className="text-squid-white/60 text-xs text-center">
-              {t('gameModeSelector.verificationBenefits.description')}
-            </p>
           </div>
         </div>
       )}

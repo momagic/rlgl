@@ -19,9 +19,9 @@ interface GameScreenProps {
 function GameScreen({ gameData, onPause, onQuit, onActivatePowerUp }: GameScreenProps) {
   const { gameState, lightState, playerStats, config, isTransitioning, showLightChangeFlash, isConsecutiveLight } = gameData
   const haptics = useHapticFeedback()
-  
 
-  
+
+
 
 
   if (gameState === 'paused') {
@@ -45,7 +45,7 @@ function GameScreen({ gameData, onPause, onQuit, onActivatePowerUp }: GameScreen
         </div>
 
         <div className="flex-1 flex flex-col justify-center items-center p-4 animate-fade-in relative z-10">
-          <div 
+          <div
             className="w-full max-w-md text-center p-6 rounded-lg border-4 border-squid-border bg-squid-gray animate-scale-in"
             style={{ boxShadow: '6px 6px 0px 0px #0A0A0F' }}
           >
@@ -53,7 +53,7 @@ function GameScreen({ gameData, onPause, onQuit, onActivatePowerUp }: GameScreen
               <span className="mr-3 text-4xl">⏸️</span>
               Paused
             </h2>
-            
+
             <div className="space-y-3">
               <button
                 onClick={() => {
@@ -73,7 +73,7 @@ function GameScreen({ gameData, onPause, onQuit, onActivatePowerUp }: GameScreen
               >
                 🚦 Resume Game
               </button>
-              
+
               <button
                 onClick={() => {
                   haptics.buttonPress()
@@ -139,9 +139,9 @@ function GameScreen({ gameData, onPause, onQuit, onActivatePowerUp }: GameScreen
           >
             ⏸️ Pause
           </button>
-          
+
           {/* Round indicator */}
-          <div 
+          <div
             className="px-3 py-2 rounded border-3 border-squid-border bg-squid-gray"
             style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}
           >
@@ -153,9 +153,9 @@ function GameScreen({ gameData, onPause, onQuit, onActivatePowerUp }: GameScreen
         <div className="mb-4 space-y-2">
           {/* Lives Display */}
           <div className="p-2 rounded-lg border-3 border-squid-border bg-squid-gray" style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}>
-            <LivesDisplay 
-              livesRemaining={playerStats.livesRemaining} 
-              maxLives={config.initialLives} 
+            <LivesDisplay
+              livesRemaining={playerStats.livesRemaining}
+              maxLives={config.initialLives}
             />
           </div>
 
@@ -167,7 +167,7 @@ function GameScreen({ gameData, onPause, onQuit, onActivatePowerUp }: GameScreen
           {/* Power-up Bar - Only show in Arcade mode */}
           {gameData.gameMode === 'arcade' && (
             <div className="p-2 rounded-lg border-3 border-squid-teal bg-squid-teal/10" style={{ boxShadow: '3px 3px 0px 0px #00D9C0' }}>
-              <PowerUpBar 
+              <PowerUpBar
                 powerUpState={gameData.powerUpState}
                 onActivatePowerUp={onActivatePowerUp}
               />
@@ -190,7 +190,7 @@ function GameScreen({ gameData, onPause, onQuit, onActivatePowerUp }: GameScreen
               isConsecutiveLight={isConsecutiveLight}
             />
           )}
-          
+
           {/* Floating Power-ups - Only show in Arcade mode */}
           {gameData.gameMode === 'arcade' && gameData.powerUpState.availablePowerUps.map((powerUp) => (
             <FloatingPowerUp
@@ -205,10 +205,10 @@ function GameScreen({ gameData, onPause, onQuit, onActivatePowerUp }: GameScreen
               }}
             />
           ))}
-          
+
           {/* Power-up Effects Overlay - Only show in Arcade mode */}
           {gameData.gameMode === 'arcade' && (
-            <PowerUpEffects 
+            <PowerUpEffects
               activePowerUps={gameData.powerUpState.activePowerUps}
               gameSpeedMultiplier={gameData.gameSpeedMultiplier}
               hasShield={gameData.hasShield}
