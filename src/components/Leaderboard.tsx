@@ -274,7 +274,7 @@ function Leaderboard() {
       // Filter banned and process
       const filtered = data
         .filter(e => !bannedAddresses.includes(String(e.player).toLowerCase()))
-        .slice(0, 5)
+        .slice(0, 10)
         .map((entry, index) => ({
           ...entry,
           rank: index + 1,
@@ -293,11 +293,11 @@ function Leaderboard() {
       // Try contract fallback if API fails
       try {
         console.log('⚠️ API failed, falling back to contract call...');
-        const data = await getTopScores(5, mode);
+        const data = await getTopScores(10, mode);
         if (data && Array.isArray(data)) {
            const filtered = data
             .filter(e => !bannedAddresses.includes(String(e.player).toLowerCase()))
-            .slice(0, 5)
+            .slice(0, 10)
             .map((entry, index) => ({
               ...entry,
               rank: index + 1,
@@ -441,7 +441,7 @@ function Leaderboard() {
           <div className="flex-shrink-0 mb-2">
             <h3 className="text-squid-white text-lg font-squid-heading font-bold uppercase tracking-wider flex items-center">
               <span className="mr-2 text-xl">🏆</span>
-              Top 5
+              Top 10
             </h3>
           </div>
           
@@ -471,7 +471,7 @@ function Leaderboard() {
           <div className="flex-shrink-0 mb-2">
             <h3 className="text-squid-white text-lg font-squid-heading font-bold uppercase tracking-wider flex items-center">
               <span className="mr-2 text-xl">🏆</span>
-              Top 5
+              Top 10
             </h3>
           </div>
           
@@ -503,7 +503,7 @@ function Leaderboard() {
             <div>
               <h3 className="text-squid-white text-lg font-squid-heading font-bold uppercase tracking-wider flex items-center">
                 <span className="mr-2 text-xl">🏆</span>
-                Top 5
+                Top 10
               </h3>
               {lastUpdated && (
                 <p className="text-squid-white/40 text-xs mt-0.5 font-squid-mono">
