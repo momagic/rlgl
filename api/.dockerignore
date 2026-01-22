@@ -105,7 +105,6 @@ world-id-api.service
 
 # Deployment scripts (not needed in container)
 deploy-vps.sh
-scripts/
 
 # Documentation (not needed in container)
 *.md
