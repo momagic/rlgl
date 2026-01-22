@@ -153,8 +153,10 @@ async function main() {
     
     const currentBlock = await provider.getBlockNumber();
     const CHUNK_SIZE = 1000; // Smaller chunk size to avoid rate limits
-    // Start from block ~21M
-    const START_BLOCK = 21000000; 
+    
+    // Default to last 20,000 blocks (~10 hours) to catch recent activity quickly
+    // unless a specific start block is provided env var
+    const START_BLOCK = process.env.START_BLOCK ? Number(process.env.START_BLOCK) : (currentBlock - 20000);
 
     console.log(`   Range: ${START_BLOCK} to ${currentBlock} (${currentBlock - START_BLOCK} blocks)`);
 

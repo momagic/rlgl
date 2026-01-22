@@ -376,6 +376,9 @@ export function useGameLogic(turnManager: UseTurnManagerReturn) {
               permitData: { score: finalScore, round: finalRound, gameMode, signature: sig }
             })
 
+            // Record to DB
+            await recordGameToDb(submission.transactionHash, submission.tokensEarned)
+
             setGameData(currentData => ({
               ...currentData,
               tokenReward: {
