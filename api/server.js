@@ -76,8 +76,7 @@ const RPC_URLS = [
   'https://worldchain.drpc.org',                    // dRPC public fallback
   'https://worldchain-mainnet.gateway.tenderly.co', // Reliable fallback
   'https://480.rpc.thirdweb.com',                  // ThirdWeb (rate limited)
-  // Removed QuickNode - 2/second limit is too restrictive
-  // Removed Alchemy public - severe rate limits
+  'https://worldchain-mainnet.g.alchemy.com/public', // Alchemy public
 ];
 console.log('🔗 Configured RPC endpoints:', RPC_URLS.length, 'endpoints');
 console.log('   Primary:', RPC_URLS[0]?.substring(0, 60) + '...');
@@ -1027,7 +1026,17 @@ const VALIDATION_TTL_MS = 30000;
 const RATE_COOLDOWN_MS = 5 * 60 * 1000;
 function isTransientError(error) {
   const msg = (error && error.message) ? error.message.toLowerCase() : '';
-  return msg.includes('rate') || msg.includes('429') || msg.includes('timeout') || msg.includes('fetch') || msg.includes('connection') || msg.includes('retry') || msg.includes('network') || msg.includes('detect network');
+  return msg.includes('rate') || 
+         msg.includes('429') || 
+         msg.includes('timeout') || 
+         msg.includes('fetch') || 
+         msg.includes('connection') || 
+         msg.includes('retry') || 
+         msg.includes('network') || 
+         msg.includes('detect network') ||
+         msg.includes('response body') || 
+         msg.includes('missing revert data') ||
+         msg.includes('json-rpc');
 }
 function withTimeout(promise, ms) {
   return Promise.race([
