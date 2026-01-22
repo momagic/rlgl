@@ -252,7 +252,7 @@ function Leaderboard() {
         throw new Error(`API Error: ${response.status}`);
       }
       
-      const { leaderboard: apiData } = await response.json();
+      const { leaderboard: apiData, lastUpdated: serverLastUpdated } = await response.json();
       
       if (!Array.isArray(apiData)) {
         throw new Error('Invalid API response');
@@ -284,7 +284,7 @@ function Leaderboard() {
       
       setLeaderboard(filtered)
       setCachedLeaderboard(mode, filtered)
-      setLastUpdated(new Date())
+      setLastUpdated(serverLastUpdated ? new Date(serverLastUpdated) : new Date())
       hasFetchedOnce.current = true
       
     } catch (err) {

@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "start:serverless": "node world-id.js",
+    "sync:cron": "node scripts/cron-sync-leaderboard.js",
     "dev": "nodemon server.js",
     "dev:serverless": "nodemon world-id.js",
     "test": "node test.js",

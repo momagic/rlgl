@@ -491,55 +491,92 @@ app.get('/bans', (req, res) => {
   res.json({ addresses: Array.from(bannedAddresses) });
 });
 
-// Leaderboard API
+// Leaderboard Cache System
+let leaderboardCache = {
+  Classic: null,
+  Arcade: null,
+  WhackLight: null,
+  lastUpdated: 0
+};
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+// Function to refresh leaderboard cache
+async function refreshLeaderboardCache() {
+  console.log('🔄 Refreshing leaderboard cache...');
+  const modes = ['Classic', 'Arcade', 'WhackLight'];
+  
+  for (const mode of modes) {
+    try {
+      const colName = `high_score_${mode.toLowerCase()}`;
+      // Query to get top 100 for this mode
+      const query = `
+        SELECT 
+          address as player, 
+          username, 
+          avatar_url, 
+          ${colName} as score,
+          verification_level
+        FROM users 
+        WHERE ${colName} > 0
+        ORDER BY ${colName} DESC 
+        LIMIT 100
+      `;
+      
+      const result = await db.query(query);
+      
+      leaderboardCache[mode] = result.rows.map((row, index) => ({
+        rank: index + 1,
+        player: row.player,
+        username: row.username,
+        avatar: row.avatar_url,
+        score: Number(row.score),
+        gameMode: mode,
+        verificationLevel: row.verification_level,
+        tokensEarned: '0', // Placeholder
+        timestamp: Date.now() // Capture time of cache update
+      }));
+      
+    } catch (err) {
+      console.error(`❌ Failed to cache leaderboard for ${mode}:`, err);
+    }
+  }
+  
+  leaderboardCache.lastUpdated = Date.now();
+  console.log('✅ Leaderboard cache refreshed');
+}
+
+// Initialize cache refresh schedule
+setInterval(refreshLeaderboardCache, CACHE_DURATION);
+
+// Leaderboard API with 24h Cache
 app.get('/leaderboard', async (req, res) => {
   const { mode = 'Classic', limit = 10, offset = 0 } = req.query;
   
   // Validate mode
   const validModes = ['Classic', 'Arcade', 'WhackLight'];
-  // Case insensitive match
   const normalizedMode = validModes.find(m => m.toLowerCase() === String(mode).toLowerCase());
   
   if (!normalizedMode) {
     return res.status(400).json({ error: 'Invalid game mode' });
   }
 
-  try {
-    const colName = `high_score_${normalizedMode.toLowerCase()}`;
-    const query = `
-      SELECT 
-        address as player, 
-        username, 
-        avatar_url, 
-        ${colName} as score,
-        verification_level
-      FROM users 
-      WHERE ${colName} > 0
-      ORDER BY ${colName} DESC 
-      LIMIT $1 OFFSET $2
-    `;
-    
-    const result = await db.query(query, [Math.min(limit, 100), offset]);
-    
-    // Transform for frontend compatibility
-    const leaderboard = result.rows.map((row, index) => ({
-      rank: Number(offset) + index + 1,
-      player: row.player,
-      username: row.username, // New field
-      avatar: row.avatar_url, // New field
-      score: Number(row.score),
-      gameMode: normalizedMode,
-      verificationLevel: row.verification_level,
-      // Fallbacks for compatibility
-      tokensEarned: '0', 
-      timestamp: Date.now() 
-    }));
-    
-    res.json({ leaderboard });
-  } catch (err) {
-    console.error('Leaderboard query error:', err);
-    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+  // Check if cache needs refresh (first run)
+  if (!leaderboardCache[normalizedMode]) {
+    await refreshLeaderboardCache();
   }
+
+  const cachedData = leaderboardCache[normalizedMode] || [];
+  
+  // Apply pagination on cached data
+  const start = Number(offset);
+  const end = start + Number(limit);
+  const paginatedData = cachedData.slice(start, end);
+  
+  res.json({ 
+    leaderboard: paginatedData,
+    lastUpdated: leaderboardCache.lastUpdated,
+    nextUpdate: leaderboardCache.lastUpdated + CACHE_DURATION
+  });
 });
 
 // User Profile API
