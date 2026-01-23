@@ -651,7 +651,12 @@ app.post('/game/record', async (req, res) => {
   }
 
   try {
-    const modeStr = String(gameMode);
+    let modeStr = String(gameMode);
+    // Normalize WhackLight to 'whack' for DB column
+    if (modeStr.toLowerCase() === 'whacklight') {
+      modeStr = 'Whack';
+    }
+
     const scoreNum = Number(score);
     const tokensNum = Number(tokensEarned || 0);
     const gameIdNum = gameId ? Number(gameId) : Date.now(); // Fallback if no gameId yet
@@ -660,7 +665,7 @@ app.post('/game/record', async (req, res) => {
     const highScoreCol = `high_score_${modeStr.toLowerCase()}`;
     // Only update if column is valid to prevent injection
     if (!['high_score_classic', 'high_score_arcade', 'high_score_whack'].includes(highScoreCol)) {
-      throw new Error('Invalid game mode for high score update');
+      throw new Error(`Invalid game mode for high score update: ${highScoreCol}`);
     }
 
     await db.query(`
