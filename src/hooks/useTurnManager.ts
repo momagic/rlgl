@@ -29,8 +29,8 @@ export function useTurnManager(): UseTurnManagerReturn {
   const { user } = useAuth()
   const contract = useContract()
   const sounds = useSoundEffects()
-  
-  
+
+
   const [turnStatus, setTurnStatus] = useState<TurnStatus | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,9 +40,9 @@ export function useTurnManager(): UseTurnManagerReturn {
   const [pendingTransactionId, setPendingTransactionId] = useState<string>('')
 
   // Helper functions for localStorage persistence
-  
 
-  
+
+
 
   const getTurnPurchases = useCallback((_walletAddress: string): TurnPurchase[] => {
     return []
@@ -52,7 +52,7 @@ export function useTurnManager(): UseTurnManagerReturn {
     try {
       const stored = localStorage.getItem(WEEKLY_PASS_PURCHASES_KEY) || '[]'
       const purchases = JSON.parse(stored)
-      
+
       // Sanitize loaded data with graceful fallback
       const validation = sanitizeJSONData(purchases)
       if (!validation.isValid) {
@@ -64,7 +64,7 @@ export function useTurnManager(): UseTurnManagerReturn {
         }
         return []
       }
-      
+
       return validation.sanitizedValue.filter((p: WeeklyPassPurchase) => p.walletAddress === walletAddress)
     } catch (error) {
       console.warn('Failed to load weekly pass purchases:', error)
@@ -77,26 +77,26 @@ export function useTurnManager(): UseTurnManagerReturn {
   const hasActiveWeeklyPassFromStorage = useCallback((walletAddress: string): { hasActive: boolean; expiryTime?: number } => {
     const purchases = getWeeklyPassPurchases(walletAddress)
     const now = Date.now()
-    
+
     // Find the most recent valid weekly pass
     const validPasses = purchases.filter(p => p.expiryTime > now)
-    
+
     if (validPasses.length > 0) {
       // Get the pass with the latest expiry time
-      const latestPass = validPasses.reduce((latest, current) => 
+      const latestPass = validPasses.reduce((latest, current) =>
         current.expiryTime > latest.expiryTime ? current : latest
       )
       return { hasActive: true, expiryTime: latestPass.expiryTime }
     }
-    
+
     return { hasActive: false }
   }, [getWeeklyPassPurchases])
 
   // Helper function to check if current user is a dev user
   const isDevUser = useCallback((): boolean => {
     return user?.walletAddress === '0x1234567890123456789012345678901234567890' ||
-           user?.walletAddress === '0x2345678901234567890123456789012345678901' ||
-           user?.walletAddress === '0x3456789012345678901234567890123456789012'
+      user?.walletAddress === '0x2345678901234567890123456789012345678901' ||
+      user?.walletAddress === '0x3456789012345678901234567890123456789012'
   }, [user?.walletAddress])
 
   // Helper function to check if current user is dev user 1 (with weekly pass)
@@ -141,15 +141,15 @@ export function useTurnManager(): UseTurnManagerReturn {
       const allPurchases = JSON.parse(localStorage.getItem(TURN_PURCHASES_KEY) || '[]')
       const now = Date.now()
       const validPurchases = allPurchases.filter((p: TurnPurchase) => now - p.timestamp < 24 * 60 * 60 * 1000)
-      
+
       if (validPurchases.length !== allPurchases.length) {
         localStorage.setItem(TURN_PURCHASES_KEY, JSON.stringify(validPurchases))
       }
-      
+
       // Cleanup expired weekly passes
       const allWeeklyPasses = JSON.parse(localStorage.getItem(WEEKLY_PASS_PURCHASES_KEY) || '[]')
       const validWeeklyPasses = allWeeklyPasses.filter((p: WeeklyPassPurchase) => p.expiryTime > now)
-      
+
       if (validWeeklyPasses.length !== allWeeklyPasses.length) {
         localStorage.setItem(WEEKLY_PASS_PURCHASES_KEY, JSON.stringify(validWeeklyPasses))
       }
@@ -162,11 +162,11 @@ export function useTurnManager(): UseTurnManagerReturn {
     if (!user?.verified) {
       throw new Error('User not authenticated')
     }
-    
+
     if (!user?.authenticated || !user?.walletAddress) {
       throw new Error('Wallet not authenticated')
     }
-    
+
     return user.walletAddress
   }, [user])
 
@@ -175,29 +175,29 @@ export function useTurnManager(): UseTurnManagerReturn {
     const now = Date.now()
     const timeSinceLastPurchase = now - lastPurchaseTime
     const recentPurchaseProtectionWindow = 10000 // 10 seconds
-    
+
     if (timeSinceLastPurchase < recentPurchaseProtectionWindow && !manual) {
       return
     }
-    
+
     setIsLoading(true)
     setError(null)
-    
+
     try {
       if (!user?.verified) {
         setTurnStatus(null)
         return
       }
-      
+
       if (!user?.authenticated || !user?.walletAddress) {
         setTurnStatus(null)
         return
       }
-      
+
       // Provide unlimited turns for dev users
       if (isDevUser()) {
         let devTurnStatus: TurnStatus
-        
+
         if (isDevUser1()) {
           // Dev user 1: unlimited turns with active weekly pass
           devTurnStatus = {
@@ -209,26 +209,26 @@ export function useTurnManager(): UseTurnManagerReturn {
             weeklyPassExpiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year from now
           }
         } else if (isDevUser2()) {
-            // Dev user 2: 3 free turns but no weekly pass
-            devTurnStatus = {
-              availableTurns: 3,
-              timeUntilReset: 0,
-              canPurchaseMoreTurns: true,
-              nextResetTime: new Date(),
-              hasActiveWeeklyPass: false,
-              weeklyPassExpiry: undefined
-            }
-         } else if (isDevUser3()) {
-            // Dev user 3: no turns remaining
-            devTurnStatus = {
-              availableTurns: 0,
-              timeUntilReset: 0,
-              canPurchaseMoreTurns: true,
-              nextResetTime: new Date(),
-              hasActiveWeeklyPass: false,
-              weeklyPassExpiry: undefined
-            }
-         } else {
+          // Dev user 2: 3 free turns but no weekly pass
+          devTurnStatus = {
+            availableTurns: 3,
+            timeUntilReset: 0,
+            canPurchaseMoreTurns: true,
+            nextResetTime: new Date(),
+            hasActiveWeeklyPass: false,
+            weeklyPassExpiry: undefined
+          }
+        } else if (isDevUser3()) {
+          // Dev user 3: no turns remaining
+          devTurnStatus = {
+            availableTurns: 0,
+            timeUntilReset: 0,
+            canPurchaseMoreTurns: true,
+            nextResetTime: new Date(),
+            hasActiveWeeklyPass: false,
+            weeklyPassExpiry: undefined
+          }
+        } else {
           // Fallback for any other dev users
           devTurnStatus = {
             availableTurns: Number.MAX_SAFE_INTEGER,
@@ -239,27 +239,27 @@ export function useTurnManager(): UseTurnManagerReturn {
             weeklyPassExpiry: undefined
           }
         }
-        
+
         setTurnStatus(devTurnStatus)
         setError(null)
         setRetryCount(0)
         return
       }
-      
+
       const playerAddress = getPlayerAddress()
-      
+
       // Add timeout to prevent hanging
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Turn status request timed out after 10 seconds')), 10000)
       })
-      
+
       const status = await Promise.race([
         contract.getTurnStatus(playerAddress),
         timeoutPromise
       ])
-      
-      
-      
+
+
+
       // Merge contract data with localStorage data
       const enhancedStatus = {
         ...status,
@@ -268,14 +268,14 @@ export function useTurnManager(): UseTurnManagerReturn {
         hasActiveWeeklyPass: false,
         weeklyPassExpiry: undefined
       }
-      
+
       setTurnStatus(enhancedStatus)
       setError(null) // Clear any previous errors
       setRetryCount(0) // Reset retry count on success
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch turn status'
       setError(errorMessage)
-      
+
       // Only increment retry count if not manual and below max retries
       if (!manual && retryCount < maxRetries) {
         const newRetryCount = retryCount + 1
@@ -292,12 +292,12 @@ export function useTurnManager(): UseTurnManagerReturn {
   }, [user, contract, getPlayerAddress, calculateBonusTurns, hasActiveWeeklyPassFromStorage, lastPurchaseTime, retryCount, maxRetries, isDevUser])
 
   const purchaseTurns = useCallback(async (_dynamicCost?: string): Promise<boolean> => {
-    console.log('🎮 Turn purchase initiated:', { 
-      _dynamicCost, 
+    console.log('🎮 Turn purchase initiated:', {
+      _dynamicCost,
       timestamp: new Date().toISOString(),
       user: user?.walletAddress
     })
-    
+
     try {
       setIsLoading(true)
       setError(null)
@@ -308,14 +308,14 @@ export function useTurnManager(): UseTurnManagerReturn {
       // Initiate the payment through MiniKit
       console.log('💳 Starting payment through MiniKit...')
       const paymentResult = await contract.purchaseAdditionalTurns()
-      
+
       console.log('💳 Payment result received:', {
         success: paymentResult.success,
         transactionHash: paymentResult.transactionHash,
         error: paymentResult.error,
         timestamp: new Date().toISOString()
       })
-      
+
       if (!paymentResult.success) {
         console.error('❌ Payment failed in turn manager:', paymentResult.error)
         setError(paymentResult.error || 'Payment failed')
@@ -385,13 +385,13 @@ export function useTurnManager(): UseTurnManagerReturn {
       }
 
       const walletAddress = getPlayerAddress()
-      
+
       // If user has active weekly pass, no need to consume turns or call contract
       if (turnStatus?.hasActiveWeeklyPass) {
         // Weekly pass users have unlimited turns, no blockchain transaction needed
         return true
       }
-      
+
       // Check if we have bonus turns from purchases to consume first
       const purchases = getTurnPurchases(walletAddress)
       const now = Date.now()
@@ -401,44 +401,44 @@ export function useTurnManager(): UseTurnManagerReturn {
 
       if (hasBonusTurns) {
         // Consume from purchased turns first
-        
+
         // Remove one turn from the most recent purchase
         const allPurchases = JSON.parse(localStorage.getItem(TURN_PURCHASES_KEY) || '[]')
         let turnConsumed = false
-        
+
         for (let i = allPurchases.length - 1; i >= 0; i--) {
           const purchase = allPurchases[i]
-          
-          if (purchase.walletAddress === walletAddress && 
-              now - purchase.timestamp < 24 * 60 * 60 * 1000 && 
-              purchase.turnsGranted > 0) {
-            
+
+          if (purchase.walletAddress === walletAddress &&
+            now - purchase.timestamp < 24 * 60 * 60 * 1000 &&
+            purchase.turnsGranted > 0) {
+
             // Consume one turn from this purchase
             allPurchases[i].turnsGranted -= 1
-            
+
             // Remove purchase if no turns left
             if (allPurchases[i].turnsGranted <= 0) {
               allPurchases.splice(i, 1)
             }
-            
+
             localStorage.setItem(TURN_PURCHASES_KEY, JSON.stringify(allPurchases))
             turnConsumed = true
             break
           }
         }
-        
+
         if (!turnConsumed) {
           return false
         }
       } else {
         // No bonus turns, use contract turn
         const success = await contract.startGame()
-        
+
         if (!success) {
           return false
         }
       }
-      
+
       // Update turn status optimistically
       setTurnStatus(prevStatus => {
         if (prevStatus) {
@@ -446,7 +446,7 @@ export function useTurnManager(): UseTurnManagerReturn {
           if (prevStatus.hasActiveWeeklyPass) {
             return prevStatus // No change needed for weekly pass users
           }
-          
+
           const newStatus = {
             ...prevStatus,
             availableTurns: Math.max(0, prevStatus.availableTurns - 1),
@@ -456,7 +456,7 @@ export function useTurnManager(): UseTurnManagerReturn {
         }
         return prevStatus
       })
-      
+
       return true
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to consume turn'
@@ -470,12 +470,12 @@ export function useTurnManager(): UseTurnManagerReturn {
   // Auto-refresh turn status on mount and when user changes
   useEffect(() => {
     cleanupOldPurchases() // Cleanup old purchases on mount
-    
+
     // Only refresh if user is authenticated
     if (user?.authenticated) {
       refreshTurnStatus(true) // manual=true on mount
     }
-  }, [user?.authenticated]) // Only depend on auth state changes, remove cleanupOldPurchases
+  }, [user?.authenticated, user?.verified]) // Refresh when auth or verification status changes
 
   useEffect(() => {
     if (pendingTransactionId && isConfirmed) {
@@ -489,10 +489,10 @@ export function useTurnManager(): UseTurnManagerReturn {
   // Format time until reset for display
   const formatTimeUntilReset = useCallback((milliseconds: number): string => {
     if (milliseconds <= 0) return 'Available now'
-    
+
     const hours = Math.floor(milliseconds / (1000 * 60 * 60))
     const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60))
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m`
     } else {
@@ -528,6 +528,6 @@ export function useTurnManager(): UseTurnManagerReturn {
         return next
       })
     }
-    ,retryCount, maxRetries
+    , retryCount, maxRetries
   }
 }

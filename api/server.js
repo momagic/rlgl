@@ -212,12 +212,17 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
 
     const submitterAddress = wallet.address;
-    const contractOwner = await contract.owner();
-    const isAuthorized = await contract.authorizedSubmitters(submitterAddress);
 
-    console.log(
-      `🔑 Submitter ${submitterAddress} | Owner ${contractOwner} | Authorized=${isAuthorized} | Contract=${CONTRACT_ADDRESS}`
-    );
+    // Diagnostic logging (non-fatal)
+    try {
+      const contractOwner = await contract.owner();
+      const isAuthorized = await contract.authorizedSubmitters(submitterAddress);
+      console.log(
+        `🔑 Submitter ${submitterAddress} | Owner ${contractOwner} | Authorized=${isAuthorized} | Contract=${CONTRACT_ADDRESS}`
+      );
+    } catch (diagErr) {
+      console.warn('⚠️ Diagnostic check failed (non-fatal):', diagErr.message);
+    }
 
     const normalizedLevel = (verificationLevel || '').toLowerCase();
     const level = VERIFICATION_LEVELS[normalizedLevel];
