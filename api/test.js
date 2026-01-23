@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // Test configuration
-const API_URL = process.env.API_URL || 'http://localhost:3000/api';
+const API_URL = process.env.API_URL || 'http://127.0.0.1:3000';
 const TEST_USER_ADDRESS = '0x1234567890123456789012345678901234567890';
 const TEST_NULLIFIER_HASH = '0x_test_nullifier_hash';
 

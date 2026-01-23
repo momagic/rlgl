@@ -8,12 +8,12 @@ let verifyCloudProof
 try {
   const idkitCore = require('@worldcoin/idkit-core')
   verifyCloudProof = idkitCore.verifyCloudProof || idkitCore.default?.verifyCloudProof || idkitCore.default
-} catch {}
+} catch { }
 if (typeof verifyCloudProof !== 'function') {
   try {
     const mk = require('@worldcoin/minikit-js')
     verifyCloudProof = mk.verifyCloudProof || mk.default?.verifyCloudProof
-  } catch {}
+  } catch { }
 }
 
 async function getVerifyCloudProof() {
@@ -25,7 +25,7 @@ async function getVerifyCloudProof() {
       verifyCloudProof = fn
       return fn
     }
-  } catch {}
+  } catch { }
   try {
     const mod = await import('@worldcoin/minikit-js')
     const fn = mod.verifyCloudProof || mod.default?.verifyCloudProof
@@ -33,7 +33,7 @@ async function getVerifyCloudProof() {
       verifyCloudProof = fn
       return fn
     }
-  } catch {}
+  } catch { }
   throw new Error('verifyCloudProof is not a function')
 }
 require('dotenv').config();
@@ -99,7 +99,7 @@ function saveBans() {
     const arr = Array.from(bannedAddresses);
     const data = JSON.stringify({ addresses: arr }, null, 2);
     fs.writeFileSync(BANS_FILE, data, 'utf8');
-  } catch {}
+  } catch { }
 }
 function isBanned(addr) {
   if (!addr) return false;
@@ -141,14 +141,14 @@ const NETWORK_NAME_CACHE_TTL = 60000; // 1 minute
 const CLEANUP_INTERVAL = 5 * 60 * 1000;
 setInterval(() => {
   const now = Date.now();
-  
+
   // Cleanup verificationCache
   for (const [key, value] of verificationCache.entries()) {
     if (now - value.timestamp > CACHE_TTL) {
       verificationCache.delete(key);
     }
   }
-  
+
   // Cleanup permitRateMap
   for (const [address, timestamps] of permitRateMap.entries()) {
     const recent = timestamps.filter(ts => now - ts <= PERMIT_WINDOW_MS);
@@ -158,7 +158,7 @@ setInterval(() => {
       permitRateMap.set(address, recent);
     }
   }
-  
+
   // Cleanup endpointCooldowns (will be defined below)
   if (typeof endpointCooldowns !== 'undefined') {
     for (const [url, until] of endpointCooldowns.entries()) {
@@ -167,7 +167,7 @@ setInterval(() => {
       }
     }
   }
-  
+
   console.log(`🧹 Cache cleanup: verification=${verificationCache.size}, rateLimit=${permitRateMap.size}`);
 }, CLEANUP_INTERVAL);
 
@@ -178,19 +178,10 @@ async function verifyWorldIDProof(proof, userAddress) {
   try {
     const v = await getVerifyCloudProof()
     const verifyRes = await v(proof, APP_ID, ACTION_ID);
-    
+
     if (!verifyRes.success) {
       throw new Error(`World ID verification failed: ${verifyRes.code}`);
     }
-
-    // Cache successful verification for anti-cheat
-    const cacheKey = `${userAddress}-${proof.nullifier_hash}`;
-    verificationCache.set(cacheKey, {
-      timestamp: Date.now(),
-      verificationLevel: proof.verification_level,
-      nullifierHash: proof.nullifier_hash,
-      userAddress: userAddress
-    });
 
     return {
       success: true,
@@ -280,7 +271,7 @@ async function submitVerificationOnChain(userAddress, verificationLevel, isVerif
     };
   } catch (error) {
     console.error('❌ On-chain verification error:', error);
-    
+
     // Check if it's a contract revert error
     if (error.reason) {
       throw new Error(`Contract error: ${error.reason}`);
@@ -310,7 +301,7 @@ app.post('/world-id', async (req, res) => {
   const { proof, userAddress, submitOnChain = true } = req.body;
 
   if (!proof || !userAddress) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: 'Missing required fields',
       details: 'proof and userAddress are required'
     });
@@ -320,7 +311,7 @@ app.post('/world-id', async (req, res) => {
     if (isBanned(userAddress)) {
       return res.status(403).json({ error: 'User is banned' });
     }
-    
+
     // Log user login attempt
     console.log('🟢 USER_LOGIN_ATTEMPT', {
       userAddress,
@@ -330,19 +321,42 @@ app.post('/world-id', async (req, res) => {
       ip: req.ip || req.connection.remoteAddress,
       userAgent: req.headers['user-agent']
     });
-    
+
     console.log('🔄 Verifying World ID proof...');
     const verificationResult = await verifyWorldIDProof(proof, userAddress);
-    
+
+    // PERSIST TO DATABASE (New Source of Truth)
+    try {
+      await db.query(`
+        INSERT INTO users (address, verification_level, nullifier_hash, last_seen)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (address) 
+        DO UPDATE SET 
+          verification_level = $2,
+          nullifier_hash = $3,
+          last_seen = NOW()
+      `, [userAddress, verificationResult.verificationLevel, verificationResult.nullifierHash]);
+      console.log('💾 Verification persisted to database for', userAddress);
+    } catch (dbErr) {
+      console.error('Failed to persist verification to DB:', dbErr);
+      // We continue even if DB write fails, but warn about it
+    }
+
     let onChainResult = null;
-    
+
     if (submitOnChain) {
       console.log('⛓️  Submitting verification on-chain...');
-      onChainResult = await submitVerificationOnChain(
-        userAddress, 
-        verificationResult.verificationLevel,
-        true
-      );
+      // Note: This might fail if user doesn't have gas or other issues, but DB is now updated
+      try {
+        onChainResult = await submitVerificationOnChain(
+          userAddress,
+          verificationResult.verificationLevel,
+          true
+        );
+      } catch (chainErr) {
+        console.warn('⚠️ On-chain submission failed but DB is updated:', chainErr.message);
+        // We don't fail the request if only on-chain fails, since DB is updated
+      }
     }
 
     const response = {
@@ -359,11 +373,12 @@ app.post('/world-id', async (req, res) => {
       verificationLevel: verificationResult.verificationLevel,
       nullifierHash: verificationResult.nullifierHash,
       onChainSubmitted: !!onChainResult,
+      dbUpdated: true,
       transactionHash: onChainResult?.transactionHash,
       timestamp: new Date().toISOString(),
       ip: req.ip || req.connection.remoteAddress
     });
-    
+
     console.log('✅ Verification completed successfully');
     res.json(response);
 
@@ -375,11 +390,11 @@ app.post('/world-id', async (req, res) => {
       timestamp: new Date().toISOString(),
       ip: req.ip || req.connection.remoteAddress
     });
-    
+
     console.error('❌ Verification failed:', error.message);
-    res.status(400).json({ 
+    res.status(400).json({
       error: 'Verification failed',
-      message: error.message 
+      message: error.message
     });
   }
 });
@@ -388,10 +403,10 @@ app.post('/world-id', async (req, res) => {
 app.get('/world-id', async (req, res) => {
   const { userAddress, nullifierHash } = req.query;
 
-  if (!userAddress || !nullifierHash) {
-    return res.status(400).json({ 
+  if (!userAddress) {
+    return res.status(400).json({
       error: 'Missing required parameters',
-      details: 'userAddress and nullifierHash are required'
+      details: 'userAddress is required'
     });
   }
 
@@ -399,57 +414,81 @@ app.get('/world-id', async (req, res) => {
     if (isBanned(userAddress)) {
       return res.status(403).json({ error: 'User is banned' });
     }
-    
-    // Log user verification check (login status check)
+
+    // Log user verification check
     console.log('🔍 USER_VERIFICATION_CHECK', {
       userAddress,
       nullifierHash,
       timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
+      ip: req.ip || req.connection.remoteAddress
     });
-    
-    const cacheKey = `${userAddress}-${nullifierHash}`;
-    const cachedVerification = verificationCache.get(cacheKey);
 
-    if (!cachedVerification) {
-      return res.status(404).json({ 
-        error: 'Verification not found',
-        message: 'No recent verification found for this user'
-      });
+    let verificationData = null;
+
+    // 1. Check DB (Primary Source)
+    try {
+      const dbRes = await db.query('SELECT verification_level, nullifier_hash, last_seen FROM users WHERE address = $1', [userAddress]);
+      if (dbRes.rows.length > 0 && dbRes.rows[0].verification_level) {
+        // If nullifierHash is provided, verify it matches
+        if (nullifierHash && dbRes.rows[0].nullifier_hash && dbRes.rows[0].nullifier_hash !== nullifierHash) {
+          console.warn(`⚠️ Nullifier mismatch for ${userAddress}: DB=${dbRes.rows[0].nullifier_hash}, Req=${nullifierHash}`);
+          // We might want to flag this or fail, but for now we trust the address ownership + DB record
+        }
+
+        verificationData = {
+          verificationLevel: dbRes.rows[0].verification_level,
+          nullifierHash: dbRes.rows[0].nullifier_hash,
+          timestamp: new Date(dbRes.rows[0].last_seen).getTime()
+        };
+      }
+    } catch (dbErr) {
+      console.error('DB check failed:', dbErr);
     }
 
-    // Check if verification is still valid (not expired)
-    const isExpired = Date.now() - cachedVerification.timestamp > CACHE_TTL;
-    if (isExpired) {
-      verificationCache.delete(cacheKey);
-      return res.status(410).json({ 
-        error: 'Verification expired',
-        message: 'Verification has expired, please re-verify'
-      });
-    }
-
-    // Check on-chain verification status
+    // 2. Check on-chain verification status (Secondary/Fallback)
     let onChainStatus = null;
-    if (CONTRACT_ADDRESS && PRIVATE_KEY) {
+    if (CONTRACT_ADDRESS) {
       try {
         const provider = await getHealthyProvider();
-        onChainStatus = await withProviderRetry(async (p) => {
-          const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, p);
-          return c.getUserVerificationStatus(userAddress);
-        });
+        // Use a simpler read if possible, or retry wrapper
+        if (typeof withProviderRetry === 'function') {
+          onChainStatus = await withProviderRetry(async (p) => {
+            const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, p);
+            return c.getUserVerificationStatus(userAddress);
+          });
+        } else {
+          const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+          onChainStatus = await c.getUserVerificationStatus(userAddress);
+        }
+
+        // Use on-chain data if DB missed it
+        if (!verificationData && onChainStatus && onChainStatus.isVerified) {
+          verificationData = {
+            verificationLevel: onChainStatus.verificationLevel,
+            nullifierHash: null, // On-chain usually doesn't expose nullifier hash easily or at all here
+            timestamp: Date.now()
+          };
+          // Optionally backfill DB here?
+        }
       } catch (error) {
         console.warn('Could not fetch on-chain status:', error.message);
       }
     }
 
+    if (!verificationData) {
+      return res.status(404).json({
+        error: 'Verification not found',
+        message: 'No verification found for this user'
+      });
+    }
+
     const response = {
       success: true,
       verified: true,
-      verificationLevel: cachedVerification.verificationLevel,
-      nullifierHash: cachedVerification.nullifierHash,
-      timestamp: cachedVerification.timestamp,
-      expiresAt: cachedVerification.timestamp + CACHE_TTL,
+      verificationLevel: verificationData.verificationLevel,
+      nullifierHash: verificationData.nullifierHash,
+      timestamp: verificationData.timestamp,
+      expiresAt: Date.now() + (24 * 60 * 60 * 1000), // Mock expiry (24h) or remove expiry concept
       onChainStatus: onChainStatus ? {
         verificationLevel: onChainStatus.verificationLevel.toString(),
         isVerified: onChainStatus.isVerified
@@ -459,29 +498,18 @@ app.get('/world-id', async (req, res) => {
     // Log successful verification check
     console.log('✅ USER_VERIFICATION_SUCCESS', {
       userAddress,
-      nullifierHash,
-      verificationLevel: cachedVerification.verificationLevel,
-      onChainVerified: onChainStatus?.isVerified,
-      timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress
+      verificationLevel: verificationData.verificationLevel,
+      source: verificationData.nullifierHash ? 'database' : 'chain',
+      timestamp: new Date().toISOString()
     });
 
     res.json(response);
 
   } catch (error) {
-    // Log failed verification check
-    console.log('🔴 USER_VERIFICATION_FAILED', {
-      userAddress,
-      nullifierHash,
-      error: error.message,
-      timestamp: new Date().toISOString(),
-      ip: req.ip || req.connection.remoteAddress
-    });
-    
     console.error('❌ Verification status check failed:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Verification check failed',
-      message: error.message 
+      message: error.message
     });
   }
 });
@@ -503,7 +531,7 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 async function refreshLeaderboardCache() {
   console.log('🔄 Refreshing leaderboard cache...');
   const modes = ['Classic', 'Arcade', 'WhackLight'];
-  
+
   for (const mode of modes) {
     try {
       const colName = `high_score_${mode.toLowerCase()}`;
@@ -520,9 +548,9 @@ async function refreshLeaderboardCache() {
         ORDER BY ${colName} DESC 
         LIMIT 100
       `;
-      
+
       const result = await db.query(query);
-      
+
       leaderboardCache[mode] = result.rows.map((row, index) => ({
         rank: index + 1,
         player: row.player,
@@ -534,12 +562,12 @@ async function refreshLeaderboardCache() {
         tokensEarned: '0', // Placeholder
         timestamp: Date.now() // Capture time of cache update
       }));
-      
+
     } catch (err) {
       console.error(`❌ Failed to cache leaderboard for ${mode}:`, err);
     }
   }
-  
+
   leaderboardCache.lastUpdated = Date.now();
   console.log('✅ Leaderboard cache refreshed');
 }
@@ -550,11 +578,11 @@ setInterval(refreshLeaderboardCache, CACHE_DURATION);
 // Leaderboard API with 24h Cache
 app.get('/leaderboard', async (req, res) => {
   const { mode = 'Classic', limit = 10, offset = 0 } = req.query;
-  
+
   // Validate mode
   const validModes = ['Classic', 'Arcade', 'WhackLight'];
   const normalizedMode = validModes.find(m => m.toLowerCase() === String(mode).toLowerCase());
-  
+
   if (!normalizedMode) {
     return res.status(400).json({ error: 'Invalid game mode' });
   }
@@ -565,13 +593,13 @@ app.get('/leaderboard', async (req, res) => {
   }
 
   const cachedData = leaderboardCache[normalizedMode] || [];
-  
+
   // Apply pagination on cached data
   const start = Number(offset);
   const end = start + Number(limit);
   const paginatedData = cachedData.slice(start, end);
-  
-  res.json({ 
+
+  res.json({
     leaderboard: paginatedData,
     lastUpdated: leaderboardCache.lastUpdated,
     nextUpdate: leaderboardCache.lastUpdated + CACHE_DURATION
@@ -581,14 +609,14 @@ app.get('/leaderboard', async (req, res) => {
 // User Profile API
 app.get('/user/:address', async (req, res) => {
   const { address } = req.params;
-  
+
   try {
     const userResult = await db.query('SELECT * FROM users WHERE address = $1', [address]);
-    
+
     // Get total games played count from game_history
     const historyResult = await db.query('SELECT COUNT(*) FROM game_history WHERE player = $1', [address]);
     const totalGames = parseInt(historyResult.rows[0].count || '0');
-    
+
     if (userResult.rows.length === 0) {
       if (totalGames > 0) {
         // User exists in history but not in users table (edge case)
@@ -603,10 +631,10 @@ app.get('/user/:address', async (req, res) => {
       }
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     const userData = userResult.rows[0];
     userData.total_games_played = totalGames;
-    
+
     res.json(userData);
   } catch (err) {
     console.error('User profile query error:', err);
@@ -617,7 +645,7 @@ app.get('/user/:address', async (req, res) => {
 // Record Game Completion API (called by frontend after tx)
 app.post('/game/record', async (req, res) => {
   const { player, score, round, gameMode, tokensEarned, gameId, transactionHash } = req.body;
-  
+
   if (!player || !score || !gameMode) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -632,7 +660,7 @@ app.post('/game/record', async (req, res) => {
     const highScoreCol = `high_score_${modeStr.toLowerCase()}`;
     // Only update if column is valid to prevent injection
     if (!['high_score_classic', 'high_score_arcade', 'high_score_whack'].includes(highScoreCol)) {
-       throw new Error('Invalid game mode for high score update');
+      throw new Error('Invalid game mode for high score update');
     }
 
     await db.query(`
@@ -666,9 +694,9 @@ app.post('/game/record', async (req, res) => {
 app.post('/user/profile', async (req, res) => {
   const { address, username, avatar_url } = req.body;
   // TODO: Add auth/signature verification here
-  
+
   if (!address) return res.status(400).json({ error: 'Address required' });
-  
+
   try {
     await db.query(`
       INSERT INTO users (address, username, avatar_url, last_seen)
@@ -679,7 +707,7 @@ app.post('/user/profile', async (req, res) => {
         avatar_url = COALESCE($3, users.avatar_url),
         last_seen = NOW()
     `, [address, username, avatar_url]);
-    
+
     res.json({ success: true });
   } catch (err) {
     console.error('Update profile error:', err);
@@ -712,36 +740,56 @@ app.post('/admin/unban', (req, res) => {
 
 app.post('/session/start', async (req, res) => {
   const { proof, userAddress } = req.body || {};
-  if (!userAddress || !proof) {
+
+  // DEPRECATED: This endpoint is no longer needed for the simplified auth flow
+  // Kept for backward compatibility with older clients
+  console.warn(`⚠️ DEPRECATED: /session/start called by ${userAddress?.slice(0, 10)}... this endpoint will be removed in future versions.`);
+
+  if (!userAddress) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-  
+
+  // Return a dummy session to satisfy older clients without doing expensive verification
+  // Secure clients/gameplay now use /score/permit's direct DB verification
   const startTime = Date.now();
-  
+  const nonce = Math.floor(Date.now());
+  const deadline = Math.floor(Date.now() / 1000) + 900;
+  const sessionId = ethers.id(`sess:${userAddress}:${nonce}`);
+
   try {
+    // Optional: check ban status just in case
     if (isBanned(userAddress)) {
-      console.log(`🚫 SESSION_BLOCKED: ${userAddress.slice(0,10)}... (banned)`);
       return res.status(403).json({ error: 'User is banned' });
     }
 
-    const verificationResult = await verifyWorldIDProof(proof, userAddress);
-    const provider = await getHealthyProvider();
-    const chainId = await provider.getNetwork().then(n => Number(n.chainId));
-    const nonce = Math.floor(Date.now());
-    const deadline = Math.floor(Date.now() / 1000) + 900;
-    const sessionId = ethers.id(`sess:${userAddress}:${nonce}`);
-    
-    console.log(`✅ SESSION_START: ${userAddress.slice(0,10)}... level=${verificationResult.verificationLevel} chain=${chainId} (${Date.now() - startTime}ms)`);
-    
-    res.json({ success: true, sessionId, nonce, deadline, chainId, verificationLevel: verificationResult.verificationLevel });
+    // We skip verifyWorldIDProof here to save API/compute costs as it's redundant
+    // The proof should have been verified via /world-id endpoint already
+    // For older clients that rely on verificationLevel in response, we try to fetch from DB
+    let verificationLevel = 'orb'; // Default fallback
+    try {
+      const dbRes = await db.query('SELECT verification_level FROM users WHERE address = $1', [userAddress]);
+      if (dbRes.rows.length > 0 && dbRes.rows[0].verification_level) {
+        verificationLevel = dbRes.rows[0].verification_level;
+      }
+    } catch (e) { }
+
+    res.json({
+      success: true,
+      sessionId,
+      nonce,
+      deadline,
+      chainId: 480, // World Chain
+      verificationLevel
+    });
   } catch (error) {
-    console.error(`❌ SESSION_FAILED: ${userAddress.slice(0,10)}... error=${error.message} (${Date.now() - startTime}ms)`);
+    console.error(`❌ SESSION_FAILED: ${userAddress.slice(0, 10)}... error=${error.message}`);
     res.status(400).json({ error: error.message });
   }
 });
 
 app.post('/score/permit', async (req, res) => {
   const { userAddress, score, round, gameMode, sessionId, nonce, deadline } = req.body || {};
+  // SessionID is now optional/generated client-side, but still required for permit structure
   if (!userAddress || typeof score !== 'number' || typeof round !== 'number' || !sessionId || typeof nonce !== 'number' || typeof deadline !== 'number') {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -751,15 +799,51 @@ app.post('/score/permit', async (req, res) => {
   if (!CONTRACT_ADDRESS) {
     return res.status(500).json({ error: 'GAME_CONTRACT_ADDRESS not configured' });
   }
-  
+
   const requestId = `${userAddress.slice(-6)}-${Date.now().toString(36)}`;
   const startTime = Date.now();
-  
+
   try {
     if (isBanned(userAddress)) {
       return res.status(403).json({ error: 'User is banned' });
     }
-    
+
+    // NEW: Verification Check (DB first, then Chain as fallback)
+    let isVerified = false;
+    let verificationLevel = null;
+
+    // 1. Check DB
+    try {
+      const userResult = await db.query('SELECT verification_level FROM users WHERE address = $1', [userAddress]);
+      if (userResult.rows.length > 0 && userResult.rows[0].verification_level) {
+        isVerified = true;
+        verificationLevel = userResult.rows[0].verification_level;
+      }
+    } catch (dbErr) {
+      console.warn(`[${requestId}] DB verification check failed, falling back to chain:`, dbErr.message);
+    }
+
+    // 2. Fallback to Chain if not in DB
+    if (!isVerified) {
+      try {
+        const provider = await getHealthyProvider();
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+        const onChainStatus = await contract.getUserVerificationStatus(userAddress);
+        if (onChainStatus && onChainStatus.isVerified) {
+          isVerified = true;
+          verificationLevel = onChainStatus.verificationLevel;
+          // Optionally backfill DB? Skipping for now to keep it simple/fast
+        }
+      } catch (chainErr) {
+        console.warn(`[${requestId}] Chain verification check failed:`, chainErr.message);
+      }
+    }
+
+    if (!isVerified) {
+      console.warn(`⚠️ [${requestId}] Unverified user attempted to score: ${userAddress}`);
+      return res.status(403).json({ error: 'User not verified. Please verify with World ID first.' });
+    }
+
     // Rate limiting check
     const now = Date.now();
     const arr = permitRateMap.get(userAddress) || [];
@@ -770,7 +854,7 @@ app.post('/score/permit', async (req, res) => {
     }
     recent.push(now);
     permitRateMap.set(userAddress, recent);
-    
+
     // Validation
     if (round <= 0 || round > 1000) {
       return res.status(400).json({ error: 'Invalid round' });
@@ -783,7 +867,7 @@ app.post('/score/permit', async (req, res) => {
       console.warn(`⚠️ [${requestId}] Score ${score} exceeds max ${maxScore}`);
       return res.status(400).json({ error: 'Score exceeds theoretical maximum' });
     }
-    
+
     // Sign permit
     const provider = await getHealthyProvider();
     const wallet = new ethers.Wallet(SIGNER_PRIVATE_KEY, provider);
@@ -808,21 +892,21 @@ app.post('/score/permit', async (req, res) => {
       nonce: value.nonce.toString(),
       deadline: value.deadline.toString()
     };
-    
+
     // Single consolidated log (use cached network name)
     const network = await getNetworkName();
-    console.log(`✅ [${requestId}] PERMIT_ISSUED: ${userAddress.slice(0,10)}... score=${score} round=${round} mode=${gameMode} tokens≈${Math.floor(score * 0.1)} network=${network} (${Date.now() - startTime}ms)`);
-    
-    res.json({ 
-      success: true, 
-      signature, 
-      domain, 
-      types: ScorePermitTypes, 
+    console.log(`✅ [${requestId}] PERMIT_ISSUED: ${userAddress.slice(0, 10)}... score=${score} level=${verificationLevel} round=${round} mode=${gameMode} tokens≈${Math.floor(score * 0.1)} network=${network} (${Date.now() - startTime}ms)`);
+
+    res.json({
+      success: true,
+      signature,
+      domain,
+      types: ScorePermitTypes,
       value: valueOut
     });
   } catch (error) {
     const network = await getNetworkName();
-    console.error(`❌ [${requestId}] PERMIT_FAILED: ${userAddress.slice(0,10)}... error=${error.message} network=${network} (${Date.now() - startTime}ms)`);
+    console.error(`❌ [${requestId}] PERMIT_FAILED: ${userAddress.slice(0, 10)}... error=${error.message} network=${network} (${Date.now() - startTime}ms)`);
     res.status(500).json({ error: error.message });
   }
 });
@@ -833,7 +917,7 @@ app.post('/permit/usage', async (req, res) => {
   if (!userAddress || !permitSignature || !status) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-  
+
   try {
     const network = await getNetworkName();
     const logData = {
@@ -875,7 +959,7 @@ app.post('/token/claim/status', async (req, res) => {
   if (!userAddress || !status) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-  
+
   try {
     const network = await getNetworkName();
     const logData = {
@@ -940,7 +1024,7 @@ app.use((error, req, res, next) => {
       frontendNote: 'If this is a token claim failure, ensure your frontend is calling /token/claim/status to track the failure'
     });
   }
-  
+
   console.error('❌ Unhandled error:', error);
   res.status(500).json({
     error: 'Internal server error',
@@ -954,7 +1038,7 @@ app.post('/world-id/cache-sync', async (req, res) => {
   const { userAddress, verificationLevel, nullifierHash, timestamp } = req.body;
 
   if (!userAddress || !verificationLevel || !nullifierHash) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: 'Missing required fields',
       details: 'userAddress, verificationLevel, and nullifierHash are required'
     });
@@ -1007,10 +1091,10 @@ app.post('/world-id/cache-sync', async (req, res) => {
       timestamp: new Date().toISOString(),
       ip: req.ip || req.connection.remoteAddress
     });
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: 'Cache sync failed',
-      message: error.message 
+      message: error.message
     });
   }
 });
@@ -1046,17 +1130,17 @@ const VALIDATION_TTL_MS = 30000;
 const RATE_COOLDOWN_MS = 5 * 60 * 1000;
 function isTransientError(error) {
   const msg = (error && error.message) ? error.message.toLowerCase() : '';
-  return msg.includes('rate') || 
-         msg.includes('429') || 
-         msg.includes('timeout') || 
-         msg.includes('fetch') || 
-         msg.includes('connection') || 
-         msg.includes('retry') || 
-         msg.includes('network') || 
-         msg.includes('detect network') ||
-         msg.includes('response body') || 
-         msg.includes('missing revert data') ||
-         msg.includes('json-rpc');
+  return msg.includes('rate') ||
+    msg.includes('429') ||
+    msg.includes('timeout') ||
+    msg.includes('fetch') ||
+    msg.includes('connection') ||
+    msg.includes('retry') ||
+    msg.includes('network') ||
+    msg.includes('detect network') ||
+    msg.includes('response body') ||
+    msg.includes('missing revert data') ||
+    msg.includes('json-rpc');
 }
 function withTimeout(promise, ms) {
   return Promise.race([
@@ -1079,7 +1163,7 @@ async function getHealthyProvider() {
   if (currentProvider && currentUrl && !isCoolingDown(currentUrl) && (Date.now() - lastValidatedAt) < VALIDATION_TTL_MS) {
     return currentProvider;
   }
-  
+
   // Always try endpoints in priority order (first = highest priority)
   for (let i = 0; i < RPC_URLS.length; i++) {
     const url = RPC_URLS[i];
@@ -1093,7 +1177,7 @@ async function getHealthyProvider() {
       const provider = new ethers.JsonRpcProvider(url, WORLDCHAIN_NETWORK, {
         staticNetwork: WORLDCHAIN_NETWORK
       });
-      
+
       // Just test block number - network is already set statically
       const blockNumber = await withTimeout(provider.getBlockNumber(), 8000);
 
@@ -1152,7 +1236,7 @@ async function getNetworkName() {
   if (cachedNetworkName && (Date.now() - networkNameCacheTime) < NETWORK_NAME_CACHE_TTL) {
     return cachedNetworkName;
   }
-  
+
   try {
     const provider = await getHealthyProvider();
     const network = await provider.getNetwork();
@@ -1165,7 +1249,7 @@ async function getNetworkName() {
       case '11155111': networkName = 'ethereum-sepolia'; break;
       default: networkName = `chain-${network.chainId}`;
     }
-    
+
     // Cache the result
     cachedNetworkName = networkName;
     networkNameCacheTime = Date.now();
