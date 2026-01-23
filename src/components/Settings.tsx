@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
-import { useContract } from '../hooks/useContract'
 import LanguageSwitcher from './LanguageSwitcher'
 import { sanitizeLocalStorageData } from '../utils/inputSanitizer'
 import { UserInfo } from './UserInfo'
@@ -13,7 +12,6 @@ interface SettingsProps {
 function Settings({ onClose }: SettingsProps) {
   const { t } = useTranslation()
   const { user, logout } = useAuth()
-  const { getPlayerStats } = useContract()
   const [contractStats, setContractStats] = useState<{ totalGamesPlayed: number; highScore: number } | null>(null)
   const [isLoadingStats, setIsLoadingStats] = useState(false)
 
@@ -80,28 +78,39 @@ function Settings({ onClose }: SettingsProps) {
     }
   }
 
-  // Fetch contract stats when component mounts or user changes
+  // Fetch stats from API when component mounts or user changes
   useEffect(() => {
-    const fetchContractStats = async () => {
-      if (!user?.walletAddress || !user?.onChainVerified) return
+    const fetchPlayerStats = async () => {
+      if (!user?.walletAddress) return
 
       try {
         setIsLoadingStats(true)
-        const stats = await getPlayerStats(user.walletAddress)
-        setContractStats({
-          totalGamesPlayed: stats.totalGamesPlayed,
-          highScore: stats.highScore
-        })
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+        const response = await fetch(`${apiBase}/user/${user.walletAddress}`)
+        
+        if (response.ok) {
+          const data = await response.json()
+          setContractStats({
+            totalGamesPlayed: data.total_games_played || 0,
+            highScore: Math.max(
+              data.high_score_classic || 0,
+              data.high_score_arcade || 0,
+              data.high_score_whack || 0
+            )
+          })
+        } else {
+          setContractStats({ totalGamesPlayed: 0, highScore: 0 })
+        }
       } catch (error) {
-        console.error('Failed to fetch contract stats:', error)
+        console.error('Failed to fetch player stats:', error)
         setContractStats(null)
       } finally {
         setIsLoadingStats(false)
       }
     }
 
-    fetchContractStats()
-  }, [user?.walletAddress, user?.onChainVerified, getPlayerStats])
+    fetchPlayerStats()
+  }, [user?.walletAddress])
 
   return (
     <div className="h-full flex flex-col animate-fade-in bg-[#0A0A0F] relative overflow-hidden">

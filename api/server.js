@@ -583,13 +583,31 @@ app.get('/user/:address', async (req, res) => {
   const { address } = req.params;
   
   try {
-    const result = await db.query('SELECT * FROM users WHERE address = $1', [address]);
+    const userResult = await db.query('SELECT * FROM users WHERE address = $1', [address]);
     
-    if (result.rows.length === 0) {
+    // Get total games played count from game_history
+    const historyResult = await db.query('SELECT COUNT(*) FROM game_history WHERE player = $1', [address]);
+    const totalGames = parseInt(historyResult.rows[0].count || '0');
+    
+    if (userResult.rows.length === 0) {
+      if (totalGames > 0) {
+        // User exists in history but not in users table (edge case)
+        return res.json({
+          address,
+          total_games_played: totalGames,
+          high_score_classic: 0,
+          high_score_arcade: 0,
+          high_score_whack: 0,
+          total_tokens_earned: 0
+        });
+      }
       return res.status(404).json({ error: 'User not found' });
     }
     
-    res.json(result.rows[0]);
+    const userData = userResult.rows[0];
+    userData.total_games_played = totalGames;
+    
+    res.json(userData);
   } catch (err) {
     console.error('User profile query error:', err);
     res.status(500).json({ error: 'Failed to fetch user profile' });
