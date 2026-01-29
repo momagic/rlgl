@@ -29,7 +29,8 @@
     "test:v3": "node scripts/test-v3-contract.cjs",
     "test:v3:quick": "npx hardhat test test/RedLightGreenLightGameV3.test.cjs",
     "verify:worldchain": "npx hardhat verify --network worldchain",
-    "verify:sepolia": "npx hardhat verify --network worldchain-sepolia"
+    "verify:sepolia": "npx hardhat verify --network worldchain-sepolia",
+    "sync:cron": "node api/scripts/cron-sync-leaderboard.js"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.8",

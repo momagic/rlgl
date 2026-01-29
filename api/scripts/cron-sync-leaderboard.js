@@ -13,7 +13,7 @@ const RPC_URL = process.env.RPC_URL || 'https://worldchain-mainnet.g.alchemy.com
 const CONTRACT_ADDRESS = process.env.GAME_CONTRACT_ADDRESS;
 const DATABASE_URL = process.env.DATABASE_URL;
 // 24 hours approx in blocks (assuming 2s block time = 43200, safe buffer 50000)
-const DEFAULT_LOOKBACK = 50000; 
+const DEFAULT_LOOKBACK = 50000;
 
 if (!CONTRACT_ADDRESS || !DATABASE_URL) {
   console.error('❌ Missing GAME_CONTRACT_ADDRESS or DATABASE_URL');
@@ -43,12 +43,12 @@ async function processGameCompleted(player, gameMode, score, tokensEarned, gameI
   const modeStr = GAME_MODES[gameMode] || 'Classic';
   const scoreNum = Number(score);
   const tokensNum = Number(ethers.formatEther(tokensEarned));
-  
+
   // console.log(`Processing: ${player} | ${modeStr} | ${scoreNum}`);
 
   try {
     const highScoreCol = `high_score_${modeStr.toLowerCase()}`;
-    
+
     // Upsert User
     await db.query(`
       INSERT INTO users (address, ${highScoreCol}, total_tokens_earned, last_seen)
@@ -67,13 +67,13 @@ async function processGameCompleted(player, gameMode, score, tokensEarned, gameI
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, to_timestamp($8))
       ON CONFLICT (game_id, game_mode) DO NOTHING
     `, [
-      player, 
-      scoreNum, 
-      0, 
-      modeStr, 
-      tokensNum, 
-      Number(gameId), 
-      blockNumber, 
+      player,
+      scoreNum,
+      0,
+      modeStr,
+      tokensNum,
+      Number(gameId),
+      blockNumber,
       timestamp
     ]);
 
@@ -100,16 +100,16 @@ async function main() {
 
   try {
     await db.connect();
-    
+
     const currentBlock = await provider.getBlockNumber();
     const lastSyncedBlock = await getLastSyncedBlock();
-    
+
     // Determine start block:
     // If we have a last synced block, start from there + 1.
     // Otherwise, use default lookback.
     // Also ensure we don't go back further than safety limit if last synced is 0
     let startBlock = lastSyncedBlock > 0 ? lastSyncedBlock + 1 : Math.max(0, currentBlock - DEFAULT_LOOKBACK);
-    
+
     // Safety check: if last synced is TOO old (e.g. > 1 week), maybe just scan last 24h to avoid massive query?
     // But for accuracy, we should sync all. Let's cap at 100k blocks (approx 2 days) per run to avoid timeout
     const MAX_SCAN_RANGE = 100000;
@@ -132,18 +132,32 @@ async function main() {
     for (let i = startBlock; i <= currentBlock; i += CHUNK_SIZE) {
       const end = Math.min(i + CHUNK_SIZE - 1, currentBlock);
       // console.log(`Scanning ${i} to ${end}...`);
-      
+
       try {
         const gameEvents = await contract.queryFilter('GameCompleted', i, end);
-        
+
         if (gameEvents.length > 0) {
           console.log(`   Found ${gameEvents.length} games in range ${i}-${end}`);
           totalGames += gameEvents.length;
 
+          const blockCache = new Map();
+
+          // Pre-fetch blocks in parallel for this batch of events
+          const uniqueBlockNumbers = [...new Set(gameEvents.map(e => e.blockNumber))];
+          await Promise.all(uniqueBlockNumbers.map(async (bn) => {
+            try {
+              const block = await provider.getBlock(bn);
+              blockCache.set(bn, block.timestamp);
+            } catch (e) {
+              console.warn(`Failed to fetch block ${bn}:`, e.message);
+              blockCache.set(bn, Math.floor(Date.now() / 1000)); // Fallback
+            }
+          }));
+
           for (const event of gameEvents) {
-            const block = await event.getBlock();
+            const timestamp = blockCache.get(event.blockNumber) || Math.floor(Date.now() / 1000);
             const { player, gameMode, score, tokensEarned, gameId, isNewHighScore } = event.args;
-            await processGameCompleted(player, Number(gameMode), score, tokensEarned, gameId, isNewHighScore, event.blockNumber, block.timestamp);
+            await processGameCompleted(player, Number(gameMode), score, tokensEarned, gameId, isNewHighScore, event.blockNumber, timestamp);
           }
         }
       } catch (err) {
