@@ -561,7 +561,7 @@ async function refreshLeaderboardCache() {
             FROM game_history gh 
             WHERE gh.player = u.address 
               AND gh.score = u.${colName} 
-              AND gh.game_mode = '${dbMode}'
+              AND (gh.game_mode = '${dbMode}' ${dbMode === 'Whack' ? "OR gh.game_mode = 'WhackLight'" : ""})
             ORDER BY timestamp DESC
             LIMIT 1
           ) as round

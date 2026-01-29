@@ -40,7 +40,8 @@ const provider = new ethers.JsonRpcProvider(RPC_URL);
 const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
 
 async function processGameCompleted(player, gameMode, score, tokensEarned, gameId, isNewHighScore, blockNumber, timestamp) {
-  const modeStr = GAME_MODES[gameMode] || 'Classic';
+  let modeStr = GAME_MODES[gameMode] || 'Classic';
+  if (modeStr === 'WhackLight') modeStr = 'Whack';
   const scoreNum = Number(score);
   const tokensNum = Number(ethers.formatEther(tokensEarned));
 
