@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { formatEther } from 'viem'
 import { useState, useEffect, useRef } from 'react'
 
+
 interface GameOverScreenProps {
   playerStats: PlayerStats
   isNewHighScore: boolean
@@ -24,9 +25,9 @@ function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain,
   const { getCurrentPricing, getPlayerStats } = useContract()
   const { user } = useAuth()
   const [estimatedTokens, setEstimatedTokens] = useState<string>('0')
-  
-  const accuracy = playerStats.totalTaps > 0 
-    ? Math.round((playerStats.correctTaps / playerStats.totalTaps) * 100) 
+
+  const accuracy = playerStats.totalTaps > 0
+    ? Math.round((playerStats.correctTaps / playerStats.totalTaps) * 100)
     : 100
 
   const tokensEarned = tokenReward?.tokensEarned ?? estimatedTokens
@@ -41,7 +42,7 @@ function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain,
       // Mark this reward as processed
       processedTokenRewardRef.current = tokenReward.transactionHash
       setHasShownSuccessMessage(true)
-      
+
       // Wait a bit before showing the success message to let the game over screen load
       const timer = setTimeout(() => {
         setShowSuccessMessage(true)
@@ -66,7 +67,7 @@ function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain,
           try {
             const stats = await getPlayerStats(addr)
             multiplier = BigInt(stats.verificationMultiplier ?? 100)
-          } catch {}
+          } catch { }
         }
         const mintedWei = (BigInt(playerStats.currentScore) * tpp * multiplier) / 100n
         const amount = formatEther(mintedWei)
@@ -82,190 +83,150 @@ function GameOverScreen({ playerStats, isNewHighScore, tokenReward, onPlayAgain,
   }, [playerStats.currentScore, getCurrentPricing, getPlayerStats, user?.walletAddress])
 
   const getPerformanceMessage = () => {
-    if (isNewHighScore) return "🎉 NEW HIGH SCORE! 🎉"
-    if (playerStats.round >= 20) return "🔥 LEGENDARY PERFORMANCE! 🔥"
-    if (playerStats.round >= 15) return "💪 INCREDIBLE REFLEXES! 💪"
-    if (playerStats.round >= 10) return "⚡ GREAT JOB! ⚡"
-    if (playerStats.round >= 5) return "👍 NOT BAD! 👍"
-    return "🎯 KEEP PRACTICING! 🎯"
+    if (isNewHighScore) return "NEW HIGH SCORE!"
+    if (playerStats.round >= 20) return "LEGENDARY!"
+    if (playerStats.round >= 15) return "INCREDIBLE!"
+    if (playerStats.round >= 10) return "GREAT JOB!"
+    if (playerStats.round >= 5) return "NOT BAD!"
+    return "ELIMINATED"
   }
 
-
+  const getMessageColor = () => {
+    if (isNewHighScore) return "text-pink-500 neon-text-pink"
+    if (playerStats.round >= 10) return "text-teal-400 neon-text-teal"
+    return "text-red-500 neon-text-red"
+  }
 
   return (
-    <div className="flex flex-col h-full p-2 relative animate-fade-in">
-      {/* Main Content - Fixed Height */}
-      <div className="flex-1 flex flex-col items-center text-center space-y-2 overflow-hidden min-h-0 relative z-10">
-        {/* Game Over Title */}
-        <div className="space-y-1">
-          <h1 className="font-squid-heading text-2xl font-bold text-squid-white uppercase tracking-wider flex items-center justify-center">
-            <span className="mr-2 text-2xl">💀</span>
-            Game Over
-          </h1>
-          <p className={`text-sm font-squid-heading font-bold uppercase ${isNewHighScore ? 'neon-text-pink animate-neon-pulse' : 'neon-text-teal'}`}>{getPerformanceMessage()}</p>
-        </div>
-
-        {/* Final Score */}
-        <div 
-          className={`w-full p-3 rounded-lg border-3 relative ${
-            isNewHighScore 
-              ? 'border-squid-pink bg-squid-pink/20' 
-              : 'border-squid-green bg-squid-green/20'
-          }`}
-          style={{
-            boxShadow: isNewHighScore 
-              ? '4px 4px 0px 0px #FF1F8C' 
-              : '4px 4px 0px 0px #00A878'
-          }}
-        >
-          <div className="text-squid-white/80 text-xs font-squid-heading font-bold uppercase mb-1">FINAL SCORE</div>
-          <div className={`text-3xl font-squid-mono font-bold mb-1 ${isNewHighScore ? 'neon-text-pink' : 'neon-text-green'}`}>
-            {playerStats.currentScore.toLocaleString()}
-          </div>
-          
-          {isNewHighScore && (
-            <div className="text-squid-white/70 text-xs font-squid font-semibold">
-              Previous best: {(playerStats.highScore || 0).toLocaleString()}
-            </div>
-          )}
-        </div>
-
-        {/* Tokens Earned */}
-        <div 
-          className="w-full p-3 rounded-lg border-3 border-squid-teal bg-squid-teal/10"
-          style={{ boxShadow: '4px 4px 0px 0px #00D9C0' }}
-        >
-          <div className="text-squid-teal text-xs font-squid-heading font-bold uppercase mb-1">TOKENS EARNED</div>
-          <div className="flex items-center justify-center space-x-2">
-            <img src="/RLGL Coin sml.png" alt="RLGL Token" className="w-6 h-6 border-2 border-squid-black rounded-full" />
-            <div className="text-squid-white text-xl font-squid-mono font-bold neon-text-teal">{tokensEarned}</div>
-            <span className="text-squid-white/70 text-xs font-squid-heading font-bold uppercase">RLGL</span>
-          </div>
-          <div className="text-squid-white/60 text-xs mt-1 font-squid font-semibold">
-            1 token per round + verification bonus
-          </div>
-        </div>
-
-        {/* Play Again Button */}
-        <button
-          onClick={canPlayAgain ? onPlayAgain : onMainMenu}
-          disabled={turnLoading}
-          className={`w-full py-3 rounded-lg font-squid-heading font-bold uppercase tracking-wider transition-all duration-150 border-3 text-sm ${
-            canPlayAgain
-              ? 'text-squid-white border-squid-black'
-              : 'text-squid-white/60 border-squid-border cursor-not-allowed'
-          }`}
-          style={{
-            background: canPlayAgain ? '#FF1F8C' : '#2D2D35',
-            boxShadow: canPlayAgain ? '4px 4px 0px 0px #0A0A0F' : '2px 2px 0px 0px #0A0A0F'
-          }}
-          onPointerDown={(e) => {
-            if (canPlayAgain && !turnLoading) {
-              e.currentTarget.style.transform = 'translate(2px, 2px)'
-              e.currentTarget.style.boxShadow = '2px 2px 0px 0px #0A0A0F'
-            }
-          }}
-          onPointerUp={(e) => {
-            if (canPlayAgain && !turnLoading) {
-              e.currentTarget.style.transform = 'translate(0, 0)'
-              e.currentTarget.style.boxShadow = '4px 4px 0px 0px #0A0A0F'
-            }
-          }}
-        >
-          {turnLoading ? (
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-4 h-4 border-2 border-squid-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Checking...</span>
-            </div>
-          ) : canPlayAgain ? (
-            `🔄 Play Again (${turnStatus.hasActiveWeeklyPass ? '∞' : turnStatus.availableTurns} left)`
-          ) : (
-            '❌ No Turns - Buy More!'
-          )}
-        </button>
-
-        {/* Game Stats */}
-        <div 
-          className="w-full p-3 rounded-lg border-3 border-squid-border bg-squid-gray"
-          style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}
-        >
-          <h3 className="text-squid-white text-sm font-squid-heading font-bold uppercase tracking-wider mb-2">Your Performance</h3>
-          
-          <div className="grid grid-cols-2 gap-2 text-center">
-            <div 
-              className="rounded p-2 border-2 border-squid-teal bg-squid-teal/10"
-              style={{ boxShadow: '2px 2px 0px 0px #00D9C0' }}
-            >
-              <div className="text-squid-teal text-xs font-squid-heading font-bold uppercase mb-1">ROUNDS</div>
-              <div className="text-squid-white text-lg font-squid-mono font-bold">{playerStats.round}</div>
-            </div>
-            
-            <div 
-              className="rounded p-2 border-2 border-squid-pink bg-squid-pink/10"
-              style={{ boxShadow: '2px 2px 0px 0px #FF1F8C' }}
-            >
-              <div className="text-squid-pink text-xs font-squid-heading font-bold uppercase mb-1">BEST STREAK</div>
-              <div className="text-squid-white text-lg font-squid-mono font-bold">{(playerStats as any).maxStreak ?? 0}</div>
-            </div>
-            
-            <div 
-              className="rounded p-2 border-2 border-squid-green bg-squid-green/10"
-              style={{ boxShadow: '2px 2px 0px 0px #00A878' }}
-            >
-              <div className="text-squid-green text-xs font-squid-heading font-bold uppercase mb-1">CORRECT</div>
-              <div className="text-squid-white text-lg font-squid-mono font-bold">{playerStats.correctTaps}</div>
-            </div>
-            
-            <div 
-              className="rounded p-2 border-2 border-squid-teal bg-squid-teal/10"
-              style={{ boxShadow: '2px 2px 0px 0px #00D9C0' }}
-            >
-              <div className="text-squid-teal text-xs font-squid-heading font-bold uppercase mb-1">ACCURACY</div>
-              <div className={`text-lg font-squid-mono font-bold ${
-                accuracy >= 90 ? 'neon-text-green' :
-                accuracy >= 80 ? 'neon-text-teal' :
-                accuracy >= 70 ? 'text-squid-white' :
-                'text-squid-white/70'
-              }`}>{accuracy}%</div>
-            </div>
-          </div>
-        </div>
-        {/* Encouragement - Inside scrollable area */}
-        <div className="text-squid-teal/90 text-xs text-center w-full mx-auto px-1 font-squid font-semibold">
-          {playerStats.round <= 5 
-            ? "Practice makes perfect! Try to focus on the rhythm."
-            : playerStats.round <= 10
-            ? "You're getting better! Can you reach round 15?"
-            : playerStats.round <= 15
-            ? "Amazing reflexes! Challenge yourself to reach round 20!"
-            : "You're a Red Light Green Light master! 🏆"
-          }
-        </div>
+    <div className="flex flex-col min-h-full animate-fade-in relative w-full">
+      {/* Cinematic Background - Fixed to cover full screen ignoring parent padding */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute inset-0 bg-black"></div>
+        <div className="absolute inset-0 bg-[url('/backgrounds/splash.webp')] bg-cover bg-center opacity-30 mix-blend-overlay"></div>
+        <div className={`absolute bottom-0 right-0 w-96 h-96 rounded-full blur-[120px] opacity-20 ${isNewHighScore ? 'bg-pink-600' : 'bg-red-600'}`}></div>
+        <div className="absolute top-1/4 -left-20 w-64 h-64 bg-teal-600/10 rounded-full blur-[80px] opacity-20"></div>
+        {/* Vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/80"></div>
       </div>
 
-      {/* Fixed Bottom Section */}
-      <div className="flex-shrink-0 space-y-1 pb-safe-bottom pt-1 relative z-10">
-        {/* Back to Menu Button */}
-        <button
-          onClick={onMainMenu}
-          className="w-full py-2 rounded-lg font-squid-heading font-bold uppercase tracking-wider text-squid-white border-3 border-squid-border bg-squid-gray transition-all duration-150 text-sm"
-          style={{ boxShadow: '3px 3px 0px 0px #0A0A0F' }}
-          onPointerDown={(e) => {
-            e.currentTarget.style.transform = 'translate(2px, 2px)'
-            e.currentTarget.style.boxShadow = '1px 1px 0px 0px #0A0A0F'
-          }}
-          onPointerUp={(e) => {
-            e.currentTarget.style.transform = 'translate(0, 0)'
-            e.currentTarget.style.boxShadow = '3px 3px 0px 0px #0A0A0F'
-          }}
-        >
-          🏠 Back to Menu
-        </button>
+      {/* Content Container - Flex Col to push buttons down */}
+      <div className="relative z-10 flex flex-col flex-1 w-full max-w-lg mx-auto p-4 pb-0">
+
+        {/* Header Title */}
+        <div className="text-center mt-2 mb-6">
+          <h1 className={`font-squid-heading text-4xl font-bold uppercase tracking-widest ${getMessageColor()} animate-pulse`}>
+            {getPerformanceMessage()}
+          </h1>
+          {isNewHighScore && (
+            <div className="text-white/80 font-squid text-sm mt-2 tracking-wider animate-bounce">
+              🏆 NEW RECORD SET 🏆
+            </div>
+          )}
+        </div>
+
+        {/* Main Score Card */}
+        <div className="bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 mb-6 relative overflow-hidden group shadow-2xl shrink-0">
+          <div className={`absolute inset-0 opacity-10 ${isNewHighScore ? 'bg-gradient-to-br from-pink-500 to-purple-600' : 'bg-gradient-to-br from-zinc-800 to-black'}`}></div>
+
+          <div className="relative z-10 text-center">
+            <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest mb-2">Final Score</p>
+            <div className={`text-6xl font-squid-mono font-bold mb-2 drop-shadow-lg ${isNewHighScore ? 'text-pink-500' : 'text-white'}`}>
+              {playerStats.currentScore.toLocaleString()}
+            </div>
+
+            {/* Token Reward Pill */}
+            <div className="inline-flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-teal-500/30 mx-auto">
+              <img src="/RLGL Coin sml.png" alt="Token" className="w-4 h-4" />
+              <span className="text-teal-400 font-squid-mono font-bold text-sm">+{tokensEarned} RLGL</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Performance & Stats */}
+        <div className="mb-2 shrink-0">
+          <h3 className="text-zinc-500 font-squid text-xs uppercase tracking-widest mb-3 ml-1">Your Performance</h3>
+
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {/* Round */}
+            <div className="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-4 text-center">
+              <div className="text-2xl font-squid-mono font-bold text-white mb-1">{playerStats.round}</div>
+              <div className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Round</div>
+            </div>
+
+            {/* Best Streak */}
+            <div className="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-4 text-center">
+              <div className="text-2xl font-squid-mono font-bold text-pink-500 mb-1">{(playerStats as any).maxStreak ?? 0}</div>
+              <div className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Best Streak</div>
+            </div>
+
+            {/* Accuracy */}
+            <div className="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-4 text-center">
+              <div className={`text-2xl font-squid-mono font-bold mb-1 ${accuracy >= 90 ? 'text-emerald-400' : 'text-white'}`}>{accuracy}%</div>
+              <div className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Accuracy</div>
+            </div>
+
+            {/* Correct Taps */}
+            <div className="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-4 text-center">
+              <div className="text-2xl font-squid-mono font-bold text-white mb-1">{playerStats.correctTaps}</div>
+              <div className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Correct Taps</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Hype Message */}
+        <div className="text-squid-teal text-sm text-center w-full px-4 py-3 font-squid font-bold bg-teal-900/10 border border-teal-500/20 rounded-xl mb-6 shrink-0">
+          {playerStats.round <= 5
+            ? "Practice makes perfect! Try to focus on the rhythm."
+            : playerStats.round <= 10
+              ? "You're getting better! Can you reach round 15?"
+              : playerStats.round <= 15
+                ? "Amazing reflexes! Challenge yourself to reach round 20!"
+                : "You're a Red Light Green Light master! 🏆"
+          }
+        </div>
+
+        {/* Spacer to push buttons to bottom */}
+        <div className="flex-1"></div>
+
+        {/* Actions - Now part of the flow, pushed to bottom */}
+        <div className="w-full space-y-3 pb-2 pt-2 mt-auto">
+          {/* Play Again Button */}
+          <button
+            onClick={canPlayAgain ? onPlayAgain : onMainMenu}
+            disabled={turnLoading}
+            className={`w-full py-4 rounded-xl font-squid-heading font-bold uppercase tracking-widest text-lg shadow-lg transition-all active:scale-95 border border-white/10 ${canPlayAgain
+              ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-pink-600/20 hover:shadow-pink-600/40'
+              : 'bg-zinc-800 text-white/50 cursor-not-allowed'
+              }`}
+          >
+            {turnLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                Checking...
+              </span>
+            ) : canPlayAgain ? (
+              <span className="flex items-center justify-center gap-2">
+                <span>🔄</span> Play Again
+              </span>
+            ) : (
+              "No Turns Left"
+            )}
+          </button>
+
+          {/* Menu Button */}
+          <button
+            onClick={onMainMenu}
+            className="w-full py-3 rounded-xl font-bold uppercase tracking-wider text-sm text-zinc-300 bg-white/5 border border-white/5 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            🏠 Return to Menu
+          </button>
+        </div>
+
       </div>
 
       {/* Success Message Overlay */}
       {showSuccessMessage && tokenReward && (
-        <div className="animate-fade-in">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <SuccessMessage
             tokenReward={tokenReward}
             onClose={() => setShowSuccessMessage(false)}

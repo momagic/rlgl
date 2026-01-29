@@ -22,7 +22,7 @@ import { worldIDVerificationService } from '../services/worldIDVerification'
  */
 
 // Simple username cache
-const usernameCache = new Map<string, string>()
+const profileCache = new Map<string, { username?: string; avatar?: string }>()
 
 // Cache key helper
 const getCacheKey = (mode: GameMode) => `leaderboard-top5-${mode.toLowerCase()}`
@@ -102,15 +102,16 @@ function Leaderboard() {
     }
   }, [bannedAddresses])
 
-  // Username cache with localStorage
-  const getUsernameFromCache = useCallback((address: string) => {
-    const cacheKey = `username-${address.toLowerCase()}`
+  // Profile cache with localStorage
+  const getProfileFromCache = useCallback((address: string) => {
+    const cacheKey = `profile-${address.toLowerCase()}`
     const cached = localStorage.getItem(cacheKey)
     if (cached) {
       try {
-        const { username, timestamp } = JSON.parse(cached)
+        const { username, avatar, timestamp } = JSON.parse(cached)
+        // Cache valid for 24 hours
         if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
-          return username
+          return { username, avatar }
         }
         localStorage.removeItem(cacheKey)
       } catch {
@@ -120,52 +121,78 @@ function Leaderboard() {
     return null
   }, [])
 
-  const setUsernameToCache = useCallback((address: string, username: string) => {
-    const cacheKey = `username-${address.toLowerCase()}`
+  const setProfileToCache = useCallback((address: string, profile: { username?: string; avatar?: string }) => {
+    const cacheKey = `profile-${address.toLowerCase()}`
     localStorage.setItem(cacheKey, JSON.stringify({
-      username,
+      ...profile,
       timestamp: Date.now()
     }))
-    usernameCache.set(address.toLowerCase(), username)
+    profileCache.set(address.toLowerCase(), profile)
   }, [])
 
-  // Get display name for a player
-  const getPlayerDisplayName = useCallback((playerAddress: string): string => {
+  // Resolve profile for a player
+  const resolvePlayerProfile = useCallback((playerAddress: string, currentDisplayName?: string, currentAvatar?: string | null) => {
+    // If it's me, use my current context
     if (user?.walletAddress?.toLowerCase() === playerAddress.toLowerCase()) {
       const displayName = getDisplayName({
         username: user.username,
         walletAddress: user.walletAddress
       })
-      if (user.username) {
-        setUsernameToCache(playerAddress, displayName)
+
+      // Update cache with my latest info
+      if (user.username || user.profilePictureUrl) {
+        setProfileToCache(playerAddress, {
+          username: displayName,
+          avatar: user.profilePictureUrl
+        })
       }
-      return displayName
+      return { displayName, avatar: user.profilePictureUrl }
     }
 
-    const cached = getUsernameFromCache(playerAddress) || usernameCache.get(playerAddress.toLowerCase())
-    if (cached) return cached
+    // Check cache
+    const cached = getProfileFromCache(playerAddress) || profileCache.get(playerAddress.toLowerCase())
+    if (cached) {
+      return {
+        displayName: cached.username || currentDisplayName || generateFriendlyName(playerAddress),
+        avatar: cached.avatar || currentAvatar
+      }
+    }
 
-    const friendlyName = generateFriendlyName(playerAddress)
+    // Return current values if available, otherwise friendly name
+    const finalDisplayName = currentDisplayName || generateFriendlyName(playerAddress)
 
     // Background resolution
     setTimeout(async () => {
       try {
         if (MiniKit.isInstalled()) {
           const worldIdUser = await MiniKit.getUserByAddress(playerAddress)
-          if (worldIdUser?.username) {
-            setUsernameToCache(playerAddress, worldIdUser.username)
-            setLeaderboard(prev => prev.map(entry =>
-              entry.player.toLowerCase() === playerAddress.toLowerCase()
-                ? { ...entry, displayName: worldIdUser.username }
-                : entry
-            ))
+          if (worldIdUser) {
+            const updates: { username?: string; avatar?: string } = {}
+            if (worldIdUser.username) updates.username = worldIdUser.username
+            if (worldIdUser.profilePictureUrl) updates.avatar = worldIdUser.profilePictureUrl
+
+            if (Object.keys(updates).length > 0) {
+              setProfileToCache(playerAddress, updates)
+
+              // Update state
+              setLeaderboard(prev => prev.map(entry => {
+                if (entry.player.toLowerCase() === playerAddress.toLowerCase()) {
+                  return {
+                    ...entry,
+                    displayName: updates.username || entry.displayName,
+                    avatar: updates.avatar || entry.avatar
+                  }
+                }
+                return entry
+              }))
+            }
           }
         }
       } catch { }
     }, 0)
 
-    return friendlyName
-  }, [user, getUsernameFromCache, setUsernameToCache])
+    return { displayName: finalDisplayName, avatar: currentAvatar }
+  }, [user, getProfileFromCache, setProfileToCache])
 
   // Check if current user
   const isCurrentUser = useCallback((playerAddress: string): boolean => {
@@ -263,7 +290,7 @@ function Leaderboard() {
         player: item.player,
         score: Number(item.score),
         timestamp: Number(item.timestamp || Date.now()),
-        round: 0, // Not provided by API aggregate, fallback
+        round: Number(item.round || 0),
         gameMode: mode,
         rank: item.rank,
         // Optional: username/avatar if we add them to type
@@ -275,12 +302,16 @@ function Leaderboard() {
       const filtered = data
         .filter(e => !bannedAddresses.includes(String(e.player).toLowerCase()))
         .slice(0, 10)
-        .map((entry, index) => ({
-          ...entry,
-          rank: index + 1,
-          displayName: entry.displayName || getPlayerDisplayName(entry.player), // Use API username if available
-          isCurrentUser: isCurrentUser(entry.player)
-        }))
+        .map((entry, index) => {
+          const profile = resolvePlayerProfile(entry.player, entry.displayName, entry.avatar)
+          return {
+            ...entry,
+            rank: index + 1,
+            displayName: profile.displayName,
+            avatar: profile.avatar,
+            isCurrentUser: isCurrentUser(entry.player)
+          }
+        })
 
       setLeaderboard(filtered)
       setCachedLeaderboard(mode, filtered)
@@ -298,12 +329,16 @@ function Leaderboard() {
           const filtered = data
             .filter(e => !bannedAddresses.includes(String(e.player).toLowerCase()))
             .slice(0, 10)
-            .map((entry, index) => ({
-              ...entry,
-              rank: index + 1,
-              displayName: getPlayerDisplayName(entry.player),
-              isCurrentUser: isCurrentUser(entry.player)
-            }));
+            .map((entry, index) => {
+              const profile = resolvePlayerProfile(entry.player)
+              return {
+                ...entry,
+                rank: index + 1,
+                displayName: profile.displayName,
+                avatar: profile.avatar,
+                isCurrentUser: isCurrentUser(entry.player)
+              }
+            });
           setLeaderboard(filtered);
           setCachedLeaderboard(mode, filtered);
           setLastUpdated(new Date());
@@ -327,7 +362,7 @@ function Leaderboard() {
       setIsLoading(false)
       fetchInProgress.current = false
     }
-  }, [getTopScores, getCachedLeaderboard, setCachedLeaderboard, getPlayerDisplayName, isCurrentUser, bannedAddresses, selectedMode])
+  }, [getTopScores, getCachedLeaderboard, setCachedLeaderboard, resolvePlayerProfile, isCurrentUser, bannedAddresses, selectedMode])
 
   // Handle mode change
   const handleModeChange = useCallback((mode: GameMode) => {
@@ -514,7 +549,36 @@ function Leaderboard() {
                   {index + 1}
                 </div>
 
-                {/* Player info */}
+                {/* Avatar */}
+                <div className="relative w-10 h-10 flex-shrink-0">
+                  <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-full blur-[2px]"></div>
+                  <div className={`
+                    relative w-full h-full rounded-full overflow-hidden border 
+                    ${isCurrentUserEntry ? 'border-pink-500/50' : 'border-white/10 bg-black/40'}
+                  `}>
+                    {entry.avatar ? (
+                      <img
+                        src={entry.avatar}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback to placeholder if image fails
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          ((e.target as HTMLImageElement).nextSibling as HTMLElement).style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    {/* Placeholder (shown if no avatar or error) */}
+                    <div
+                      className="absolute inset-0 flex items-center justify-center bg-zinc-900"
+                      style={{ display: entry.avatar ? 'none' : 'flex' }}
+                    >
+                      <span className="text-white text-sm">
+                        {displayName ? displayName.charAt(0).toUpperCase() : '👤'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className={`font-bold truncate text-sm ${isCurrentUserEntry ? 'text-pink-400' : 'text-white'}`}>

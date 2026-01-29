@@ -539,18 +539,35 @@ async function refreshLeaderboardCache() {
 
   for (const mode of modes) {
     try {
-      const colName = `high_score_${mode.toLowerCase()}`;
+      let dbMode = mode;
+      let colName = `high_score_${mode.toLowerCase()}`;
+
+      if (mode === 'WhackLight') {
+        dbMode = 'Whack';
+        colName = 'high_score_whack';
+      }
+
       // Query to get top 100 for this mode
+      // We subquery game_history to get the round associated with this high score
       const query = `
         SELECT 
-          address as player, 
-          username, 
-          avatar_url, 
-          ${colName} as score,
-          verification_level
-        FROM users 
-        WHERE ${colName} > 0
-        ORDER BY ${colName} DESC 
+          u.address as player, 
+          u.username, 
+          u.avatar_url, 
+          u.${colName} as score,
+          u.verification_level,
+          (
+            SELECT round 
+            FROM game_history gh 
+            WHERE gh.player = u.address 
+              AND gh.score = u.${colName} 
+              AND gh.game_mode = '${dbMode}'
+            ORDER BY timestamp DESC
+            LIMIT 1
+          ) as round
+        FROM users u
+        WHERE u.${colName} > 0
+        ORDER BY u.${colName} DESC 
         LIMIT 100
       `;
 
@@ -562,6 +579,7 @@ async function refreshLeaderboardCache() {
         username: row.username,
         avatar: row.avatar_url,
         score: Number(row.score),
+        round: Number(row.round || 0),
         gameMode: mode,
         verificationLevel: row.verification_level,
         tokensEarned: '0', // Placeholder
