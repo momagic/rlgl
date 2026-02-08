@@ -26,6 +26,18 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
   const [isClaiming, setIsClaiming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [claimLock, setClaimLock] = useState(false)
+  const [unlockAt, setUnlockAt] = useState<number | null>(null)
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [confettiPieces, setConfettiPieces] = useState<Array<{
+    id: number
+    left: number
+    delay: number
+    duration: number
+    size: number
+    color: string
+    rotate: number
+  }>>([])
 
   const loadClaimStatus = async () => {
     if (!address) return
@@ -34,9 +46,14 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
       const status = await getDailyClaimStatus(address)
       setClaimStatus(status)
       setError(null)
+      if (claimLock && unlockAt && Date.now() >= unlockAt) {
+        setClaimLock(false)
+      }
+      return status
     } catch (err) {
       console.error('Failed to load daily claim status:', err)
       setError(t('dailyClaim.loadError') || 'Failed to load daily claim status')
+      return null
     }
   }
 
@@ -48,8 +65,24 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
     return () => clearInterval(interval)
   }, [address])
 
+  const triggerConfetti = () => {
+    const palette = ['#FFD700', '#FFED4E', '#00A878', '#7C3AED', '#F97316', '#38BDF8']
+    const pieces = Array.from({ length: 18 }).map((_, index) => ({
+      id: index,
+      left: Math.random() * 100,
+      delay: Math.random() * 0.2,
+      duration: 0.9 + Math.random() * 0.6,
+      size: 6 + Math.random() * 6,
+      color: palette[index % palette.length],
+      rotate: Math.random() * 360
+    }))
+    setConfettiPieces(pieces)
+    setShowConfetti(true)
+    setTimeout(() => setShowConfetti(false), 1300)
+  }
+
   const handleClaimReward = async () => {
-    if (!address || !claimStatus?.canClaim) return
+    if (!address || !claimStatus?.canClaim || isClaiming || isLoading || claimLock) return
     
     setIsClaiming(true)
     setError(null)
@@ -59,7 +92,14 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
       
       if (result.success) {
         setSuccess(true)
-        await loadClaimStatus() // Refresh status
+        setClaimLock(true)
+        setUnlockAt(Date.now() + 24 * 60 * 60 * 1000)
+        setClaimStatus((prev) => (prev ? { ...prev, canClaim: false } : prev))
+        triggerConfetti()
+        const status = await loadClaimStatus() // Refresh status
+        if (status && !status.canClaim && status.timeUntilNextClaim > 0) {
+          setUnlockAt(Date.now() + status.timeUntilNextClaim * 1000)
+        }
         onClaimSuccess?.()
         
         // Hide success message after 3 seconds
@@ -90,10 +130,30 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
   const timeUntilNext = getTimeUntilNextClaim()
   const baseReward = 10
   const bonusReward = claimStatus ? Math.max(0, Math.round((claimStatus.nextReward ?? 0) - baseReward)) : 0
+  const canClaimNow = Boolean(claimStatus?.canClaim) && !claimLock
 
   if (variant === 'compact') {
     return (
-      <div className={`rounded-lg border-3 border-squid-border bg-squid-gray p-2 ${className}`} style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
+      <div className={`daily-claim-compact rounded-lg border-3 border-squid-border bg-squid-gray p-2 ${className}`} style={{ boxShadow: '4px 4px 0px 0px #0A0A0F' }}>
+        {showConfetti && (
+          <div className="daily-claim-confetti">
+            {confettiPieces.map((piece) => (
+              <span
+                key={piece.id}
+                className="confetti-piece"
+                style={{
+                  left: `${piece.left}%`,
+                  backgroundColor: piece.color,
+                  animationDelay: `${piece.delay}s`,
+                  animationDuration: `${piece.duration}s`,
+                  width: `${piece.size}px`,
+                  height: `${piece.size * 0.6}px`,
+                  ['--confetti-rotate' as any]: `${piece.rotate}deg`
+                } as React.CSSProperties}
+              />
+            ))}
+          </div>
+        )}
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-squid-heading font-bold uppercase text-squid-white">{t('dailyClaim.title')}</h3>
           {claimStatus && (
@@ -120,7 +180,7 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
             </div>
           )}
           {claimStatus && (
-            claimStatus.canClaim ? (
+            canClaimNow ? (
               <button
                 className="px-3 py-1.5 rounded border-2 border-squid-black text-xs font-squid-heading font-bold uppercase tracking-wider text-squid-white"
                 style={{ background: '#00A878', boxShadow: '2px 2px 0px 0px #0A0A0F' }}
@@ -143,7 +203,7 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
                 style={{ boxShadow: '2px 2px 0px 0px #0A0A0F' }}
                 disabled
               >
-                {t('dailyClaim.nextAvailable')}
+                {claimLock ? t('dailyClaim.claimed') : t('dailyClaim.nextAvailable')}
               </button>
             )
           )}
@@ -174,6 +234,25 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
   return (
     <div className={`daily-claim ${className}`}>
       <div className="daily-claim-card">
+        {showConfetti && (
+          <div className="daily-claim-confetti">
+            {confettiPieces.map((piece) => (
+              <span
+                key={piece.id}
+                className="confetti-piece"
+                style={{
+                  left: `${piece.left}%`,
+                  backgroundColor: piece.color,
+                  animationDelay: `${piece.delay}s`,
+                  animationDuration: `${piece.duration}s`,
+                  width: `${piece.size}px`,
+                  height: `${piece.size * 0.6}px`,
+                  ['--confetti-rotate' as any]: `${piece.rotate}deg`
+                } as React.CSSProperties}
+              />
+            ))}
+          </div>
+        )}
         <div className="daily-claim-header">
           <h3>{t('dailyClaim.title')}</h3>
           {claimStatus && (
@@ -192,7 +271,7 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
                   <span className="reward-bonus">(+{bonusReward})</span>
                 )}
               </div>
-              {claimStatus.canClaim ? (
+              {canClaimNow ? (
                 <button
                   className="claim-button"
                   onClick={handleClaimReward}
@@ -201,14 +280,20 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
                   {isClaiming ? t('dailyClaim.claiming') : t('dailyClaim.claim')}
                 </button>
               ) : (
-                <div className="claim-timer">
-                  {timeUntilNext && (
-                    <>
-                      <span className="timer-label">{t('dailyClaim.nextAvailable')}</span>
-                      <span className="timer-value">{timeUntilNext}</span>
-                    </>
-                  )}
-                </div>
+                claimLock ? (
+                  <button className="claim-button" disabled>
+                    {t('dailyClaim.claimed')}
+                  </button>
+                ) : (
+                  <div className="claim-timer">
+                    {timeUntilNext && (
+                      <>
+                        <span className="timer-label">{t('dailyClaim.nextAvailable')}</span>
+                        <span className="timer-value">{timeUntilNext}</span>
+                      </>
+                    )}
+                  </div>
+                )
               )}
             </>
           )}

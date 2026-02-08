@@ -10,6 +10,8 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
 }
 
 .daily-claim-header {
@@ -140,6 +142,41 @@
   font-size: 0.75rem;
   opacity: 0.7;
   margin-top: 0.5rem;
+}
+
+.daily-claim-compact {
+  position: relative;
+  overflow: hidden;
+}
+
+.daily-claim-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -10%;
+  opacity: 0.95;
+  border-radius: 2px;
+  animation-name: confetti-fall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(var(--confetti-rotate, 0deg));
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(120%) rotate(calc(var(--confetti-rotate, 0deg) + 240deg));
+    opacity: 0;
+  }
 }
 
 /* Dark mode support */
