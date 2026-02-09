@@ -65,6 +65,7 @@ class RPCManager {
   private endpoints: RPCEndpoint[] = []
   private currentEndpointIndex = 0
   private cache = new Map<string, CacheEntry<any>>()
+  private inFlight = new Map<string, Promise<any>>()
   private requestQueue: RequestQueue[] = []
   private isProcessingQueue = false
   private healthCheckInterval?: NodeJS.Timeout
@@ -213,18 +214,36 @@ class RPCManager {
     return endpoint
   }
 
+  private serializeParams(params: any[]): string {
+    return JSON.stringify(params, (_, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString()
+      }
+      return value
+    })
+  }
+
   private getCacheKey(method: string, params: any[]): string {
     try {
-      // Handle BigInt values in params by converting them to strings for cache key generation
-      const serializedParams = JSON.stringify(params, (_, value) => {
-        if (typeof value === 'bigint') {
-          return value.toString()
-        }
-        return value
-      })
-      return `${method}:${serializedParams}`
+      if (method === 'readContract' && params?.[0]) {
+        const cfg = params[0]
+        const address = cfg.address || 'unknown'
+        const fn = cfg.functionName || 'unknown'
+        const args = Array.isArray(cfg.args) ? cfg.args : []
+        return `readContract:${address}:${fn}:${this.serializeParams(args)}`
+      }
+
+      if (method === 'multicall' && params?.[0]?.contracts) {
+        const contracts = params[0].contracts.map((c: any) => ({
+          address: c.address,
+          functionName: c.functionName,
+          args: Array.isArray(c.args) ? c.args : []
+        }))
+        return `multicall:${this.serializeParams(contracts)}`
+      }
+
+      return `${method}:${this.serializeParams(params)}`
     } catch (error) {
-      // Fallback to a simple string representation if JSON.stringify fails
       console.warn('Failed to serialize cache key params:', error)
       return `${method}:${params.map(p => String(p)).join(',')}`
     }
@@ -273,7 +292,12 @@ class RPCManager {
       }
     }
 
-    return new Promise<T>((resolve, reject) => {
+    const existing = this.inFlight.get(cacheKey)
+    if (existing) {
+      return existing as Promise<T>
+    }
+
+    const pending = new Promise<T>((resolve, reject) => {
       const request = async () => {
         const endpoint = this.getNextHealthyEndpoint()
         if (!endpoint) {
@@ -332,6 +356,13 @@ class RPCManager {
 
       this.requestQueue.push({ resolve, reject, request, timestamp: Date.now() })
     })
+
+    const tracked = pending.finally(() => {
+      this.inFlight.delete(cacheKey)
+    })
+
+    this.inFlight.set(cacheKey, tracked)
+    return tracked
   }
 
   // Convenience methods with appropriate caching
@@ -339,35 +370,8 @@ class RPCManager {
     return this.request<bigint>('getBlockNumber', [], CACHE_CONFIG.blockNumberTTL)
   }
 
-  async readContract(config: any): Promise<any> {
-    return this.executeWithRetry(async () => {
-      const endpoint = this.getNextHealthyEndpoint()
-      if (!endpoint) throw new Error('No healthy RPC endpoints available')
-
-      console.log('📖 Contract read attempt:', {
-        address: config.address,
-        functionName: config.functionName,
-        args: config.args,
-        abiFunction: config.abi?.find((item: any) => item.name === config.functionName)?.name
-      })
-
-      try {
-        const result = await endpoint.client.readContract(config)
-        console.log('✅ Contract read success:', {
-          functionName: config.functionName,
-          result
-        })
-        return result
-      } catch (error) {
-        console.error('❌ Contract read failed:', {
-          functionName: config.functionName,
-          address: config.address,
-          args: config.args,
-          error: error instanceof Error ? error.message : String(error)
-        })
-        throw error
-      }
-    })
+  async readContract(config: any, cacheTTL?: number): Promise<any> {
+    return this.request('readContract', [config], cacheTTL)
   }
 
   async multicall(params: any): Promise<any> {
@@ -463,6 +467,7 @@ class RPCManager {
   // Clear cache
   clearCache(): void {
     this.cache.clear()
+    this.inFlight.clear()
   }
 
   // Cleanup

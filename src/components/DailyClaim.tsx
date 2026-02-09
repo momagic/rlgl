@@ -41,14 +41,15 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
 
   const loadClaimStatus = async () => {
     if (!address) return
+
+    if (claimLock && unlockAt && Date.now() >= unlockAt) {
+      setClaimLock(false)
+    }
     
     try {
       const status = await getDailyClaimStatus(address)
       setClaimStatus(status)
       setError(null)
-      if (claimLock && unlockAt && Date.now() >= unlockAt) {
-        setClaimLock(false)
-      }
       return status
     } catch (err) {
       console.error('Failed to load daily claim status:', err)
@@ -64,6 +65,17 @@ export const DailyClaim: React.FC<DailyClaimProps> = ({ className = '', onClaimS
     const interval = setInterval(loadClaimStatus, 30000)
     return () => clearInterval(interval)
   }, [address])
+
+  useEffect(() => {
+    if (!claimLock || !unlockAt) return
+    const now = Date.now()
+    if (now >= unlockAt) {
+      setClaimLock(false)
+      return
+    }
+    const timeout = setTimeout(() => setClaimLock(false), unlockAt - now)
+    return () => clearTimeout(timeout)
+  }, [claimLock, unlockAt])
 
   const triggerConfetti = () => {
     const palette = ['#FFD700', '#FFED4E', '#00A878', '#7C3AED', '#F97316', '#38BDF8']

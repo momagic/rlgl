@@ -17,7 +17,7 @@ import type {
   VerificationLevel
 } from '../types/contract'
 import { GAME_CONTRACT_ABI, CONTRACT_CONFIG } from '../types/contract'
-import { rpcManager } from '../utils/rpcManager'
+import { rpcManager, CACHE_CONFIG } from '../utils/rpcManager'
 
 // Contract addresses
 const GAME_CONTRACT_ADDRESS = CONTRACT_CONFIG.worldchain.gameContract as Address
@@ -46,9 +46,6 @@ export function useContract(): UseContractReturn {
 
   const getTurnStatus = useCallback(async (playerAddress: string): Promise<TurnStatus> => {
     try {
-      // First test if we can connect to the network
-      await rpcManager.getBlockNumber()
-
       // Use multicall for better performance and reduced RPC calls
       const multicallParams = {
         contracts: [
@@ -382,26 +379,65 @@ export function useContract(): UseContractReturn {
       console.log('📊 Fetching player stats for:', playerAddress)
       console.log('🏗️ Using contract address:', GAME_CONTRACT_ADDRESS)
 
-      const result = await rpcManager.readContract({
-        address: GAME_CONTRACT_ADDRESS,
-        abi: GAME_CONTRACT_ABI,
-        functionName: 'getPlayerStats',
-        args: [playerAddress as Address]
-      }) as any
+      const multicallParams = {
+        contracts: [
+          {
+            address: GAME_CONTRACT_ADDRESS,
+            abi: GAME_CONTRACT_ABI,
+            functionName: 'getPlayerStats',
+            args: [playerAddress as Address]
+          },
+          {
+            address: GAME_CONTRACT_ADDRESS,
+            abi: GAME_CONTRACT_ABI,
+            functionName: 'balanceOf',
+            args: [playerAddress as Address]
+          }
+        ]
+      }
 
-      console.log('✅ Player stats result:', result)
-
+      let result: any = null
+      let statsLoaded = false
       let balance: bigint = 0n
+      let balanceLoaded = false
+
       try {
-        balance = await rpcManager.readContract({
+        const results = await rpcManager.multicall(multicallParams)
+        if (results?.[0]?.status === 'success') {
+          result = results[0].result
+          statsLoaded = true
+        }
+        if (results?.[1]?.status === 'success') {
+          balance = results[1].result as bigint
+          balanceLoaded = true
+        }
+      } catch (multiErr) {
+        console.warn('Multicall failed, falling back to single reads:', multiErr)
+      }
+
+      if (!statsLoaded) {
+        result = await rpcManager.readContract({
           address: GAME_CONTRACT_ADDRESS,
           abi: GAME_CONTRACT_ABI,
-          functionName: 'balanceOf',
+          functionName: 'getPlayerStats',
           args: [playerAddress as Address]
-        }) as bigint
-      } catch (balErr) {
-        console.warn('⚠️ balanceOf read failed, defaulting to 0:', balErr instanceof Error ? balErr.message : String(balErr))
+        }) as any
       }
+
+      if (!balanceLoaded) {
+        try {
+          balance = await rpcManager.readContract({
+            address: GAME_CONTRACT_ADDRESS,
+            abi: GAME_CONTRACT_ABI,
+            functionName: 'balanceOf',
+            args: [playerAddress as Address]
+          }) as bigint
+        } catch (balErr) {
+          console.warn('balanceOf read failed, defaulting to 0:', balErr instanceof Error ? balErr.message : String(balErr))
+        }
+      }
+
+      console.log('Player stats result:', result)
 
       if (Array.isArray(result)) {
         return {
@@ -914,7 +950,7 @@ export function useContract(): UseContractReturn {
           address: GAME_CONTRACT_ADDRESS,
           abi: GAME_CONTRACT_ABI,
           functionName: 'getCurrentPricing'
-        })
+        }, CACHE_CONFIG.contractDataTTL)
         console.log('📊 Raw pricing result:', result)
       } catch (contractError) {
         console.error('❌ Contract read failed:', contractError)
@@ -1010,7 +1046,7 @@ export function useContract(): UseContractReturn {
         address: GAME_CONTRACT_ADDRESS,
         abi: GAME_CONTRACT_ABI,
         functionName: 'getVerificationMultipliers'
-      }) as any
+      }, CACHE_CONFIG.contractDataTTL) as any
 
       return {
         orbPlusMultiplier: Number(result.orbPlusMultiplier),
@@ -1036,7 +1072,7 @@ export function useContract(): UseContractReturn {
         address: GAME_CONTRACT_ADDRESS,
         abi: GAME_CONTRACT_ABI,
         functionName: 'getContractStats'
-      }) as any
+      }, CACHE_CONFIG.contractDataTTL) as any
 
       return {
         totalGames: Number(result.totalGames),
